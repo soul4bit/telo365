@@ -1,4 +1,5 @@
-export type User = {id:string;email:string;emailVerified:boolean;name:string;goal:string;target:number|null;timezone:string;calories:number|null;role:string}
+export type HydrationProfile={ageBand:'teen'|'adult'|'older';sex:'female'|'male'|'unspecified';stage:'standard'|'pregnancy'|'lactation';doctorLimit:number|null}
+export type User = {id:string;email:string;emailVerified:boolean;name:string;goal:string;target:number|null;timezone:string;calories:number|null;hydration:HydrationProfile;role:string}
 export type Macros = {kcal:number;p:number;f:number;c:number}
 export type Ingredient = {foodId:string;name:string;grams:number;source:string}
 export type Snapshot = Macros & {name:string;image:string;instructions:string;ingredients:Ingredient[];sample:boolean}

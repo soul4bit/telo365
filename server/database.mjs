@@ -9,7 +9,7 @@ export function openDatabase(path) {
   if (path !== ':memory:') chmodSync(path, 0o600);
   db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
   const version = db.prepare('PRAGMA user_version').get().user_version;
-  if (version > 7) throw new Error('Database is newer than this application');
+  if (version > 8) throw new Error('Database is newer than this application');
   if (version === 0) {
     db.exec(`BEGIN IMMEDIATE;
       CREATE TABLE users(id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, recovery TEXT NOT NULL,
@@ -57,6 +57,9 @@ export function openDatabase(path) {
     CREATE TABLE habit_values(user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,habit_id TEXT NOT NULL REFERENCES habits(id) ON DELETE CASCADE,date TEXT NOT NULL,value REAL NOT NULL,details TEXT NOT NULL DEFAULT '{}',PRIMARY KEY(user_id,habit_id,date));
     UPDATE habits SET tracking='hydration',target=2000,unit='мл' WHERE name='Вода';
     PRAGMA user_version=7; COMMIT;`);
+  if (version < 8) db.exec(`BEGIN IMMEDIATE;
+    ALTER TABLE users ADD COLUMN hydration TEXT NOT NULL DEFAULT '{}';
+    PRAGMA user_version=8; COMMIT;`);
   return db;
 }
 

@@ -63,7 +63,9 @@ test('account and journal integration', async t=>{
     assert.equal((await req('/api/marks','PUT',{habitId:weekendHabit.value.id,date:day,done:true})).status,200);
     assert.equal((await req('/api/habits/'+weekendHabit.value.id,'PUT',{name:'Weekend reset',icon:'🌿',schedule:'weekdays',weeklyTarget:3})).status,200);
     assert.equal((await req('/api/marks','PUT',{habitId:weekendHabit.value.id,date:day,done:true})).status,400);
-    assert.equal((await req('/api/profile','PUT',{name:'Аня',goal:'maintain',target:65,calories:2000,timezone:'Asia/Vladivostok'})).status,200);
+    assert.equal((await req('/api/profile','PUT',{name:'Аня',goal:'maintain',target:65,calories:2000,timezone:'Asia/Vladivostok',hydration:{ageBand:'adult',sex:'male',stage:'standard',doctorLimit:null}})).status,200);
+    const personalized=(await req('/api/state?date='+day)).value;
+    assert.equal(personalized.user.hydration.sex,'male');assert.equal(personalized.habits.find(habit=>habit.name==='Вода').target,3000);
     assert.equal((await req('/api/weights','PUT',{date:day,value:66})).status,200);
     assert.equal((await req('/api/weights','PUT',{date:day,value:65.5})).status,200);
     assert.equal((await req('/api/weights','PUT',{date:'2026-02-30',value:65})).status,400);

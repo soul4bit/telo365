@@ -9,7 +9,7 @@ export function openDatabase(path) {
   if (path !== ':memory:') chmodSync(path, 0o600);
   db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
   const version = db.prepare('PRAGMA user_version').get().user_version;
-  if (version > 6) throw new Error('Database is newer than this application');
+  if (version > 7) throw new Error('Database is newer than this application');
   if (version === 0) {
     db.exec(`BEGIN IMMEDIATE;
       CREATE TABLE users(id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, recovery TEXT NOT NULL,
@@ -50,6 +50,13 @@ export function openDatabase(path) {
     ALTER TABLE habits ADD COLUMN weekly_target INTEGER NOT NULL DEFAULT 7;
     UPDATE habits SET icon=CASE name WHEN 'Вода' THEN '💧' WHEN 'Сон' THEN '🌙' WHEN 'Прогулка' THEN '🚶' WHEN 'Питание' THEN '🥗' WHEN 'Движение' THEN '🏋️' ELSE '✨' END;
     PRAGMA user_version=6; COMMIT;`);
+  if (version < 7) db.exec(`BEGIN IMMEDIATE;
+    ALTER TABLE habits ADD COLUMN tracking TEXT NOT NULL DEFAULT 'check';
+    ALTER TABLE habits ADD COLUMN target REAL NOT NULL DEFAULT 0;
+    ALTER TABLE habits ADD COLUMN unit TEXT NOT NULL DEFAULT '';
+    CREATE TABLE habit_values(user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,habit_id TEXT NOT NULL REFERENCES habits(id) ON DELETE CASCADE,date TEXT NOT NULL,value REAL NOT NULL,details TEXT NOT NULL DEFAULT '{}',PRIMARY KEY(user_id,habit_id,date));
+    UPDATE habits SET tracking='hydration',target=2000,unit='мл' WHERE name='Вода';
+    PRAGMA user_version=7; COMMIT;`);
   return db;
 }
 
@@ -92,8 +99,8 @@ function expandCatalog(db) {
 }
 
 export function createHabits(db, userId) {
-  const statement = db.prepare('INSERT INTO habits(id,user_id,name,icon,schedule,weekly_target) VALUES(?,?,?,?,?,?)');
-  for (const [name,icon,schedule,target] of [['Вода','💧','daily',7],['Сон','🌙','daily',7],['Прогулка','🚶','daily',5],['Питание','🥗','daily',5],['Движение','🏋️','daily',4]]) statement.run(randomUUID(), userId, name,icon,schedule,target);
+  const statement = db.prepare('INSERT INTO habits(id,user_id,name,icon,schedule,weekly_target,tracking,target,unit) VALUES(?,?,?,?,?,?,?,?,?)');
+  for (const [name,icon,schedule,weeklyTarget,tracking,target,unit] of [['Вода','💧','daily',7,'hydration',2000,'мл'],['Сон','🌙','daily',7,'check',0,''],['Прогулка','🚶','daily',5,'check',0,''],['Питание','🥗','daily',5,'check',0,''],['Движение','🏋️','daily',4,'check',0,'']]) statement.run(randomUUID(), userId, name,icon,schedule,weeklyTarget,tracking,target,unit);
 }
 
 export async function backupDatabase(db, destination) {

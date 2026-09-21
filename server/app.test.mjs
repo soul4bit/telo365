@@ -51,6 +51,9 @@ test('account and journal integration', async t=>{
     assert.equal((await req('/api/auth/register','POST',{email:'boris@example.test',password:pw,name:'Борис',accepted:true},'b')).status,200);
     const state=(await req('/api/state')).value;
     assert.equal(state.habits[0].schedule,'daily');assert.equal(state.habits[0].weeklyTarget,7);assert.ok(state.habits[0].icon);
+    const water=state.habits.find(habit=>habit.name==='Вода');assert.equal(water.tracking,'hydration');assert.equal(water.target,2000);
+    assert.equal((await req('/api/habits/value','PUT',{habitId:water.id,date:day,delta:400,kind:'water'})).status,200);
+    assert.equal((await req('/api/state?date='+day)).value.habitValues.find(value=>value.habit_id===water.id).value,400);
     const weekendHabit=await req('/api/habits','POST',{name:'Weekend reset',icon:'🌿',schedule:'weekends',weeklyTarget:2});
     assert.equal(weekendHabit.status,200);
     assert.equal((await req('/api/marks','PUT',{habitId:weekendHabit.value.id,date:day,done:true})).status,200);

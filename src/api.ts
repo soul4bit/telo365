@@ -8,8 +8,9 @@ export type ExerciseLog = {name:string;unit:string;sets:{reps:number;weight:numb
 export type Workout = {id:string;date:string;finished:boolean;data:{name:string;programId:string;exercises:ExerciseLog[]}}
 export type Shop = {id:string;name:string;amount:number;unit:string;checked:number;generated:number}
 export type NutritionProfile = {style:'home'|'mixed'|'ready';cooking:'quick'|'normal'|'free';budget:'economy'|'balanced'|'free';exclusions:string}
-export type Habit = {id:string;name:string;icon:string;schedule:'daily'|'weekdays'|'weekends';weeklyTarget:number;archived:number}
-export type State = {user:User;date:string;today:string;weights:{date:string;value:number}[];habits:Habit[];marks:{habit_id:string;date:string;done:number}[];meals:Meal[];workouts:Workout[];shopping:Shop[];catalog:CatalogItem[];nutritionProfile:NutritionProfile|null}
+export type Habit = {id:string;name:string;icon:string;schedule:'daily'|'weekdays'|'weekends';weeklyTarget:number;tracking:'check'|'counter'|'hydration';target:number;unit:string;archived:number}
+export type HabitValue = {habit_id:string;date:string;value:number;details:Record<string,number>}
+export type State = {user:User;date:string;today:string;weights:{date:string;value:number}[];habits:Habit[];marks:{habit_id:string;date:string;done:number}[];habitValues:HabitValue[];meals:Meal[];workouts:Workout[];shopping:Shop[];catalog:CatalogItem[];nutritionProfile:NutritionProfile|null}
 export class ApiError extends Error { status:number; constructor(status:number,message:string){super(message);this.status=status} }
 export async function api<T=Record<string,unknown>>(path:string,method='GET',data?:unknown):Promise<T> {
   let response:Response;

@@ -4,6 +4,7 @@ import { api, download, type User } from './api'
 import { Logo, ErrorMessage, errorText } from './components/ui'
 import Dashboard from './components/Dashboard'
 import EmailPage from './components/Email'
+import Marketing, { LegalPage } from './components/Marketing'
 import './workspace.css'
 const Demo=lazy(()=>import('./Demo'))
 export default function App(){
@@ -12,8 +13,11 @@ export default function App(){
   if(path==='/demo')return <Suspense fallback={<p className="loading-page">Открываем демо…</p>}><div className="demo-back"><a href="/">← О сервисе</a><a href="/register">Создать свой кабинет →</a></div><Demo/></Suspense>
   if(path==='/app')return <Dashboard/>
   if(['/login','/register','/recover'].includes(path))return <Auth mode={path.slice(1)}/>
-  if(path==='/privacy')return <Privacy/>
-  return <Landing/>
+  if(path==='/privacy')return <LegalPage page="privacy"/>
+  if(path==='/terms')return <LegalPage page="terms"/>
+  if(path==='/about')return <LegalPage page="about"/>
+  if(path==='/contacts')return <LegalPage page="contacts"/>
+  return <Marketing/>
 }
 function Landing(){
   const [intro,setIntro]=useState('Питание, движение и привычки в твоём ритме.')

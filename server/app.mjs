@@ -7,6 +7,7 @@ import { accounts, getUser } from './accounts.mjs';
 import { journal } from './journal.mjs';
 import { createMailer } from './mail.mjs';
 import { emailAuth } from './email-auth.mjs';
+import { marketing } from './marketing.mjs';
 import { fail, readJson, rateLimit } from './security.mjs';
 
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.jpg':'image/jpeg','.png':'image/png','.ttf':'font/ttf','.txt':'text/plain; charset=utf-8'};
@@ -37,7 +38,9 @@ export function createApplication(options={}) {
         if(method==='GET'&&path==='/api/public') return json(res,{intro:db.prepare('SELECT value FROM settings WHERE key=?').get('intro').value});
         const body=['GET','HEAD'].includes(method)?{}:await readJson(req);
         const user=getUser(db,req,cookieName);
-        const ctx={db,req,res,path,method,body,user,url,mailer,cookieName,secure:production,trustProxy:options.trustProxy||process.env.TELO_TRUST_PROXY==='1'};
+        const ctx={db,req,res,path,method,body,user,url,mailer,cookieName,ip,secure:production,trustProxy:options.trustProxy||process.env.TELO_TRUST_PROXY==='1'};
+        const publicResult=marketing(ctx);
+        if(publicResult) return json(res,publicResult);
         if(path.startsWith('/api/auth/email/')||path==='/api/auth/mail') return json(res,await emailAuth(ctx));
         return json(res,path.startsWith('/api/auth/')||path==='/api/profile'?await accounts(ctx):journal(ctx));
       }

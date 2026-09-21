@@ -9,7 +9,7 @@ export function openDatabase(path) {
   if (path !== ':memory:') chmodSync(path, 0o600);
   db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
   const version = db.prepare('PRAGMA user_version').get().user_version;
-  if (version > 4) throw new Error('Database is newer than this application');
+  if (version > 5) throw new Error('Database is newer than this application');
   if (version === 0) {
     db.exec(`BEGIN IMMEDIATE;
       CREATE TABLE users(id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, recovery TEXT NOT NULL,
@@ -43,6 +43,7 @@ export function openDatabase(path) {
   if (version < 4) db.exec(`BEGIN IMMEDIATE;
     CREATE TABLE nutrition_profiles(user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,data TEXT NOT NULL,updated TEXT NOT NULL);
     PRAGMA user_version=4; COMMIT;`);
+  if (version < 5) { expandCatalog(db); db.exec('PRAGMA user_version=5'); }
   return db;
 }
 
@@ -68,6 +69,20 @@ function seed(db) {
   for (const [id,name,muscle] of exercises) add.run(id,'exercise',JSON.stringify({name,muscle,description:'Пример упражнения для самостоятельного дневника. Рабочую нагрузку и технику выбирайте с учётом подготовки.',unit:id==='plank'?'seconds':'reps'}));
   add.run('full-body','program',JSON.stringify({name:'Всё тело',description:'Пример плана для дневника тренировок',minutes:45,exercises:exercises.map(([exerciseId])=>({exerciseId,sets:3,reps:exerciseId==='plank'?45:12,weight:0}))}));
   db.prepare('INSERT INTO settings VALUES(?,?)').run('intro','Питание, движение и привычки в твоём ритме.');
+}
+
+function expandCatalog(db) {
+  const add=db.prepare('INSERT OR IGNORE INTO catalog(id,kind,owner,data) VALUES(?,?,NULL,?)');
+  const foods=[['eggs','Яйца',143,13,10,1],['rice','Рис сухой',340,7,1,78],['tomato','Томаты',18,1,0.2,3.9],['cucumber','Огурцы',15,0.8,0.1,2.8],['salmon','Лосось',208,20,13,0],['bread','Цельнозерновой хлеб',245,9,3.5,43],['cottage','Творог 5%',121,17,5,3],['banana','Банан',89,1.1,0.3,23],['pasta','Паста цельнозерновая сухая',348,13,2.5,65],['beans','Фасоль консервированная',90,6,0.5,14]];
+  for(const [id,name,kcal,p,f,c] of foods)add.run(id,'food',JSON.stringify({name,kcal,p,f,c,source:'Справочный каталог: проверьте этикетку',sample:true}));
+  const recipes=[
+    ['omelette','Омлет с овощами','breakfast','Взбейте яйца, приготовьте на сковороде, подайте с овощами и хлебом',[['eggs',150],['tomato',120],['cucumber',100],['bread',40]]],
+    ['curd-bowl','Творог с бананом и ягодами','snack','Смешайте творог с нарезанным бананом и ягодами.',[['cottage',200],['banana',120],['berries',60]]],
+    ['rice-chicken','Курица с рисом и брокколи','lunch','Отварите рис, приготовьте курицу и брокколи, соедините в тарелке.',[['chicken',150],['rice',70],['broccoli',150]]],
+    ['salmon-pasta','Паста с лососем и томатами','dinner','Отварите пасту, добавьте запечённый лосось и томаты.',[['salmon',130],['pasta',80],['tomato',150]]],
+    ['beans-bowl','Боул с фасолью и овощами','lunch','Соедините фасоль, готовый рис и свежие овощи.',[['beans',160],['rice',60],['tomato',120],['cucumber',120]]]
+  ];
+  for(const [id,name,image,instructions,ingredients] of recipes)add.run(id,'recipe',JSON.stringify({name,image,instructions,ingredients:ingredients.map(([foodId,grams])=>({foodId,grams})),sample:true}));
 }
 
 export function createHabits(db, userId) {

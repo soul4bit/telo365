@@ -9,7 +9,7 @@ export function openDatabase(path) {
   if (path !== ':memory:') chmodSync(path, 0o600);
   db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
   const version = db.prepare('PRAGMA user_version').get().user_version;
-  if (version > 8) throw new Error('Database is newer than this application');
+  if (version > 9) throw new Error('Database is newer than this application');
   if (version === 0) {
     db.exec(`BEGIN IMMEDIATE;
       CREATE TABLE users(id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, recovery TEXT NOT NULL,
@@ -60,7 +60,12 @@ export function openDatabase(path) {
   if (version < 8) db.exec(`BEGIN IMMEDIATE;
     ALTER TABLE users ADD COLUMN hydration TEXT NOT NULL DEFAULT '{}';
     PRAGMA user_version=8; COMMIT;`);
-  return db;
+  if (version < 9) {
+    db.exec('BEGIN IMMEDIATE');
+    const add=db.prepare('INSERT OR IGNORE INTO catalog(id,kind,owner,data) VALUES(?,?,NULL,?)');
+    for(const [id,name,kcal,p,f,c] of [['drink-lemonade','Лимонад',40,0,0,10],['drink-juice','Сок',45,0.5,0.1,10.5],['drink-milk','Молоко',52,3,2.5,4.7]]) add.run(id,'food',JSON.stringify({name,kcal,p,f,c,source:'Справочный ориентир на 100 мл. Проверьте этикетку своего напитка.',sample:true}));
+    db.exec('PRAGMA user_version=9; COMMIT;');
+  }  return db;
 }
 
 export function transaction(db, fn) {

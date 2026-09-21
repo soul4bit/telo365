@@ -61,8 +61,12 @@ export function journal(ctx) {
     const id=string(b.habitId,'Привычка'),d=date(b.date),delta=numeric(b.delta,'Количество',-100000,100000),kind=string(b.kind??'manual','Тип напитка',20);
     const h=owned(db,'habits',id,u.id);if(h.archived||d>today(u.timezone)||!habitScheduled(h.schedule,d)||!['counter','hydration'].includes(h.tracking)||delta===0) fail(400,'Нельзя изменить значение этой привычки');
     const old=db.prepare('SELECT value,details FROM habit_values WHERE user_id=? AND habit_id=? AND date=?').get(u.id,id,d),details=old?JSON.parse(old.details):{};
-    if(h.tracking==='hydration') {if(!['water','coffee','tea','other'].includes(kind)) fail(400,'Выберите напиток');details[kind]=Math.max(0,Number(details[kind]||0)+delta);}
-    const value=Math.max(0,Math.round(((old?.value||0)+delta)*10)/10);db.prepare('INSERT INTO habit_values(user_id,habit_id,date,value,details) VALUES(?,?,?,?,?) ON CONFLICT(user_id,habit_id,date) DO UPDATE SET value=excluded.value,details=excluded.details').run(u.id,id,d,value,JSON.stringify(details));
+    let appliedDelta=delta;
+    if(h.tracking==='hydration') {
+      if(!['water','coffee','tea','other'].includes(kind)) fail(400,'Выберите напиток');
+      const current=Math.max(0,Number(details[kind]||0)); appliedDelta=Math.max(-current,delta); details[kind]=Math.round((current+appliedDelta)*10)/10;
+    }
+    const value=Math.max(0,Math.round(((old?.value||0)+appliedDelta)*10)/10);db.prepare('INSERT INTO habit_values(user_id,habit_id,date,value,details) VALUES(?,?,?,?,?) ON CONFLICT(user_id,habit_id,date) DO UPDATE SET value=excluded.value,details=excluded.details').run(u.id,id,d,value,JSON.stringify(details));
     db.prepare('INSERT INTO marks VALUES(?,?,?,?) ON CONFLICT(user_id,habit_id,date) DO UPDATE SET done=excluded.done').run(u.id,id,d,value>=h.target?1:0);return {value};
   }  const habitId=path.match(/^\/api\/habits\/([^/]+)$/)?.[1];
   if(habitId&&method==='PUT') {owned(db,'habits',habitId,u.id);const habit=habitData(b);db.prepare('UPDATE habits SET name=?,icon=?,schedule=?,weekly_target=?,tracking=?,target=?,unit=? WHERE id=? AND user_id=?').run(habit.name,habit.icon,habit.schedule,habit.weeklyTarget,habit.tracking,habit.target,habit.unit,habitId,u.id);return {id:habitId};}

@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { createHabits, transaction } from './database.mjs';
 import { boolean, checkPassword, digest, email, fail, hashPassword, numeric, password, rateLimit, string, timezone, token } from './security.mjs';
 
-export const profile = u => ({id:u.id,email:u.email,name:u.name,goal:u.goal,target:u.target,timezone:u.timezone,calories:u.calories,role:u.role});
+export const profile = u => ({id:u.id,email:u.email,emailVerified:!!u.email_verified,name:u.name,goal:u.goal,target:u.target,timezone:u.timezone,calories:u.calories,role:u.role});
 export function getUser(db,req,cookieName) {
   const raw=(req.headers.cookie||'').split(';').map(c=>c.trim()).find(c=>c.startsWith(cookieName+'='))?.slice(cookieName.length+1);
   if(!raw||raw.length>100) return null;
@@ -47,6 +47,7 @@ export async function accounts(ctx) {
       const updated=db.prepare('UPDATE users SET password=?,recovery=? WHERE id=? AND recovery=?').run(encoded,digest(next),account.id,digest(code));
       if(!updated.changes) fail(401,'Резервный код уже использован');
       db.prepare('DELETE FROM sessions WHERE user_id=?').run(account.id);
+      db.prepare('DELETE FROM email_tokens WHERE user_id=?').run(account.id);
     });
     setSession(ctx,account.id);return {user:profile(account),recoveryCode:next};
   }
@@ -72,7 +73,7 @@ export async function accounts(ctx) {
     const code=token();
     if(path.endsWith('/password')) {
       const encoded=await hashPassword(password(b.newPassword));
-      transaction(db,()=>{db.prepare('UPDATE users SET password=?,recovery=? WHERE id=?').run(encoded,digest(code),u.id);db.prepare('DELETE FROM sessions WHERE user_id=?').run(u.id);});
+      transaction(db,()=>{db.prepare('UPDATE users SET password=?,recovery=? WHERE id=?').run(encoded,digest(code),u.id);db.prepare('DELETE FROM sessions WHERE user_id=?').run(u.id);db.prepare('DELETE FROM email_tokens WHERE user_id=?').run(u.id);});
       setSession(ctx,u.id);
     } else db.prepare('UPDATE users SET recovery=? WHERE id=?').run(digest(code),u.id);
     return {recoveryCode:code};

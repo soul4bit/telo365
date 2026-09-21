@@ -1,0 +1,2 @@
+# Installed root-owned as /etc/sudoers.d/telo365-admin. The wrapper validates its only argument.
+max ALL=(root) NOPASSWD: /usr/local/sbin/telo365-admin *

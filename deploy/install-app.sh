@@ -23,10 +23,11 @@ with tarfile.open(sys.argv[1], 'r:gz') as archive:
     if sum(m.size for m in members)>250_000_000: raise SystemExit('Archive too large')
     for m in members:
         p=pathlib.PurePosixPath(m.name)
-        if p.is_absolute() or '..' in p.parts or not p.parts or p.parts[0] not in ('dist','server','deploy') or not (m.isfile() or m.isdir()) or m.name.endswith('.local'):
+        if p.is_absolute() or '..' in p.parts or not p.parts or p.parts[0] not in ('dist','server','deploy','node_modules') or not (m.isfile() or m.isdir()) or m.name.endswith('.local'):
             raise SystemExit('Unsafe archive member')
+        if p.parts[0]=='node_modules' and (len(p.parts)<2 or p.parts[1]!='nodemailer'): raise SystemExit('Unexpected runtime dependency')
     archive.extractall(sys.argv[2], members=members, filter='data')
-for file in ('dist/index.html','server/app.mjs','deploy/telo365.service'):
+for file in ('dist/index.html','server/app.mjs','deploy/telo365.service','node_modules/nodemailer/package.json'):
     if not (pathlib.Path(sys.argv[2])/file).is_file(): raise SystemExit('Incomplete archive')
 PY
 find "$work" -type d -exec chmod 755 {} +

@@ -12,6 +12,7 @@ Environment=PORT=1435
 Environment=TELO_DB=/var/lib/telo365/telo365.sqlite
 Environment=TELO_ORIGINS=https://telo365.ru
 Environment=TELO_TRUST_PROXY=1
+EnvironmentFile=-/etc/telo365/mail.env
 ExecStart=/opt/telo365/node/bin/node server/app.mjs
 Restart=on-failure
 RestartSec=3

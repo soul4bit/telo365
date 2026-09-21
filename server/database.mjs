@@ -9,7 +9,7 @@ export function openDatabase(path) {
   if (path !== ':memory:') chmodSync(path, 0o600);
   db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
   const version = db.prepare('PRAGMA user_version').get().user_version;
-  if (version > 1) throw new Error('Database is newer than this application');
+  if (version > 2) throw new Error('Database is newer than this application');
   if (version === 0) {
     db.exec(`BEGIN IMMEDIATE;
       CREATE TABLE users(id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, recovery TEXT NOT NULL,
@@ -31,6 +31,11 @@ export function openDatabase(path) {
       COMMIT;`);
     seed(db);
   }
+  if (version < 2) db.exec(`BEGIN IMMEDIATE;
+    ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0;
+    CREATE TABLE email_tokens(token TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,purpose TEXT NOT NULL,email TEXT NOT NULL,expires INTEGER NOT NULL);
+    CREATE INDEX email_tokens_user ON email_tokens(user_id,purpose);
+    PRAGMA user_version=2; COMMIT;`);
   return db;
 }
 

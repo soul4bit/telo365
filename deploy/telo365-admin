@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Root-owned, deliberately small operational interface for the VM administrator.
+set -euo pipefail
+[[ $# -eq 1 ]] || { echo 'Usage: telo365-admin {restart|backup|mail-restart|status|health}'; exit 64; }
+case "$1" in
+  restart) /usr/bin/systemctl restart telo365.service ;;
+  backup) /usr/bin/systemctl start telo365-backup.service ;;
+  mail-restart) /usr/bin/systemctl restart mailpit@telo365.service ;;
+  status) /usr/bin/systemctl --no-pager --full status telo365.service mailpit@telo365.service telo365-backup.timer telo365-monitor.timer ;;
+  health) /usr/bin/curl --fail --silent --show-error -H 'Host: telo365.ru' http://127.0.0.1:8080/api/health ;;
+  *) echo 'Usage: telo365-admin {restart|backup|mail-restart|status|health}'; exit 64 ;;
+esac

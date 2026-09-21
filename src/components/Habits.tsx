@@ -31,30 +31,38 @@ export default function Habits({data,mutate,busy,full=false}:{data:State;mutate:
   return <section className={`card habits-panel ${full?'habits-panel-full':''}`}><div className="habits-heading"><div><span className="eyebrow">ТВОЙ РИТМ</span><h2>{full?'Привычки':'Привычки за день'}</h2><p>{data.date>data.today?'Отметки станут доступны в этот день':active.length?`Сегодня ${completed} из ${active.length} запланировано`:'На сегодня нет запланированных привычек'}</p></div><button className="soft-button" onClick={openNew}><Plus size={16}/>Новая</button></div>{full&&<><div className="habit-hero-stats"><div><span className="round-icon green"><Flame size={19}/></span><strong>{data.habits.length?Math.max(...data.habits.map(habit=>streak(habit,done,selected))):0}</strong><small>лучшая серия сейчас</small></div><div><span className="round-icon yellow"><Target size={19}/></span><strong>{completed}/{active.length}</strong><small>сделано сегодня</small></div><div><span className="round-icon purple"><Sparkles size={19}/></span><strong>{data.habits.length}</strong><small>в твоём ритме</small></div></div><div className="habit-templates"><span>Быстро добавить:</span>{templates.filter(template=>!data.habits.some(habit=>habit.name===template[1])).slice(0,4).map(([icon,name,schedule,weeklyTarget])=><button key={name} disabled={busy} onClick={()=>perform('/api/habits','POST',{name,icon,schedule,weeklyTarget})}>{icon} {name}</button>)}</div></>}{!data.habits.length?<Empty action={openNew} label="Создать привычку">Начни с одного маленького действия. Его легко заметить, а потом повторить.</Empty>:<div className="habit-cards">{cards.map(habit=>{const isDone=done.has(keyFor(habit,data.date)),isScheduled=scheduled(habit,data.date),currentStreak=streak(habit,done,selected),weekDone=week.filter(date=>scheduled(habit,date)&&done.has(keyFor(habit,date))).length;if(habit.tracking==='hydration')return <HydrationCard key={habit.id} habit={habit} value={values.get(keyFor(habit,data.date))} date={data.date} today={data.today} busy={busy} perform={perform} edit={()=>openEdit(habit)}/>;if(habit.tracking==='counter')return <CounterCard key={habit.id} habit={habit} value={values.get(keyFor(habit,data.date))?.value||0} date={data.date} today={data.today} busy={busy} perform={perform} edit={()=>openEdit(habit)}/>;return <article className={`habit-card ${isDone?'is-done':''}`} key={habit.id}><div className="habit-card-top"><button className="habit-toggle" aria-label={`${habit.name}: ${isDone?'выполнено':'не выполнено'}`} aria-pressed={isDone} disabled={busy||data.date>data.today||!isScheduled} onClick={()=>perform('/api/marks','PUT',{habitId:habit.id,date:data.date,done:!isDone})}><span className="habit-icon">{habit.icon||'✨'}</span><span><strong>{habit.name}</strong><small>{isScheduled?scheduleLabels[habit.schedule]||scheduleLabels.daily:'Сегодня не запланировано'}</small></span><span className="habit-check-big">{isDone?<Check size={18}/>:null}</span></button><button className="habit-settings" aria-label={`Настроить привычку ${habit.name}`} onClick={()=>openEdit(habit)}><Pencil size={15}/></button></div><div className="habit-calendar" aria-label={`Последние 14 дней: ${habit.name}`}>{Array.from({length:14},(_,index)=>plusDays(data.date,-13+index)).map(date=>{const isHabitDay=scheduled(habit,date),marked=done.has(keyFor(habit,date));return <span className={!isHabitDay?'skip':marked?'done':''} title={`${date}: ${!isHabitDay?'не запланировано':marked?'выполнено':'нет отметки'}`} key={date}>{atNoon(date).getUTCDate()}</span>})}</div><div className="habit-card-foot"><span><Flame size={14}/>{currentStreak} {ending(currentStreak,'день','дня','дней')}</span><span>{weekDone}/{habit.weeklyTarget||7} на этой неделе</span></div></article>})}</div>}<ErrorMessage error={error}/>{editor&&<HabitEditor habit={current} close={()=>{setEditor(null);setCurrent(null)}} remove={async()=>{if(!current)return;await perform(`/api/habits/${current.id}`,'DELETE',{});setEditor(null)}} mutate={mutate} busy={busy}/>}</section>
 }
 
+type DrinkKind='water'|'tea'|'coffee'|'lemonade'|'juice'|'milk'|'other'
+const hydrationDrinks:{kind:DrinkKind;label:string;amounts:number[]}[]=[
+  {kind:'water',label:'Вода',amounts:[100,200,300,400,500]},
+  {kind:'tea',label:'Чай',amounts:[200,300,400,500]},
+  {kind:'coffee',label:'Кофе',amounts:[100,150,200,300]},
+  {kind:'lemonade',label:'Лимонад',amounts:[200,300,400,500]},
+  {kind:'juice',label:'Сок',amounts:[200,300,400,500]},
+  {kind:'milk',label:'Молоко',amounts:[200,300,400,500]},
+  {kind:'other',label:'Другое',amounts:[100,200,300,400,500]},
+]
+
 function HydrationCard({habit,value,date,today,busy,perform,edit}:{habit:Habit;value:State['habitValues'][number]|undefined;date:string;today:string;busy:boolean;perform:(path:string,method:string,body?:unknown)=>Promise<void>;edit:()=>void}) {
-  const [pulse,setPulse]=useState(false)
+  const [pulse,setPulse]=useState(false),[kind,setKind]=useState<DrinkKind>('water'),[amount,setAmount]=useState(200)
   const total=value?.value||0,target=habit.target||2000,percent=Math.min(100,Math.round(total/target*100)),details=value?.details||{}
-  const drinks=[
-    {kind:'water' as const,label:'Вода',icon:<Droplets size={16}/>,amounts:[100,200,300]},
-    {kind:'tea' as const,label:'Чай',icon:<CupSoda size={16}/>,amounts:[300,400,500]},
-    {kind:'coffee' as const,label:'Кофе',icon:<Coffee size={16}/>,amounts:[100,200,300]},
-  ]
-  async function add(delta:number,kind:'water'|'coffee'|'tea') {
+  const selected=hydrationDrinks.find(drink=>drink.kind===kind)!,selectedTotal=Number(details[kind]||0)
+  async function change(delta:number) {
     await perform('/api/habits/value','PUT',{habitId:habit.id,date,delta,kind})
     setPulse(true);setTimeout(()=>setPulse(false),650)
   }
+  function chooseDrink(next:DrinkKind) {const drink=hydrationDrinks.find(item=>item.kind===next)!;setKind(next);setAmount(drink.amounts.includes(amount)?amount:drink.amounts[0])}
   return <article className={`habit-card hydration-card ${percent>=100?'is-done':''} ${pulse?'is-pulsing':''}`}>
-    <div className="hydration-head"><div><span className="habit-icon">{habit.icon||'💧'}</span><span><strong>{habit.name}</strong><small>Вода, чай и кофе входят в дневную норму жидкости</small></span></div><button className="habit-settings" aria-label={`Настроить привычку ${habit.name}`} onClick={edit}><Pencil size={15}/></button></div>
+    <div className="hydration-head"><div><span className="habit-icon">{habit.icon||'💧'}</span><span><strong>{habit.name}</strong><small>Удобно учитывай напитки за день</small></span></div><button className="habit-settings" aria-label={`Настроить привычку ${habit.name}`} onClick={edit}><Pencil size={15}/></button></div>
     <div className="water-meter"><div className="water-meter-fill" style={{height:`${percent}%`}}/><div className="water-meter-wave" style={{bottom:`${Math.max(0,percent-6)}%`}}/><div className="water-meter-copy"><strong>{total.toLocaleString('ru-RU')} <small>мл</small></strong><span>из {target.toLocaleString('ru-RU')} мл</span></div></div>
-    <div className="drink-choice-list">
-      {drinks.map(drink=>{const drank=Number(details[drink.kind]||0);return <div className="drink-choice" key={drink.kind}>
-        <div className="drink-choice-head">{drink.icon}<strong>{drink.label}</strong><span>{drank.toLocaleString('ru-RU')} мл</span></div>
-        <div className="drink-amounts" aria-label={`Добавить ${drink.label.toLowerCase()}`}>{drink.amounts.map(amount=><button key={amount} disabled={busy||date>today} onClick={()=>add(amount,drink.kind)}>+{amount} мл</button>)}</div>
-        {drank>0&&<div className="drink-removes" aria-label={`Убрать ${drink.label.toLowerCase()}`}>{drink.amounts.map(amount=><button key={amount} disabled={busy||date>today||drank<amount} onClick={()=>add(-amount,drink.kind)}>−{amount} мл</button>)}</div>}
-      </div>})}
+    <div className="hydration-picker">
+      <label><span>Напиток</span><select value={kind} disabled={busy||date>today} onChange={event=>chooseDrink(event.target.value as DrinkKind)}>{hydrationDrinks.map(drink=><option key={drink.kind} value={drink.kind}>{drink.label}</option>)}</select></label>
+      <label><span>Объём</span><select value={amount} disabled={busy||date>today} onChange={event=>setAmount(Number(event.target.value))}>{selected.amounts.map(value=><option key={value} value={value}>{value} мл</option>)}</select></label>
+      <button className="hydration-add" disabled={busy||date>today} onClick={()=>change(amount)}><Plus size={16}/>Добавить</button>
+      <button className="hydration-remove" disabled={busy||date>today||selectedTotal<amount} onClick={()=>change(-amount)}><Minus size={15}/>Убрать</button>
     </div>
+    <div className="hydration-ledger"><span>Сегодня:</span>{hydrationDrinks.filter(drink=>Number(details[drink.kind]||0)>0).map(drink=><b key={drink.kind}>{drink.label} {Number(details[drink.kind]).toLocaleString('ru-RU')} мл</b>)}{!hydrationDrinks.some(drink=>Number(details[drink.kind]||0)>0)&&<i>пока ничего</i>}</div>
     <div className="drink-breakdown"><em>{percent>=100?'Норма на сегодня выполнена!':`Ещё ${Math.max(0,target-total).toLocaleString('ru-RU')} мл`}</em></div>
-    <p className="hydration-note">Обычные порции чая и кофе засчитываются как жидкость. Вода остаётся лучшей основой дня.</p>
+    <p className="hydration-note">Безалкогольные напитки входят в норму жидкости. Сахар и калории из лимонада или сока учитываются отдельно в питании.</p>
   </article>
 }function CounterCard({habit,value,date,today,busy,perform,edit}:{habit:Habit;value:number;date:string;today:string;busy:boolean;perform:(path:string,method:string,body?:unknown)=>Promise<void>;edit:()=>void}) {
   const target=habit.target,percent=Math.min(100,Math.round(value/target*100)),step=Math.max(1,Math.round(target/4))

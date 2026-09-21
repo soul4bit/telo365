@@ -63,7 +63,7 @@ export function journal(ctx) {
     const old=db.prepare('SELECT value,details FROM habit_values WHERE user_id=? AND habit_id=? AND date=?').get(u.id,id,d),details=old?JSON.parse(old.details):{};
     let appliedDelta=delta;
     if(h.tracking==='hydration') {
-      if(!['water','coffee','tea','other'].includes(kind)) fail(400,'Выберите напиток');
+      if(!['water','coffee','tea','lemonade','juice','milk','other'].includes(kind)) fail(400,'Выберите напиток');
       const current=Math.max(0,Number(details[kind]||0)); appliedDelta=Math.max(-current,delta); details[kind]=Math.round((current+appliedDelta)*10)/10;
     }
     const value=Math.max(0,Math.round(((old?.value||0)+appliedDelta)*10)/10);db.prepare('INSERT INTO habit_values(user_id,habit_id,date,value,details) VALUES(?,?,?,?,?) ON CONFLICT(user_id,habit_id,date) DO UPDATE SET value=excluded.value,details=excluded.details').run(u.id,id,d,value,JSON.stringify(details));

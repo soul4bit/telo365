@@ -60,7 +60,7 @@ export async function analyzeMealPhoto(ctx) {
         ]}]
       })
     });
-    if(!response.ok) { console.error(JSON.stringify({event:'vision_error',status:response.status}));fail(503,'Распознавание временно недоступно. Попробуйте позже'); }
+    if(!response.ok) { const detail=await response.json().catch(()=>null);console.error(JSON.stringify({event:'vision_error',status:response.status,code:detail?.error?.code||null,param:detail?.error?.param||null}));fail(503,'Распознавание временно недоступно. Попробуйте позже'); }
     return estimate(jsonOutput(await response.json()));
   } catch(error) {
     if(error?.status) throw error;

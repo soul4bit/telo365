@@ -11,6 +11,7 @@ function owned(db,table,id,user) { const row=db.prepare(`SELECT * FROM ${table} 
 export function state(db,user,day) {
   const selected=date(day||today(user.timezone));
   const catalog=readCatalog(db,user.id);
+  const nutritionProfile=db.prepare('SELECT data FROM nutrition_profiles WHERE user_id=?').get(user.id);
   return {
     user:profile(user),today:today(user.timezone),date:selected,
     weights:db.prepare('SELECT date,value FROM weights WHERE user_id=? ORDER BY date').all(user.id),
@@ -20,6 +21,7 @@ export function state(db,user,day) {
     workouts:db.prepare('SELECT * FROM workouts WHERE user_id=? ORDER BY date DESC,rowid DESC LIMIT 100').all(user.id).map(parseWorkout),
     shopping:db.prepare('SELECT id,name,amount,unit,checked,generated FROM shopping WHERE user_id=? ORDER BY generated DESC,name').all(user.id),
     catalog:catalog.map(i=>i.kind==='recipe'?{...i,nutrition:mealSnapshot(db,i.id,user.id)}:i),
+    nutritionProfile:nutritionProfile?JSON.parse(nutritionProfile.data):null,
   };
 }
 
@@ -27,6 +29,12 @@ export function journal(ctx) {
   const {db,user:u,body:b,path,method,url}=ctx;
   if(!u) fail(401,'Войдите в аккаунт');
   if(method==='GET'&&path==='/api/state') return state(db,u,url.searchParams.get('date'));
+  if(path==='/api/nutrition/profile'&&method==='PUT') {
+    const style=string(b.style,'Формат питания',20),cooking=string(b.cooking,'Время готовки',20),budget=string(b.budget,'Бюджет',20),exclusions=typeof b.exclusions==='string'?b.exclusions.trim().slice(0,300):fail(400,'Проверьте ограничения');
+    if(!['home','mixed','ready'].includes(style)||!['quick','normal','free'].includes(cooking)||!['economy','balanced','free'].includes(budget)) fail(400,'Выберите вариант из списка');
+    db.prepare('INSERT INTO nutrition_profiles(user_id,data,updated) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET data=excluded.data,updated=excluded.updated').run(u.id,JSON.stringify({style,cooking,budget,exclusions}),new Date().toISOString());
+    return {ok:true};
+  }
   if(method==='GET'&&path==='/api/export') {
     return {profile:profile(u),weights:db.prepare('SELECT date,value FROM weights WHERE user_id=?').all(u.id),habits:db.prepare('SELECT * FROM habits WHERE user_id=?').all(u.id),marks:db.prepare('SELECT habit_id,date,done FROM marks WHERE user_id=?').all(u.id),meals:db.prepare('SELECT * FROM meals WHERE user_id=?').all(u.id).map(parseMeal),workouts:db.prepare('SELECT * FROM workouts WHERE user_id=?').all(u.id).map(parseWorkout),shopping:db.prepare('SELECT * FROM shopping WHERE user_id=?').all(u.id),catalog:readCatalog(db,u.id,true).filter(i=>i.owner===u.id)};
   }

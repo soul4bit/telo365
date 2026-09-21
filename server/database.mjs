@@ -9,7 +9,7 @@ export function openDatabase(path) {
   if (path !== ':memory:') chmodSync(path, 0o600);
   db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
   const version = db.prepare('PRAGMA user_version').get().user_version;
-  if (version > 3) throw new Error('Database is newer than this application');
+  if (version > 4) throw new Error('Database is newer than this application');
   if (version === 0) {
     db.exec(`BEGIN IMMEDIATE;
       CREATE TABLE users(id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, recovery TEXT NOT NULL,
@@ -40,6 +40,9 @@ export function openDatabase(path) {
     CREATE TABLE feedback(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,email TEXT NOT NULL,message TEXT NOT NULL,created TEXT NOT NULL);
     CREATE TABLE analytics_daily(day TEXT NOT NULL,event TEXT NOT NULL,hits INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(day,event));
     PRAGMA user_version=3; COMMIT;`);
+  if (version < 4) db.exec(`BEGIN IMMEDIATE;
+    CREATE TABLE nutrition_profiles(user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,data TEXT NOT NULL,updated TEXT NOT NULL);
+    PRAGMA user_version=4; COMMIT;`);
   return db;
 }
 

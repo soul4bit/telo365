@@ -7,7 +7,8 @@ export type Meal = {id:string;date:string;slot:string;servings:number;eaten:bool
 export type ExerciseLog = {name:string;unit:string;sets:{reps:number;weight:number;done:boolean}[]}
 export type Workout = {id:string;date:string;finished:boolean;data:{name:string;programId:string;exercises:ExerciseLog[]}}
 export type Shop = {id:string;name:string;amount:number;unit:string;checked:number;generated:number}
-export type State = {user:User;date:string;today:string;weights:{date:string;value:number}[];habits:{id:string;name:string;archived:number}[];marks:{habit_id:string;date:string;done:number}[];meals:Meal[];workouts:Workout[];shopping:Shop[];catalog:CatalogItem[]}
+export type NutritionProfile = {style:'home'|'mixed'|'ready';cooking:'quick'|'normal'|'free';budget:'economy'|'balanced'|'free';exclusions:string}
+export type State = {user:User;date:string;today:string;weights:{date:string;value:number}[];habits:{id:string;name:string;archived:number}[];marks:{habit_id:string;date:string;done:number}[];meals:Meal[];workouts:Workout[];shopping:Shop[];catalog:CatalogItem[];nutritionProfile:NutritionProfile|null}
 export class ApiError extends Error { status:number; constructor(status:number,message:string){super(message);this.status=status} }
 export async function api<T=Record<string,unknown>>(path:string,method='GET',data?:unknown):Promise<T> {
   let response:Response;

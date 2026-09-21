@@ -44,6 +44,7 @@ test('account and journal integration', async t=>{
     assert.equal((await req('/api/weights','PUT',{date:day,value:65},'a',{'X-Telo365':''})).status,403);
     assert.equal((await req('/api/state','GET',undefined,'a',{Host:'evil.test'})).status,403);
     assert.equal((await req('/api/profile','PUT',{name:'x'.repeat(70000)})).status,413);
+    assert.equal((await req('/api/nutrition/analyze-photo','POST',{image:'data:image/jpeg;base64,'+'?'.repeat(70000)})).status,400);
     assert.equal((await req('/api/state','GET',undefined,'anonymous')).status,401);
   });
   await t.test('profile, dates, marks and weights remain isolated across accounts and shared across devices',async()=>{

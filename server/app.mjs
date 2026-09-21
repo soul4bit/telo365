@@ -36,13 +36,13 @@ export function createApplication(options={}) {
           rateLimit(db,`writes:${ip}`,400,60000);
         }
         if(method==='GET'&&path==='/api/public') return json(res,{intro:db.prepare('SELECT value FROM settings WHERE key=?').get('intro').value});
-        const body=['GET','HEAD'].includes(method)?{}:await readJson(req);
+        const body=['GET','HEAD'].includes(method)?{}:await readJson(req,path==='/api/nutrition/analyze-photo'?3500000:65536);
         const user=getUser(db,req,cookieName);
         const ctx={db,req,res,path,method,body,user,url,mailer,cookieName,ip,secure:production,trustProxy:options.trustProxy||process.env.TELO_TRUST_PROXY==='1'};
         const publicResult=marketing(ctx);
         if(publicResult) return json(res,publicResult);
         if(path.startsWith('/api/auth/email/')||path==='/api/auth/mail') return json(res,await emailAuth(ctx));
-        return json(res,path.startsWith('/api/auth/')||path==='/api/profile'?await accounts(ctx):journal(ctx));
+        return json(res,path.startsWith('/api/auth/')||path==='/api/profile'?await accounts(ctx):await journal(ctx));
       }
       if(method!=='GET'&&method!=='HEAD') fail(405,'Метод не разрешён');
       let filename;
@@ -60,7 +60,7 @@ export function createApplication(options={}) {
       if(!res.headersSent)json(res,{error:error.status?error.message:'Не удалось выполнить запрос. Попробуйте ещё раз'},error.status||500);else res.destroy();
     }
   });
-  server.requestTimeout=15000;server.headersTimeout=10000;
+  server.requestTimeout=45000;server.headersTimeout=10000;
   server.on('close',()=>db.close());
   return {server,db};
 }

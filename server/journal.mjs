@@ -3,6 +3,7 @@ import { transaction } from './database.mjs';
 import { profile } from './accounts.mjs';
 import { boolean, date, digest, fail, numeric, string, today } from './security.mjs';
 import { getItem, mealSnapshot, readCatalog, saveItem } from './catalog.mjs';
+import { analyzeMealPhoto } from './vision.mjs';
 
 const parseMeal=r=>({...r,snapshot:JSON.parse(r.snapshot),eaten:!!r.eaten});
 const parseWorkout=r=>({...r,data:JSON.parse(r.data),finished:!!r.finished});
@@ -29,6 +30,7 @@ export function journal(ctx) {
   const {db,user:u,body:b,path,method,url}=ctx;
   if(!u) fail(401,'Войдите в аккаунт');
   if(method==='GET'&&path==='/api/state') return state(db,u,url.searchParams.get('date'));
+  if(path==='/api/nutrition/analyze-photo'&&method==='POST') return analyzeMealPhoto(ctx);
   if(path==='/api/nutrition/profile'&&method==='PUT') {
     const style=string(b.style,'Формат питания',20),cooking=string(b.cooking,'Время готовки',20),budget=string(b.budget,'Бюджет',20),exclusions=typeof b.exclusions==='string'?b.exclusions.trim().slice(0,300):fail(400,'Проверьте ограничения');
     if(!['home','mixed','ready'].includes(style)||!['quick','normal','free'].includes(cooking)||!['economy','balanced','free'].includes(budget)) fail(400,'Выберите вариант из списка');

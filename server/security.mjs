@@ -48,10 +48,10 @@ export function rateLimit(db,key,max,windowMs) {
   if (db.prepare('SELECT hits FROM limits WHERE key=?').get(digest(key)).hits > max) fail(429,'Слишком много попыток. Попробуйте позже');
 }
 
-export async function readJson(req) {
+export async function readJson(req, maxBytes=65536) {
   if (!(req.headers['content-type']||'').startsWith('application/json')) fail(415,'Ожидается JSON');
   let size=0; const chunks=[];
-  for await (const chunk of req) { size+=chunk.length; if(size>65536) fail(413,'Запрос слишком большой'); chunks.push(chunk); }
+  for await (const chunk of req) { size+=chunk.length; if(size>maxBytes) fail(413,'Запрос слишком большой'); chunks.push(chunk); }
   try { const value=JSON.parse(Buffer.concat(chunks).toString('utf8')); if (!value || Array.isArray(value) || typeof value!=='object') fail(400,'Ожидается объект'); return value; }
   catch { fail(400,'Некорректный JSON'); }
 }

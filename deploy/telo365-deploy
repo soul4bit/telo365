@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Root-owned, argument-free updater. It deliberately extracts no deployment
+# configuration from the upload: application code always runs as telo365.
+set -Eeuo pipefail
+umask 022
+[[ $EUID -eq 0 && $# -eq 0 ]] || { echo 'Usage: sudo telo365-deploy' >&2; exit 64; }
+
+archive=/home/max/telo365-upload.tar.gz
+[[ -f $archive && ! -L $archive ]] || { echo "Upload not found: $archive" >&2; exit 66; }
+install -d -m 755 /opt/telo365/releases
+work=$(mktemp -d /opt/telo365/releases/app.XXXXXXXX)
+chmod 755 "$work"
+
+cleanup_failed() {
+  rm -rf -- "$work"
+}
+trap cleanup_failed ERR
+
+python3 - "$archive" "$work" <<'PY'
+import pathlib,sys,tarfile
+with tarfile.open(sys.argv[1], 'r:gz') as archive:
+    members=archive.getmembers()
+    if sum(m.size for m in members)>250_000_000: raise SystemExit('Archive too large')
+    for m in members:
+        p=pathlib.PurePosixPath(m.name)
+        allowed = p.parts and p.parts[0] in ('dist','server','node_modules')
+        nodemailer = not p.parts or p.parts[0]!='node_modules' or (len(p.parts)>1 and p.parts[1]=='nodemailer')
+        if p.is_absolute() or '..' in p.parts or not allowed or not nodemailer or not (m.isfile() or m.isdir()) or m.name.endswith('.local'):
+            raise SystemExit('Unsafe archive member')
+    archive.extractall(sys.argv[2], members=members, filter='data')
+for file in ('dist/index.html','server/app.mjs','node_modules/nodemailer/package.json'):
+    if not (pathlib.Path(sys.argv[2])/file).is_file(): raise SystemExit('Incomplete archive')
+PY
+find "$work" -type d -exec chmod 755 {} +
+find "$work" -type f -exec chmod 644 {} +
+
+previous=$(readlink /opt/telo365/current || true)
+if [[ -f /var/lib/telo365/telo365.sqlite && -n $previous ]]; then
+  runuser -u telo365 -- env TELO_DB=/var/lib/telo365/telo365.sqlite TELO_BACKUPS=/var/backups/telo365 /opt/telo365/node/bin/node "$previous/server/admin.mjs" backup
+fi
+rollback() {
+  trap - ERR
+  systemctl stop telo365.service || true
+  if [[ -n $previous ]]; then ln -sfn "$previous" /opt/telo365/current; else rm -f /opt/telo365/current; fi
+  systemctl start telo365.service || true
+  echo "Release rolled back. Database backup is preserved." >&2
+}
+trap rollback ERR
+ln -s "$work" /opt/telo365/current.next
+mv -Tf /opt/telo365/current.next /opt/telo365/current
+systemctl restart telo365.service
+for attempt in {1..20}; do
+  if curl --fail --silent http://127.0.0.1:1435/api/health >/dev/null; then
+    trap - ERR
+    echo "TELO365 deployed: $work"
+    exit 0
+  fi
+  sleep 1
+done
+false

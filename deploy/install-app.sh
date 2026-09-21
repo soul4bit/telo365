@@ -72,6 +72,9 @@ mv -Tf /opt/telo365/current.next /opt/telo365/current
 for unit in telo365.service telo365-backup.service telo365-backup.timer telo365-monitor.service telo365-monitor.timer; do
     install -m 644 "$work/deploy/$unit" "/etc/systemd/system/$unit"
 done
+install -m 755 "$work/deploy/telo365-deploy" /usr/local/sbin/telo365-deploy
+install -m 440 "$work/deploy/telo365-deploy.sudoers" /etc/sudoers.d/telo365-deploy
+visudo -cf /etc/sudoers.d/telo365-deploy
 systemctl daemon-reload
 systemctl enable telo365.service
 systemctl restart telo365.service

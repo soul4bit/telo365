@@ -3,7 +3,7 @@ import { createHabits, transaction } from './database.mjs';
 import { hydrationGoal, hydrationProfile } from './hydration.mjs';
 import { boolean, checkPassword, digest, email, fail, hashPassword, numeric, password, rateLimit, string, timezone, token } from './security.mjs';
 
-export const profile = u => ({id:u.id,email:u.email,emailVerified:!!u.email_verified,name:u.name,goal:u.goal,target:u.target,timezone:u.timezone,calories:u.calories,hydration:JSON.parse(u.hydration||'{}'),role:u.role});
+export const profile = u => ({id:u.id,email:u.email,emailVerified:!!u.email_verified,name:u.name,goal:u.goal,target:u.target,targetLow:u.target_low,targetHigh:u.target_high,timezone:u.timezone,calories:u.calories,hydration:JSON.parse(u.hydration||'{}'),role:u.role});
 export function getUser(db,req,cookieName) {
   const raw=(req.headers.cookie||'').split(';').map(c=>c.trim()).find(c=>c.startsWith(cookieName+'='))?.slice(cookieName.length+1);
   if(!raw||raw.length>100) return null;
@@ -62,8 +62,10 @@ export async function accounts(ctx) {
     const goal=string(b.goal,'Цель',30);
     if(!['wellbeing','lose','gain','maintain'].includes(goal)) fail(400,'Выберите цель');
     const hydration=b.hydration===undefined?hydrationProfile(JSON.parse(u.hydration||'{}')):hydrationProfile(b.hydration);
+    const targetLow=b.targetLow==null?null:numeric(b.targetLow,'Нижняя граница',30,350),targetHigh=b.targetHigh==null?null:numeric(b.targetHigh,'Верхняя граница',30,350);
+    if((targetLow===null)!==(targetHigh===null)||(targetLow!==null&&targetLow>=targetHigh)) fail(400,'Укажите обе границы комфортного диапазона');
     transaction(db,()=>{
-      db.prepare('UPDATE users SET name=?,goal=?,target=?,timezone=?,calories=?,hydration=? WHERE id=?').run(string(b.name,'Имя',60),goal,b.target==null?null:numeric(b.target,'Целевой вес',30,350),timezone(b.timezone),b.calories==null?null:numeric(b.calories,'Калории',500,8000),JSON.stringify(hydration),u.id);
+      db.prepare('UPDATE users SET name=?,goal=?,target=?,target_low=?,target_high=?,timezone=?,calories=?,hydration=? WHERE id=?').run(string(b.name,'Имя',60),goal,b.target==null?null:numeric(b.target,'Целевой вес',30,350),targetLow,targetHigh,timezone(b.timezone),b.calories==null?null:numeric(b.calories,'Калории',500,8000),JSON.stringify(hydration),u.id);
       if(b.hydration!==undefined) db.prepare("UPDATE habits SET target=? WHERE user_id=? AND tracking='hydration' AND name='Вода'").run(hydrationGoal(hydration),u.id);
     });
     return {user:profile(db.prepare('SELECT * FROM users WHERE id=?').get(u.id))};

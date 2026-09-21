@@ -122,6 +122,20 @@ test('account and journal integration', async t=>{
     assert.equal((await req('/api/state')).value.workouts[0].finished,true);
     assert.equal((await req('/api/workouts/'+id,'DELETE',{},'b')).status,404);
   });
+  await t.test('weekly meal plan replaces earlier planned meals and preserves eaten meals',async()=>{
+    const nextDay='2026-09-21';
+    await req('/api/meals','PUT',{id:randomUUID(),date:day,catalogId:recipeId,slot:'Обед',servings:1,eaten:false});
+    await req('/api/meals','PUT',{id:randomUUID(),date:nextDay,catalogId:recipeId,slot:'Ужин',servings:1,eaten:false});
+    const applied=await req('/api/nutrition/plan','POST',{meals:[
+      {date:day,slot:'Перекус',catalogId:recipeId,servings:1.5},
+      {date:nextDay,slot:'Завтрак',catalogId:recipeId,servings:2},
+    ]});
+    assert.equal(applied.status,200);assert.equal(applied.value.count,2);
+    const current=(await req('/api/state?date='+day)).value;
+    assert.equal(current.meals.length,2);assert.ok(current.meals.some(meal=>meal.id===mealId&&meal.eaten));assert.ok(current.meals.some(meal=>!meal.eaten&&meal.slot==='Перекус'));
+    const next=(await req('/api/state?date='+nextDay)).value;
+    assert.equal(next.meals.length,1);assert.equal(next.meals[0].slot,'Завтрак');
+  });
   await t.test('admin role cannot be self-assigned and catalog is protected',async()=>{
     assert.equal((await req('/api/admin/status')).status,403);
     assert.equal((await req('/api/admin/intro','PUT',{intro:'changed'})).status,403);

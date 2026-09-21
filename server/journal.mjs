@@ -86,13 +86,31 @@ export function journal(ctx) {
     const item=db.prepare('SELECT * FROM catalog WHERE id=? AND owner=? AND archived=0').get(personalItem,u.id);
     if(!item) fail(404,'Запись не найдена');return {id:saveItem(db,item.kind,b,u,false,personalItem)};
   }
+  if(path==='/api/nutrition/plan'&&method==='POST') {
+    if(!Array.isArray(b.meals)||b.meals.length<1||b.meals.length>35) fail(400,'Проверьте план питания');
+    const slots=['Завтрак','Обед','Ужин','Перекус','Поздний перекус'];
+    const meals=b.meals.map(value=>{
+      if(!value||typeof value!=='object') fail(400,'Проверьте план питания');
+      const d=date(value.date),slot=string(value.slot,'Приём пищи',30);
+      if(!slots.includes(slot)) fail(400,'Выберите приём пищи');
+      return {date:d,slot,servings:numeric(value.servings,'Количество порций',0.01,100),snapshot:mealSnapshot(db,string(value.catalogId,'Блюдо'),u.id)};
+    });
+    const dates=meals.map(meal=>meal.date),from=dates.reduce((a,b)=>a<b?a:b),to=dates.reduce((a,b)=>a>b?a:b);
+    if((Date.parse(to)-Date.parse(from))/86400000>6) fail(400,'План можно собрать только на неделю');
+    transaction(db,()=>{
+      db.prepare('DELETE FROM meals WHERE user_id=? AND date BETWEEN ? AND ? AND eaten=0').run(u.id,from,to);
+      const insert=db.prepare('INSERT INTO meals VALUES(?,?,?,?,?,?,?)');
+      for(const meal of meals) insert.run(randomUUID(),u.id,meal.date,meal.slot,meal.servings,0,JSON.stringify(meal.snapshot));
+    });
+    return {ok:true,count:meals.length};
+  }
   if(path==='/api/meals'&&method==='PUT') {
     const id=string(b.id,'Идентификатор',80),d=date(b.date);
     const existing=db.prepare('SELECT * FROM meals WHERE id=?').get(id);
     if(existing&&existing.user_id!==u.id) fail(404,'Запись не найдена');
     if(!existing) limitCount(db,'meals',u.id,20000);
     const slot=string(b.slot,'Приём пищи',30);
-    if(!['Завтрак','Обед','Ужин','Перекус'].includes(slot)) fail(400,'Выберите приём пищи');
+    if(!['Завтрак','Обед','Ужин','Перекус','Поздний перекус'].includes(slot)) fail(400,'Выберите приём пищи');
     const snapshot=existing?JSON.parse(existing.snapshot):mealSnapshot(db,string(b.catalogId,'Блюдо'),u.id);
     const eaten=boolean(b.eaten);if(eaten&&d>today(u.timezone)) fail(400,'Будущий приём пищи можно только запланировать');
     db.prepare('INSERT INTO meals VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET date=excluded.date,slot=excluded.slot,servings=excluded.servings,eaten=excluded.eaten').run(id,u.id,d,slot,numeric(b.servings,'Количество порций',0.01,100),eaten,JSON.stringify(snapshot));return {id};

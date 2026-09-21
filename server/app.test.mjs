@@ -50,6 +50,12 @@ test('account and journal integration', async t=>{
   await t.test('profile, dates, marks and weights remain isolated across accounts and shared across devices',async()=>{
     assert.equal((await req('/api/auth/register','POST',{email:'boris@example.test',password:pw,name:'Борис',accepted:true},'b')).status,200);
     const state=(await req('/api/state')).value;
+    assert.equal(state.habits[0].schedule,'daily');assert.equal(state.habits[0].weeklyTarget,7);assert.ok(state.habits[0].icon);
+    const weekendHabit=await req('/api/habits','POST',{name:'Weekend reset',icon:'🌿',schedule:'weekends',weeklyTarget:2});
+    assert.equal(weekendHabit.status,200);
+    assert.equal((await req('/api/marks','PUT',{habitId:weekendHabit.value.id,date:day,done:true})).status,200);
+    assert.equal((await req('/api/habits/'+weekendHabit.value.id,'PUT',{name:'Weekend reset',icon:'🌿',schedule:'weekdays',weeklyTarget:3})).status,200);
+    assert.equal((await req('/api/marks','PUT',{habitId:weekendHabit.value.id,date:day,done:true})).status,400);
     assert.equal((await req('/api/profile','PUT',{name:'Аня',goal:'maintain',target:65,calories:2000,timezone:'Asia/Vladivostok'})).status,200);
     assert.equal((await req('/api/weights','PUT',{date:day,value:66})).status,200);
     assert.equal((await req('/api/weights','PUT',{date:day,value:65.5})).status,200);

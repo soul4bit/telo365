@@ -9,6 +9,13 @@ const parseMeal=r=>({...r,snapshot:JSON.parse(r.snapshot),eaten:!!r.eaten});
 const parseWorkout=r=>({...r,data:JSON.parse(r.data),finished:!!r.finished});
 function limitCount(db,table,user,max) { if(db.prepare(`SELECT count(*) AS n FROM ${table} WHERE user_id=?`).get(user).n>=max) fail(409,'Достигнут лимит записей. Удалите ненужные записи'); }
 function owned(db,table,id,user) { const row=db.prepare(`SELECT * FROM ${table} WHERE id=? AND user_id=?`).get(id,user);if(!row) fail(404,'Запись не найдена');return row; }
+function habitData(body) {
+  const name=string(body.name,'Привычка',80),icon=string(body.icon??'✨','Иконка',8);
+  const schedule=string(body.schedule??'daily','Расписание',20),weeklyTarget=numeric(body.weeklyTarget??7,'Цель на неделю',1,7);
+  if(!['daily','weekdays','weekends'].includes(schedule)||!Number.isInteger(weeklyTarget)) fail(400,'Проверьте настройки привычки');
+  return {name,icon,schedule,weeklyTarget};
+}
+function habitScheduled(schedule,dateValue) { const day=new Date(dateValue+'T12:00:00Z').getUTCDay();return schedule==='weekdays'?day>0&&day<6:schedule==='weekends'?day===0||day===6:true; }
 export function state(db,user,day) {
   const selected=date(day||today(user.timezone));
   const catalog=readCatalog(db,user.id);
@@ -16,8 +23,8 @@ export function state(db,user,day) {
   return {
     user:profile(user),today:today(user.timezone),date:selected,
     weights:db.prepare('SELECT date,value FROM weights WHERE user_id=? ORDER BY date').all(user.id),
-    habits:db.prepare('SELECT id,name,archived FROM habits WHERE user_id=? AND archived=0').all(user.id),
-    marks:db.prepare('SELECT habit_id,date,done FROM marks WHERE user_id=? AND date>=date(?,\'-90 days\') AND date<=?').all(user.id,selected,selected),
+    habits:db.prepare('SELECT id,name,icon,schedule,weekly_target AS weeklyTarget,archived FROM habits WHERE user_id=? AND archived=0').all(user.id),
+    marks:db.prepare('SELECT habit_id,date,done FROM marks WHERE user_id=? AND date>=date(?,\'-365 days\') AND date<=?').all(user.id,selected,selected),
     meals:db.prepare('SELECT * FROM meals WHERE user_id=? AND date=? ORDER BY rowid').all(user.id,selected).map(parseMeal),
     workouts:db.prepare('SELECT * FROM workouts WHERE user_id=? ORDER BY date DESC,rowid DESC LIMIT 100').all(user.id).map(parseWorkout),
     shopping:db.prepare('SELECT id,name,amount,unit,checked,generated FROM shopping WHERE user_id=? ORDER BY generated DESC,name').all(user.id),
@@ -46,12 +53,13 @@ export function journal(ctx) {
     db.prepare('INSERT INTO weights VALUES(?,?,?) ON CONFLICT(user_id,date) DO UPDATE SET value=excluded.value').run(u.id,d,value);return {ok:true};
   }
   if(path==='/api/weights'&&method==='DELETE') {db.prepare('DELETE FROM weights WHERE user_id=? AND date=?').run(u.id,date(b.date));return {ok:true};}
-  if(path==='/api/habits'&&method==='POST') {limitCount(db,'habits',u.id,100);const id=randomUUID();db.prepare('INSERT INTO habits(id,user_id,name) VALUES(?,?,?)').run(id,u.id,string(b.name,'Привычка',80));return {id};}
+  if(path==='/api/habits'&&method==='POST') {limitCount(db,'habits',u.id,100);const id=randomUUID(),habit=habitData(b);db.prepare('INSERT INTO habits(id,user_id,name,icon,schedule,weekly_target) VALUES(?,?,?,?,?,?)').run(id,u.id,habit.name,habit.icon,habit.schedule,habit.weeklyTarget);return {id};}
   const habitId=path.match(/^\/api\/habits\/([^/]+)$/)?.[1];
+  if(habitId&&method==='PUT') {owned(db,'habits',habitId,u.id);const habit=habitData(b);db.prepare('UPDATE habits SET name=?,icon=?,schedule=?,weekly_target=? WHERE id=? AND user_id=?').run(habit.name,habit.icon,habit.schedule,habit.weeklyTarget,habitId,u.id);return {id:habitId};}
   if(habitId&&method==='DELETE') {owned(db,'habits',habitId,u.id);db.prepare('UPDATE habits SET archived=1 WHERE id=? AND user_id=?').run(habitId,u.id);return {ok:true};}
   if(path==='/api/marks'&&method==='PUT') {
     const id=string(b.habitId,'Привычка'),d=date(b.date);const h=owned(db,'habits',id,u.id);
-    if(h.archived||d>today(u.timezone)) fail(400,'Нельзя отметить эту привычку на выбранную дату');
+    if(h.archived||d>today(u.timezone)||!habitScheduled(h.schedule,d)) fail(400,'Нельзя отметить эту привычку на выбранную дату');
     db.prepare('INSERT INTO marks VALUES(?,?,?,?) ON CONFLICT(user_id,habit_id,date) DO UPDATE SET done=excluded.done').run(u.id,id,d,boolean(b.done));return {ok:true};
   }
   if(path==='/api/catalog'&&method==='POST') {

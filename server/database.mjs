@@ -9,7 +9,7 @@ export function openDatabase(path) {
   if (path !== ':memory:') chmodSync(path, 0o600);
   db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
   const version = db.prepare('PRAGMA user_version').get().user_version;
-  if (version > 5) throw new Error('Database is newer than this application');
+  if (version > 6) throw new Error('Database is newer than this application');
   if (version === 0) {
     db.exec(`BEGIN IMMEDIATE;
       CREATE TABLE users(id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, recovery TEXT NOT NULL,
@@ -44,6 +44,12 @@ export function openDatabase(path) {
     CREATE TABLE nutrition_profiles(user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,data TEXT NOT NULL,updated TEXT NOT NULL);
     PRAGMA user_version=4; COMMIT;`);
   if (version < 5) { expandCatalog(db); db.exec('PRAGMA user_version=5'); }
+  if (version < 6) db.exec(`BEGIN IMMEDIATE;
+    ALTER TABLE habits ADD COLUMN icon TEXT NOT NULL DEFAULT '✨';
+    ALTER TABLE habits ADD COLUMN schedule TEXT NOT NULL DEFAULT 'daily';
+    ALTER TABLE habits ADD COLUMN weekly_target INTEGER NOT NULL DEFAULT 7;
+    UPDATE habits SET icon=CASE name WHEN 'Вода' THEN '💧' WHEN 'Сон' THEN '🌙' WHEN 'Прогулка' THEN '🚶' WHEN 'Питание' THEN '🥗' WHEN 'Движение' THEN '🏋️' ELSE '✨' END;
+    PRAGMA user_version=6; COMMIT;`);
   return db;
 }
 
@@ -86,8 +92,8 @@ function expandCatalog(db) {
 }
 
 export function createHabits(db, userId) {
-  const statement = db.prepare('INSERT INTO habits(id,user_id,name) VALUES(?,?,?)');
-  for (const name of ['Вода','Сон','Прогулка','Питание','Движение']) statement.run(randomUUID(), userId, name);
+  const statement = db.prepare('INSERT INTO habits(id,user_id,name,icon,schedule,weekly_target) VALUES(?,?,?,?,?,?)');
+  for (const [name,icon,schedule,target] of [['Вода','💧','daily',7],['Сон','🌙','daily',7],['Прогулка','🚶','daily',5],['Питание','🥗','daily',5],['Движение','🏋️','daily',4]]) statement.run(randomUUID(), userId, name,icon,schedule,target);
 }
 
 export async function backupDatabase(db, destination) {

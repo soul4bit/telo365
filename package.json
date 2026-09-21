@@ -3,9 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22.12" },
+  "engines": { "node": ">=24.14" },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
+    "server": "node server/app.mjs",
+    "test:server": "node --test server/*.test.mjs",
+    "backup": "node server/admin.mjs backup",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "test:e2e": "playwright test"

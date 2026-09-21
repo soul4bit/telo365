@@ -1,0 +1,28 @@
+[Unit]
+Description=TELO365 application
+After=network.target
+
+[Service]
+Type=simple
+User=telo365
+Group=telo365
+WorkingDirectory=/opt/telo365/current
+Environment=NODE_ENV=production
+Environment=PORT=1435
+Environment=TELO_DB=/var/lib/telo365/telo365.sqlite
+Environment=TELO_ORIGINS=https://telo365.ru
+Environment=TELO_TRUST_PROXY=1
+ExecStart=/opt/telo365/node/bin/node server/app.mjs
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/telo365
+RestrictSUIDSGID=true
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

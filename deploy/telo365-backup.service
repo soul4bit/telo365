@@ -1,0 +1,18 @@
+[Unit]
+Description=Verified TELO365 database backup
+After=telo365.service
+
+[Service]
+Type=oneshot
+User=telo365
+Group=telo365
+WorkingDirectory=/opt/telo365/current
+Environment=TELO_DB=/var/lib/telo365/telo365.sqlite
+Environment=TELO_BACKUPS=/var/backups/telo365
+ExecStart=/opt/telo365/node/bin/node server/admin.mjs backup
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/telo365 /var/backups/telo365

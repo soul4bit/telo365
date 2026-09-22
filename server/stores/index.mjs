@@ -8,8 +8,8 @@ const requirements=value=>{if(!Array.isArray(value)||value.length<1||value.lengt
 export async function stores(ctx) {
   const {path,method,url,body,storeCatalog,db,user}=ctx;
   if(!path.startsWith('/api/stores')&&!path.startsWith('/api/store-products')&&path!=='/api/nutrition/estimate-cost'&&path!=='/api/nutrition/shopping-list')return null;
-  if(method==='GET'&&path==='/api/stores/chains')return {chains:STORE_CHAINS.map(chain=>({...chain,configured:false}))};
-  if(method==='GET'&&path==='/api/stores')return {stores:[],configured:false};
+  if(method==='GET'&&path==='/api/stores/chains'){const stores=storeCatalog.locations();const configured=new Set(stores.map(store=>store.chain));return {chains:STORE_CHAINS.map(chain=>({...chain,configured:configured.has(chain.slug)}))};}
+  if(method==='GET'&&path==='/api/stores'){const chains=chainValues(url.searchParams.get('chains')||undefined),stores=storeCatalog.locations({chains});return {stores,configured:stores.length>0};}
   if(method==='GET'&&path==='/api/store-products/search'){
     const query=(url.searchParams.get('q')||'').trim().slice(0,120),chains=chainValues(url.searchParams.get('chains')||undefined),result=await storeCatalog.search({query,chains,storeId:url.searchParams.get('storeId')||undefined});
     return {products:result.products,isMock:result.isMock,configured:result.configured};

@@ -1,5 +1,5 @@
 import { productPriceMinor } from './types.mjs';
-import { canonicalFoods, searchStoredProducts, storedProduct, storedProductsForFoods } from './repository.mjs';
+import { canonicalFoods, finishStoreSync, latestStoreSyncs, searchStoredProducts, startStoreSync, storeLocations, storedProduct, storedProductsForFoods, upsertStoreLocation, upsertStoredProduct } from './repository.mjs';
 
 const priceRank={lowest_price:0,balanced:1,familiar:2,no_preference:3};
 export function consumedCostMinor(product,amount) {
@@ -43,23 +43,49 @@ export function aggregateIngredients(meals=[]) {
   return [...totals.values()].map(item=>({...item,requiredAmount:Math.round(item.requiredAmount*10)/10}));
 }
 export class StoreCatalog {
-  constructor({db,providers=[],enableMock=false}) {this.db=db;this.providers=providers;this.enableMock=enableMock;}
+  constructor({db,providers=[],enableMock=false,production=false}) {this.db=db;this.providers=providers;this.enableMock=enableMock;this.production=production;}
   async search({query='',chains=[],storeId}={}) {
-    const stored=searchStoredProducts(this.db,{query,chains,storeId});
+    const stored=searchStoredProducts(this.db,{query,chains,storeId,excludeMock:this.production});
     const mock=this.enableMock?this.providers.find(provider=>provider.id==='mock'):null;
     if(!mock)return {products:stored,isMock:false,configured:stored.length>0};
     const result=await mock.searchProducts({query,chains,storeId});
     return {products:[...stored,...result.products],isMock:true,configured:stored.length>0};
   }
   async product(id) {
-    const stored=storedProduct(this.db,id);if(stored)return {product:stored,isMock:false};
+    const stored=storedProduct(this.db,id);if(stored&&(!this.production||stored.provider!=='mock'))return {product:stored,isMock:false};
     const mock=this.enableMock?this.providers.find(provider=>provider.id==='mock'):null;
     if(!mock)return {product:null,isMock:false};
     const result=await mock.getProduct({id});return {product:result.product,isMock:!!result.product};
   }
   estimate(requirements,preferences={}) {
-    const productsByFood=storedProductsForFoods(this.db,requirements.map(item=>item.canonicalFoodId));
+    const productsByFood=storedProductsForFoods(this.db,requirements.map(item=>item.canonicalFoodId),{excludeMock:this.production});
     return optimizeShoppingList({requirements,productsByFood,preferences});
   }
   canonicalFoods(ids) { return canonicalFoods(this.db,ids); }
+  locations(filters) { return storeLocations(this.db,filters).filter(store=>!this.production||store.provider!=='mock'); }
+  syncHistory() { return latestStoreSyncs(this.db); }
+  async sync(providerId,{chain,storeId}={}) {
+    const provider=this.providers.find(item=>item.id===providerId);
+    if(!provider)return {status:'unknown_provider',provider:providerId,productsSeen:0,productsUpdated:0};
+    const run=startStoreSync(this.db,{provider:provider.id,chain,storeId});
+    try {
+      const result=await provider.sync({chain,storeId});
+      if(result.status!=='ready') {
+        finishStoreSync(this.db,run.id,{status:result.status||'unavailable',errorCode:result.errorCode});
+        return {status:result.status||'unavailable',provider:provider.id,runId:run.id,productsSeen:0,productsUpdated:0};
+      }
+      let productsUpdated=0;
+      for(const location of result.stores||[])upsertStoreLocation(this.db,{...location,provider:location.provider||provider.id,chain:location.chain||chain||provider.chains[0]});
+      for(const incoming of result.products||[]) {
+        if(!incoming.id||!incoming.name||!incoming.chain||!provider.chains.includes(incoming.chain))continue;
+        upsertStoredProduct(this.db,{...incoming,provider:provider.id,syncRunId:run.id,priceFetchedAt:incoming.priceFetchedAt||new Date().toISOString(),priceSourceUrl:incoming.priceSourceUrl||result.sourceUrl||null});
+        productsUpdated++;
+      }
+      finishStoreSync(this.db,run.id,{status:'ready',productsSeen:(result.products||[]).length,productsUpdated});
+      return {status:'ready',provider:provider.id,runId:run.id,productsSeen:(result.products||[]).length,productsUpdated};
+    } catch(error) {
+      finishStoreSync(this.db,run.id,{status:'failed',errorCode:error?.code||'SYNC_FAILED'});
+      return {status:'failed',provider:provider.id,runId:run.id,productsSeen:0,productsUpdated:0};
+    }
+  }
 }

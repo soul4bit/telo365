@@ -16,6 +16,7 @@ export class StoreProvider {
   async getStores() { return {status:'not_configured',stores:[]}; }
   async searchProducts() { return {status:'not_configured',products:[]}; }
   async getProduct() { return {status:'not_configured',product:null}; }
+  async sync() { return {status:'not_configured',sourceUrl:null,stores:[],products:[]}; }
   async request(url,{attempts=2,timeoutMs=7000,fetchImpl=fetch}={}) {
     let lastError;
     for(let attempt=0;attempt<attempts;attempt++) {
@@ -31,5 +32,6 @@ export class StoreProvider {
   }
 }
 
-export const productPriceMinor=product=>product.loyaltyPriceMinor??product.promoPriceMinor??product.priceMinor??product.regularPriceMinor??null;
+export const productPriceType=product=>product.loyaltyPriceMinor!=null?'loyalty':product.promoPriceMinor!=null?'promo':product.priceMinor!=null?'current':product.regularPriceMinor!=null?'regular':null;
+export const productPriceMinor=product=>{const type=productPriceType(product);return type==='loyalty'?product.loyaltyPriceMinor:type==='promo'?product.promoPriceMinor:type==='current'?product.priceMinor:type==='regular'?product.regularPriceMinor:null;};
 export const isPriceReady=product=>Number.isInteger(productPriceMinor(product))&&productPriceMinor(product)>=0&&Number.isInteger(product.packageAmount)&&product.packageAmount>0;

@@ -25,3 +25,16 @@ test('mock products are absent from a production store catalog',async()=>{
   assert.deepEqual((await production.search({query:'гречка'})).products,[]);
   db.close();
 });
+
+test('store sync records price provenance, location and a non-configured provider safely',async()=>{
+  const db=openDatabase(':memory:'),catalog=createStoreCatalog({db,production:false,enableMock:true});
+  const synced=await catalog.sync('mock');
+  assert.equal(synced.status,'ready');assert.equal(synced.productsSeen,4);assert.equal(synced.productsUpdated,4);
+  const product=(await catalog.product('mock-oats-450')).product;
+  assert.deepEqual(product.priceProvenance,{priceMinor:8990,priceType:'current',currency:'RUB',storeId:'mock-moscow',sourceUrl:'local://mock-store-catalog',sourceUpdatedAt:'2026-09-22T00:00:00.000Z',fetchedAt:product.priceProvenance.fetchedAt});
+  assert.equal(catalog.locations()[0].city,'Москва');assert.equal(catalog.syncHistory()[0].status,'ready');
+  const production=createStoreCatalog({db,production:true}),unavailable=await production.sync('pyaterochka');
+  assert.equal(unavailable.status,'not_configured');assert.equal(unavailable.productsUpdated,0);
+  assert.equal((await production.product('mock-oats-450')).product,null);assert.equal(production.estimate([{canonicalFoodId:'oats',requiredAmount:100,unit:'g'}]).complete,false);
+  db.close();
+});

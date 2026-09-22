@@ -9,7 +9,7 @@ export function openDatabase(path) {
   if (path !== ':memory:') chmodSync(path, 0o600);
   db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
   const version = db.prepare('PRAGMA user_version').get().user_version;
-  if (version > 13) throw new Error('Database is newer than this application');
+  if (version > 14) throw new Error('Database is newer than this application');
   if (version === 0) {
     db.exec(`BEGIN IMMEDIATE;
       CREATE TABLE users(id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, recovery TEXT NOT NULL,
@@ -149,6 +149,54 @@ export function openDatabase(path) {
     CREATE INDEX store_product_foods_canonical ON store_product_foods(canonical_food_id);
     PRAGMA user_version=13; COMMIT;`);
   if (version < 13) seedStoreDomain(db);
+  if (version < 14) db.exec(`BEGIN IMMEDIATE;
+    CREATE TABLE store_locations(
+      id TEXT PRIMARY KEY,
+      provider TEXT NOT NULL,
+      chain TEXT NOT NULL,
+      external_store_id TEXT,
+      name TEXT NOT NULL,
+      city TEXT,
+      region TEXT,
+      address TEXT,
+      timezone TEXT,
+      source_url TEXT,
+      source_updated TEXT,
+      updated TEXT NOT NULL
+    );
+    CREATE UNIQUE INDEX store_locations_provider_external ON store_locations(provider,external_store_id);
+    CREATE TABLE store_sync_runs(
+      id TEXT PRIMARY KEY,
+      provider TEXT NOT NULL,
+      chain TEXT,
+      store_id TEXT,
+      status TEXT NOT NULL,
+      source_url TEXT,
+      started TEXT NOT NULL,
+      finished TEXT,
+      products_seen INTEGER NOT NULL DEFAULT 0,
+      products_updated INTEGER NOT NULL DEFAULT 0,
+      error_code TEXT
+    );
+    CREATE INDEX store_sync_runs_provider_started ON store_sync_runs(provider,started DESC);
+    ALTER TABLE store_products ADD COLUMN price_type TEXT;
+    ALTER TABLE store_products ADD COLUMN price_source_url TEXT;
+    ALTER TABLE store_products ADD COLUMN price_observed_at TEXT;
+    ALTER TABLE store_products ADD COLUMN price_fetched_at TEXT;
+    CREATE TABLE store_price_observations(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      store_product_id TEXT NOT NULL REFERENCES store_products(id) ON DELETE CASCADE,
+      sync_run_id TEXT REFERENCES store_sync_runs(id) ON DELETE SET NULL,
+      price_type TEXT NOT NULL,
+      price_minor INTEGER NOT NULL,
+      currency TEXT NOT NULL DEFAULT 'RUB',
+      source_url TEXT,
+      source_updated TEXT,
+      observed_at TEXT,
+      fetched_at TEXT NOT NULL
+    );
+    CREATE INDEX store_price_observations_product_fetched ON store_price_observations(store_product_id,fetched_at DESC);
+    PRAGMA user_version=14; COMMIT;`);
   return db;
 }
 

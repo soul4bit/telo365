@@ -24,6 +24,7 @@ export class MockStoreProvider extends StoreProvider {
     return {status:'ready',products:needle?products.filter(product=>product.name.toLocaleLowerCase('ru-RU').includes(needle)):products};
   }
   async getProduct({id}) { const {products}=await this.searchProducts({});return {status:'ready',product:products.find(product=>product.id===id)||null}; }
+  async sync() { const [{stores},{products}]=await Promise.all([this.getStores(),this.searchProducts({})]);return {status:'ready',sourceUrl:'local://mock-store-catalog',stores,products}; }
 }
 
 export function providerRegistry({enableMock=false}={}) {

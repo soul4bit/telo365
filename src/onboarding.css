@@ -42,3 +42,5 @@
 .onboarding-card input:focus,.onboarding-card select:focus,.onboarding-card textarea:focus{outline:0;border-color:#72a866;box-shadow:0 0 0 3px #75a96b24}
 
 .onboarding-area-context{margin:2px 0 16px}.onboarding-area-context>p{margin-bottom:9px!important}.onboarding-area-context details{margin:8px 0;border:1px solid #dce7d6;border-radius:10px;background:#fbfdf9}.onboarding-area-context summary{padding:12px 13px;color:#426541;font-size:12px;font-weight:700;cursor:pointer}.onboarding-area-context details .onboarding-choices{margin:0;padding:0 10px 11px}.onboarding-health-consent{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 9px;margin:4px 0 16px}.onboarding-health-consent .onboarding-check{margin:0}.onboarding-health-consent a{font-size:11px}
+
+.onboarding-recovery-timing{margin:14px 0 4px}.onboarding-recovery-timing>p{margin-bottom:8px!important}

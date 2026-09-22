@@ -18,6 +18,8 @@ export default function Dashboard(){
   const refresh=useCallback(async()=>{const request=++seq.current;try{const next=await api<State>('/api/state'+(selectedDate?`?date=${selectedDate}`:''));if(request===seq.current){setData(next);setError('')}}catch(e){if(e instanceof ApiError&&e.status===401)location.assign('/login');if(request===seq.current)setError(errorText(e));throw e}},[selectedDate])
   useEffect(()=>{refresh().catch(()=>{});const timer=setInterval(()=>{if(!pending.current&&document.visibilityState==='visible')refresh().catch(()=>{})},20000);const focus=()=>{if(!pending.current)refresh().catch(()=>{})};window.addEventListener('focus',focus);return()=>{seq.current++;clearInterval(timer);window.removeEventListener('focus',focus)}},[refresh])
   useEffect(()=>{if(!notice)return;const timer=setTimeout(()=>setNotice(''),4000);return()=>clearTimeout(timer)},[notice])
+  useEffect(()=>{if(data&&!data.user.onboardingCompleted)location.replace('/onboarding')},[data])
+
   const mutate:Mutate=async(path,method,body)=>{if(pending.current)throw new Error('Дождитесь сохранения предыдущего изменения');pending.current=true;setBusy(true);setError('');try{await api(path,method,body);await refresh();setNotice('Сохранено')}catch(e){setError(errorText(e));throw e}finally{pending.current=false;setBusy(false)}}
   const execute=(path:string,method:string,body?:unknown)=>mutate(path,method,body).catch(()=>{})
   if(!data)return <div className="loading-page"><Logo/><p>{error||'Открываем твой день…'}</p>{error&&<button className="primary-button" onClick={()=>refresh().catch(()=>{})}>Повторить</button>}</div>

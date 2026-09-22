@@ -9,7 +9,7 @@ export function openDatabase(path) {
   if (path !== ':memory:') chmodSync(path, 0o600);
   db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
   const version = db.prepare('PRAGMA user_version').get().user_version;
-  if (version > 11) throw new Error('Database is newer than this application');
+  if (version > 12) throw new Error('Database is newer than this application');
   if (version === 0) {
     db.exec(`BEGIN IMMEDIATE;
       CREATE TABLE users(id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, recovery TEXT NOT NULL,
@@ -81,6 +81,9 @@ export function openDatabase(path) {
     for(const [id,name,description,minutes,exercises] of programs)add.run(id,'program',JSON.stringify({name,description,minutes,exercises:exercises.map(([exerciseId,sets,reps,weight])=>({exerciseId,sets,reps,weight}))}));
     db.exec('PRAGMA user_version=11; COMMIT;');
   }
+  if (version < 12) db.exec(`BEGIN IMMEDIATE;
+    CREATE TABLE onboarding(user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,step INTEGER NOT NULL DEFAULT 1,completed INTEGER NOT NULL DEFAULT 0,data TEXT NOT NULL DEFAULT '{}',plan TEXT,updated TEXT NOT NULL);
+    PRAGMA user_version=12; COMMIT;`);
   return db;
 }
 

@@ -31,7 +31,7 @@ export async function accounts(ctx) {
       if(boolean(b.accepted)!==1) fail(400,'Подтвердите согласие с условиями хранения данных');
       const encoded=await hashPassword(pw),code=token(),id=randomUUID();
       if(db.prepare('SELECT id FROM users WHERE email=?').get(address)) fail(409,'Не удалось создать аккаунт с этим email. Войдите или восстановите доступ');
-      transaction(db,()=>{db.prepare('INSERT INTO users(id,email,password,recovery,name,timezone,created) VALUES(?,?,?,?,?,?,?)').run(id,address,encoded,digest(code),name,zone,new Date().toISOString());createHabits(db,id);});
+      transaction(db,()=>{db.prepare('INSERT INTO users(id,email,password,recovery,name,timezone,created) VALUES(?,?,?,?,?,?,?)').run(id,address,encoded,digest(code),name,zone,new Date().toISOString());createHabits(db,id);db.prepare('INSERT INTO onboarding(user_id,step,completed,data,updated) VALUES(?,1,0,?,?)').run(id,'{}',new Date().toISOString());});
       setSession(ctx,id);
       return {user:profile(db.prepare('SELECT * FROM users WHERE id=?').get(id)),recoveryCode:code};
     }

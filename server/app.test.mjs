@@ -136,6 +136,17 @@ test('account and journal integration', async t=>{
     const next=(await req('/api/state?date='+nextDay)).value;
     assert.equal(next.meals.length,1);assert.equal(next.meals[0].slot,'Завтрак');
   });
+  await t.test('onboarding persists a draft and applies a safe starter plan',async()=>{
+    const signup=await req('/api/auth/register','POST',{email:'start@example.test',password:pw,name:'Start',accepted:true,timezone:'Europe/Moscow'},'start');
+    assert.equal(signup.status,200);
+    assert.equal((await req('/api/state','GET',undefined,'start')).value.user.onboardingCompleted,false);
+    const draft={age:30,sex:'female',heightCm:168,weightKg:70,targetWeightKg:65,primaryGoal:'lose_weight',secondaryGoals:['move_more'],activityLevel:'light',averageSteps:5000,averageSleepHours:7,trainingDaysPerWeek:3,trainingDurationMinutes:35,trainingLocations:['home'],equipment:['dumbbells'],trainingExperience:'beginner',limitations:['knees'],limitationNotes:'',doctorRestrictions:'',acutePainOrExerciseRestriction:false,mealsPerDay:4,cooking:'normal',foodBudget:5000,foodBudgetPeriod:'week',allergies:['\u043c\u043e\u043b\u043e\u043a\u043e'],excludedFoods:[],likedFoods:['eggs'],preferredStores:['shop'],dietType:'any',preferredTrainingDays:[1,3,5],preferredTrainingTime:'evening',habitPreferences:['water','sleep','steps','food','workouts']};
+    assert.equal((await req('/api/onboarding','PUT',{step:5,data:draft},'start')).status,200);
+    const saved=await req('/api/onboarding','GET',undefined,'start');assert.equal(saved.value.step,5);assert.equal(saved.value.data.heightCm,168);
+    const completed=await req('/api/onboarding/complete','POST',{data:draft},'start');assert.equal(completed.status,200);assert.equal(completed.value.completed,true);assert.equal(completed.value.plan.trainingDaysPerWeek,3);assert.equal(completed.value.plan.healthSafetyLevel,'standard');
+    const state=(await req('/api/state','GET',undefined,'start')).value;assert.equal(state.user.onboardingCompleted,true);assert.ok(state.user.calories>=1400);assert.equal(state.weights.length,1);assert.equal(state.meals.length,4);assert.equal(state.nutritionProfile.exclusions,'\u043c\u043e\u043b\u043e\u043a\u043e');assert.ok(!completed.value.plan.nutrition.recipeIds.includes('oatmeal'));
+    const restricted={...draft,acutePainOrExerciseRestriction:true};assert.equal((await req('/api/onboarding/complete','POST',{data:restricted},'start')).status,200);assert.equal((await req('/api/onboarding','GET',undefined,'start')).value.plan.healthSafetyLevel,'restricted');
+  });
   await t.test('admin role cannot be self-assigned and catalog is protected',async()=>{
     assert.equal((await req('/api/admin/status')).status,403);
     assert.equal((await req('/api/admin/intro','PUT',{intro:'changed'})).status,403);

@@ -1,5 +1,5 @@
 export type HydrationProfile={ageBand:'teen'|'adult'|'older';sex:'female'|'male'|'unspecified';stage:'standard'|'pregnancy'|'lactation';doctorLimit:number|null}
-export type User = {id:string;email:string;emailVerified:boolean;name:string;goal:string;target:number|null;targetLow:number|null;targetHigh:number|null;timezone:string;calories:number|null;hydration:HydrationProfile;role:string}
+export type User = {id:string;email:string;emailVerified:boolean;name:string;goal:string;target:number|null;targetLow:number|null;targetHigh:number|null;timezone:string;calories:number|null;hydration:HydrationProfile;role:string;onboardingCompleted?:boolean}
 export type Macros = {kcal:number;p:number;f:number;c:number}
 export type Ingredient = {foodId:string;name:string;grams:number;source:string}
 export type Snapshot = Macros & {name:string;image:string;instructions:string;ingredients:Ingredient[];sample:boolean}
@@ -11,7 +11,7 @@ export type Shop = {id:string;name:string;amount:number;unit:string;checked:numb
 export type NutritionProfile = {style:'home'|'mixed'|'ready';cooking:'quick'|'normal'|'free';budget:'economy'|'balanced'|'free';exclusions:string}
 export type Habit = {id:string;name:string;icon:string;schedule:'daily'|'weekdays'|'weekends';weeklyTarget:number;tracking:'check'|'counter'|'hydration';target:number;unit:string;archived:number}
 export type HabitValue = {habit_id:string;date:string;value:number;details:Record<string,number>}
-export type State = {user:User;date:string;today:string;weights:{date:string;value:number}[];habits:Habit[];marks:{habit_id:string;date:string;done:number}[];habitValues:HabitValue[];meals:Meal[];workouts:Workout[];shopping:Shop[];catalog:CatalogItem[];nutritionProfile:NutritionProfile|null}
+export type State = {user:User;date:string;today:string;weights:{date:string;value:number}[];habits:Habit[];marks:{habit_id:string;date:string;done:number}[];habitValues:HabitValue[];meals:Meal[];workouts:Workout[];shopping:Shop[];catalog:CatalogItem[];nutritionProfile:NutritionProfile|null;onboardingPlan?:{calories:number;trainingDaysPerWeek:number;trainingDurationMinutes:number;healthSafetyLevel:string;[key:string]:unknown}|null}
 export class ApiError extends Error { status:number; constructor(status:number,message:string){super(message);this.status=status} }
 export async function api<T=Record<string,unknown>>(path:string,method='GET',data?:unknown):Promise<T> {
   let response:Response;

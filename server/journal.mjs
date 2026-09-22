@@ -4,6 +4,7 @@ import { profile } from './accounts.mjs';
 import { boolean, date, digest, fail, numeric, string, today } from './security.mjs';
 import { getItem, mealSnapshot, readCatalog, saveItem } from './catalog.mjs';
 import { analyzeMealPhoto } from './vision.mjs';
+import { onboarding } from './onboarding.mjs';
 
 const parseMeal=r=>({...r,snapshot:JSON.parse(r.snapshot),eaten:!!r.eaten});
 const parseWorkout=r=>({...r,data:JSON.parse(r.data),finished:!!r.finished});
@@ -22,8 +23,9 @@ export function state(db,user,day) {
   const selected=date(day||today(user.timezone));
   const catalog=readCatalog(db,user.id);
   const nutritionProfile=db.prepare('SELECT data FROM nutrition_profiles WHERE user_id=?').get(user.id);
+  const onboardingRow=db.prepare('SELECT completed,plan FROM onboarding WHERE user_id=?').get(user.id);
   return {
-    user:profile(user),today:today(user.timezone),date:selected,
+    user:{...profile(user),onboardingCompleted:!onboardingRow||!!onboardingRow.completed},today:today(user.timezone),date:selected,
     weights:db.prepare('SELECT date,value FROM weights WHERE user_id=? ORDER BY date').all(user.id),
     habits:db.prepare('SELECT id,name,icon,schedule,weekly_target AS weeklyTarget,tracking,target,unit,archived FROM habits WHERE user_id=? AND archived=0').all(user.id),
     marks:db.prepare('SELECT habit_id,date,done FROM marks WHERE user_id=? AND date>=date(?,\'-365 days\') AND date<=?').all(user.id,selected,selected),
@@ -32,13 +34,14 @@ export function state(db,user,day) {
     workouts:db.prepare('SELECT * FROM workouts WHERE user_id=? ORDER BY date DESC,rowid DESC LIMIT 100').all(user.id).map(parseWorkout),
     shopping:db.prepare('SELECT id,name,amount,unit,checked,generated FROM shopping WHERE user_id=? ORDER BY generated DESC,name').all(user.id),
     catalog:catalog.map(i=>i.kind==='recipe'?{...i,nutrition:mealSnapshot(db,i.id,user.id)}:i),
-    nutritionProfile:nutritionProfile?JSON.parse(nutritionProfile.data):null,
+    nutritionProfile:nutritionProfile?JSON.parse(nutritionProfile.data):null,onboardingPlan:onboardingRow?.plan?JSON.parse(onboardingRow.plan):null,
   };
 }
 
 export function journal(ctx) {
   const {db,user:u,body:b,path,method,url}=ctx;
   if(!u) fail(401,'Войдите в аккаунт');
+  const onboardingResult=onboarding(ctx);if(onboardingResult)return onboardingResult;
   if(method==='GET'&&path==='/api/state') return state(db,u,url.searchParams.get('date'));
   if(path==='/api/nutrition/analyze-photo'&&method==='POST') return analyzeMealPhoto(ctx);
   if(path==='/api/nutrition/profile'&&method==='PUT') {

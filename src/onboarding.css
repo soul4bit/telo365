@@ -32,3 +32,5 @@
 .onboarding-section-title{margin:20px 0 8px;font-size:12px;font-weight:800;color:#3e603f}.onboarding-training-section{margin-top:23px;padding-top:18px;border-top:1px solid #e4eee0}.onboarding-skip{display:block;margin:-8px 0 4px auto;border:0;background:transparent;color:#70856c;font:700 11px inherit;text-decoration:underline;text-underline-offset:3px}.onboarding-skip.selected{color:#39753b}
 
 .onboarding-other-equipment{display:grid;gap:7px;margin:-5px 0 16px;font-size:12px;font-weight:700;color:#526c51}.onboarding-other-equipment input{width:100%}
+
+.onboarding-safety-note{margin:2px 0 16px!important;padding:12px 14px!important;border:1px solid #e3d6b6;border-radius:9px;background:#fff9ec;color:#806d43!important;font-size:11px!important;line-height:1.6!important}

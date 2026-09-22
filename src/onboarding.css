@@ -55,3 +55,32 @@
 .onboarding-summary-toggle{margin:0;padding:0;border:0;background:transparent;color:#315e35;font:700 12px inherit;text-align:right;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}.onboarding-summary-toggle:hover{color:#1f4f26}
 .onboarding-plan-ready{max-width:680px}.onboarding-ready-section{margin-top:22px}.onboarding-ready-section h2{margin:0 0 9px;color:#496b48;font-size:12px;font-weight:800}.onboarding-ready-section>p{margin:0!important;color:#71866c!important;font-size:12px!important;line-height:1.6!important}.onboarding-ready-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.onboarding-ready-grid>div{display:flex;flex-direction:column;gap:4px;padding:13px;border:1px solid #dfebda;border-radius:10px;background:#f7fbf5}.onboarding-ready-grid strong{color:#315e35;font-size:15px}.onboarding-ready-grid span{color:#70866b;font-size:10px}.onboarding-ready-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}.onboarding-ready-week>div{display:flex;flex-direction:column;gap:5px;min-height:68px;padding:9px 8px;border:1px solid #dfebda;border-radius:9px;background:#fbfdf9}.onboarding-ready-week strong{color:#426a43;font-size:11px}.onboarding-ready-week span{color:#71866c;font-size:9px;line-height:1.35}.onboarding-plan-ready>.primary-button{margin-top:25px}@media(max-width:600px){.onboarding-ready-grid{grid-template-columns:1fr}.onboarding-ready-week{grid-template-columns:repeat(2,minmax(0,1fr))}.onboarding-ready-week>div{min-height:0}}
 .onboarding-stores{position:static;transform:none;margin:24px 0 24px;gap:0}.onboarding-stores>span{margin:0}.onboarding-stores>.onboarding-choice-hint{position:static;transform:none;margin:5px 0 0!important}.onboarding-stores .onboarding-store-price-note{position:static;transform:none;margin:3px 0 0}.onboarding-stores>.onboarding-choices.compact{position:static;display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0!important}.onboarding-stores .onboarding-choices.compact>button{justify-content:flex-start;min-height:38px;padding:8px 12px;white-space:nowrap}.onboarding-stores .onboarding-choices.compact>button:last-child{min-width:144px}.onboarding-stores .onboarding-chips{margin-top:12px}
+
+/* Lightweight onboarding motion: local CSS and inline SVG only. */
+.onboarding-step-content{animation:onboarding-step-in 240ms cubic-bezier(.2,.72,.28,1) both}
+.onboarding-step-content.is-back{animation-name:onboarding-step-back}
+.onboarding-step-heading{display:flex;align-items:center;justify-content:space-between;min-height:44px;margin-top:10px}
+.onboarding-step-heading>.eyebrow{margin:0}
+.onboarding-step-art{width:64px;height:44px;flex:none;color:#64a35b}
+.onboarding-step-art svg{display:block;width:100%;height:100%;overflow:visible;animation:onboarding-art-float 4.8s ease-in-out infinite}
+.onboarding-step-art path,.onboarding-step-art circle{stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.onboarding-step-art .art-frame{opacity:.28}.onboarding-step-art .art-dot{fill:currentColor;stroke:none}.onboarding-step-art .art-target,.onboarding-step-art .art-plate,.onboarding-step-art .art-orbit{opacity:.78}
+.step-1 .art-leaf{transform-box:fill-box;transform-origin:center;animation:onboarding-sprout 2.8s ease-in-out infinite}.step-2 .art-target{transform-box:fill-box;transform-origin:center;animation:onboarding-target 2.8s ease-in-out infinite}.step-3 .art-wave,.step-7 .art-rhythm{stroke-dasharray:3 3;animation:onboarding-rhythm 2.6s linear infinite}.step-4 .art-house{animation:onboarding-draw 2.8s ease-in-out infinite}.step-5 .art-shield{transform-box:fill-box;transform-origin:center;animation:onboarding-shield 3s ease-in-out infinite}.step-6 .art-food{transform-box:fill-box;transform-origin:bottom center;animation:onboarding-food 2.7s ease-in-out infinite}.step-7 .art-orbit{transform-box:fill-box;transform-origin:center;animation:onboarding-orbit 4.5s linear infinite}
+.onboarding-progress b{transition:width 260ms cubic-bezier(.2,.72,.28,1)}
+.onboarding-choices>button{transition:transform 220ms cubic-bezier(.2,.72,.28,1),border-color 180ms ease,background-color 180ms ease,box-shadow 180ms ease;will-change:transform}
+.onboarding-choices>button:active{transform:scale(.985)}
+.onboarding-choices>button.selected{transform:scale(1.008)}
+.onboarding-choices>button.selected svg{animation:onboarding-check-in 250ms cubic-bezier(.18,.9,.28,1.25) both}
+@keyframes onboarding-step-in{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}
+@keyframes onboarding-step-back{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+@keyframes onboarding-check-in{from{opacity:0;transform:scale(.55)}to{opacity:1;transform:scale(1)}}
+@keyframes onboarding-art-float{50%{transform:translateY(-1px)}}
+@keyframes onboarding-sprout{50%{transform:scale(1.07) rotate(-2deg)}}
+@keyframes onboarding-target{50%{transform:scale(1.06);opacity:.52}}
+@keyframes onboarding-rhythm{to{stroke-dashoffset:-18}}
+@keyframes onboarding-draw{50%{opacity:.58}}
+@keyframes onboarding-shield{50%{transform:scale(1.05)}}
+@keyframes onboarding-food{50%{transform:translateY(-2px)}}
+@keyframes onboarding-orbit{to{transform:rotate(1turn)}}
+@media(max-width:600px){.onboarding-step-heading{min-height:36px;margin-top:8px}.onboarding-step-art{width:48px;height:34px}.onboarding-step-art svg,.onboarding-step-art *{animation:none!important}.onboarding-choices>button.selected{transform:none}}
+@media(prefers-reduced-motion:reduce){.onboarding-step-content,.onboarding-step-art svg,.onboarding-step-art *,.onboarding-choices>button,.onboarding-choices>button.selected svg,.onboarding-progress b,.onboarding-building-steps i{animation:none!important;transition:none!important;transform:none!important}}

@@ -75,8 +75,8 @@ async function finishOnboarding(page:any){
   await expect(next).toBeEnabled()
   await page.getByRole('button',{name:'\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c',exact:true}).click({force:true});await expect(page.getByLabel('\u0411\u044e\u0434\u0436\u0435\u0442 \u043d\u0430 \u043d\u0435\u0434\u0435\u043b\u044e',{exact:true})).toBeVisible();await page.getByRole('button',{name:'\u0414\u043e 15 \u043c\u0438\u043d\u0443\u0442',exact:true}).click();await page.getByRole('button',{name:'\u041d\u0430 2\u20133 \u0434\u043d\u044f \u0432\u043f\u0435\u0440\u0451\u0434',exact:true}).click();await page.getByLabel('\u0411\u044e\u0434\u0436\u0435\u0442 \u043d\u0430 \u043d\u0435\u0434\u0435\u043b\u044e',{exact:true}).fill('5000');await page.getByRole('button',{name:'\u041d\u0435\u0442',exact:true}).last().click();await page.getByRole('button',{name:'\u041f\u044f\u0442\u0451\u0440\u043e\u0447\u043a\u0430',exact:true}).click();await page.getByRole('button',{name:'\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c',exact:true}).click({force:true})
   await page.getByRole('button',{name:'\u0421\u043e\u0441\u0442\u0430\u0432\u0438\u0442\u044c \u043c\u043e\u0439 \u043f\u043b\u0430\u043d',exact:true}).click({force:true})
-  await expect(page.getByText('\u0423\u0441\u0440\u0435\u0434\u043d\u0451\u043d\u043d\u044b\u0439 \u043e\u0440\u0438\u0435\u043d\u0442\u0438\u0440 \u0431\u0435\u0437 \u0443\u043a\u0430\u0437\u0430\u043d\u0438\u044f \u043f\u043e\u043b\u0430',{exact:true})).toBeVisible()
-  await page.getByRole('button',{name:'\u041f\u0435\u0440\u0435\u0439\u0442\u0438 \u0432 \u043c\u043e\u0439 \u0434\u0435\u043d\u044c',exact:true}).click({force:true})
+  await expect(page.getByRole('heading',{name:'\u0421\u043e\u0431\u0438\u0440\u0430\u0435\u043c \u0442\u0432\u043e\u0439 \u0441\u0442\u0430\u0440\u0442\u043e\u0432\u044b\u0439 \u0440\u0438\u0442\u043c',exact:true})).toBeVisible()
+  await expect(page.getByRole('heading',{name:'\u041c\u043e\u0439 \u0434\u0435\u043d\u044c',exact:true})).toBeVisible({timeout:8000})
 }
 
 test('registration keeps invalid input local to its field',async({page})=>{

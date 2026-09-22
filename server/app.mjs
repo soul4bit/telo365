@@ -8,6 +8,7 @@ import { journal } from './journal.mjs';
 import { createMailer } from './mail.mjs';
 import { emailAuth } from './email-auth.mjs';
 import { marketing } from './marketing.mjs';
+import { createStoreCatalog } from './stores/catalog.mjs';
 import { fail, readJson, rateLimit } from './security.mjs';
 
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.jpg':'image/jpeg','.png':'image/png','.ttf':'font/ttf','.txt':'text/plain; charset=utf-8'};
@@ -16,6 +17,7 @@ export function createApplication(options={}) {
   const origins=(options.origins||process.env.TELO_ORIGINS||'http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:4173').split(',');
   if(production&&origins.some(o=>!o.startsWith('https://')))throw new Error('Production origins must use HTTPS');
   const db=openDatabase(options.dbPath||process.env.TELO_DB||'data/telo365.sqlite');
+  const storeCatalog=createStoreCatalog({db,production,enableMock:options.enableMockStores});
   const mailer=options.mailer||createMailer();
   const allowedHosts=new Set(origins.map(o=>new URL(o).host));
   const cookieName=production?'__Host-telo365':'telo365_session';
@@ -38,7 +40,7 @@ export function createApplication(options={}) {
         if(method==='GET'&&path==='/api/public') return json(res,{intro:db.prepare('SELECT value FROM settings WHERE key=?').get('intro').value});
         const body=['GET','HEAD'].includes(method)?{}:await readJson(req,path==='/api/nutrition/analyze-photo'?3500000:65536);
         const user=getUser(db,req,cookieName);
-        const ctx={db,req,res,path,method,body,user,url,mailer,cookieName,ip,secure:production,trustProxy:options.trustProxy||process.env.TELO_TRUST_PROXY==='1'};
+        const ctx={db,req,res,path,method,body,user,url,mailer,cookieName,ip,secure:production,trustProxy:options.trustProxy||process.env.TELO_TRUST_PROXY==='1',storeCatalog};
         const publicResult=marketing(ctx);
         if(publicResult) return json(res,publicResult);
         if(path.startsWith('/api/auth/email/')||path==='/api/auth/mail') return json(res,await emailAuth(ctx));

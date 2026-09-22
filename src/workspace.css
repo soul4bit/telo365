@@ -47,3 +47,4 @@
 
 /* Keep actions reachable in long mobile dialogs. */
 .workspace dialog{max-height:calc(100dvh - 28px);overflow-y:auto}
+.nutrition-cost-card{grid-column:1/-1;display:flex;align-items:center;gap:12px;flex-wrap:wrap}.nutrition-cost-card p{margin:0;color:var(--muted);font-size:13px}.nutrition-cost-card strong{color:var(--ink)}

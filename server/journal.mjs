@@ -5,6 +5,7 @@ import { boolean, date, digest, fail, numeric, string, today } from './security.
 import { getItem, mealSnapshot, readCatalog, saveItem } from './catalog.mjs';
 import { analyzeMealPhoto } from './vision.mjs';
 import { onboarding } from './onboarding.mjs';
+import { stores } from './stores/index.mjs';
 
 const parseMeal=r=>({...r,snapshot:JSON.parse(r.snapshot),eaten:!!r.eaten});
 const parseWorkout=r=>({...r,data:JSON.parse(r.data),finished:!!r.finished});
@@ -38,10 +39,11 @@ export function state(db,user,day) {
   };
 }
 
-export function journal(ctx) {
+export async function journal(ctx) {
   const {db,user:u,body:b,path,method,url}=ctx;
   if(!u) fail(401,'Войдите в аккаунт');
   const onboardingResult=onboarding(ctx);if(onboardingResult)return onboardingResult;
+  const storesResult=await stores(ctx);if(storesResult)return storesResult;
   if(method==='GET'&&path==='/api/state') return state(db,u,url.searchParams.get('date'));
   if(path==='/api/nutrition/analyze-photo'&&method==='POST') return analyzeMealPhoto(ctx);
   if(path==='/api/nutrition/profile'&&method==='PUT') {

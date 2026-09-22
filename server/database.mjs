@@ -9,7 +9,7 @@ export function openDatabase(path) {
   if (path !== ':memory:') chmodSync(path, 0o600);
   db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
   const version = db.prepare('PRAGMA user_version').get().user_version;
-  if (version > 12) throw new Error('Database is newer than this application');
+  if (version > 13) throw new Error('Database is newer than this application');
   if (version === 0) {
     db.exec(`BEGIN IMMEDIATE;
       CREATE TABLE users(id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, recovery TEXT NOT NULL,
@@ -84,6 +84,71 @@ export function openDatabase(path) {
   if (version < 12) db.exec(`BEGIN IMMEDIATE;
     CREATE TABLE onboarding(user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,step INTEGER NOT NULL DEFAULT 1,completed INTEGER NOT NULL DEFAULT 0,data TEXT NOT NULL DEFAULT '{}',plan TEXT,updated TEXT NOT NULL);
     PRAGMA user_version=12; COMMIT;`);
+  if (version < 13) db.exec(`BEGIN IMMEDIATE;
+    CREATE TABLE food_preferences(
+      user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      meals_per_day INTEGER,
+      cooking_time TEXT,
+      cooking_frequency TEXT,
+      weekly_food_budget_minor INTEGER,
+      food_budget_unlimited INTEGER NOT NULL DEFAULT 0,
+      diet_type TEXT,
+      food_allergies TEXT NOT NULL DEFAULT '[]',
+      food_dislikes TEXT NOT NULL DEFAULT '[]',
+      food_likes TEXT NOT NULL DEFAULT '[]',
+      preferred_store_chains TEXT NOT NULL DEFAULT '[]',
+      custom_stores TEXT NOT NULL DEFAULT '[]',
+      shopping_priority TEXT NOT NULL DEFAULT 'no_preference',
+      updated TEXT NOT NULL
+    );
+    CREATE TABLE canonical_foods(
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      category TEXT,
+      created TEXT NOT NULL,
+      updated TEXT NOT NULL
+    );
+    CREATE TABLE store_products(
+      id TEXT PRIMARY KEY,
+      provider TEXT NOT NULL,
+      chain TEXT NOT NULL,
+      store_id TEXT,
+      external_product_id TEXT,
+      ean TEXT,
+      name TEXT NOT NULL,
+      brand TEXT,
+      category TEXT,
+      package_amount INTEGER,
+      package_unit TEXT,
+      price_minor INTEGER,
+      regular_price_minor INTEGER,
+      loyalty_price_minor INTEGER,
+      promo_price_minor INTEGER,
+      currency TEXT NOT NULL DEFAULT 'RUB',
+      kcal_per_100 REAL,
+      protein_per_100 REAL,
+      fat_per_100 REAL,
+      carbs_per_100 REAL,
+      ingredients TEXT,
+      allergens TEXT,
+      available INTEGER,
+      product_url TEXT,
+      image_url TEXT,
+      source_updated TEXT,
+      created TEXT NOT NULL,
+      updated TEXT NOT NULL
+    );
+    CREATE UNIQUE INDEX store_products_provider_external ON store_products(provider,external_product_id,store_id);
+    CREATE INDEX store_products_chain_store ON store_products(chain,store_id);
+    CREATE TABLE store_product_foods(
+      store_product_id TEXT NOT NULL REFERENCES store_products(id) ON DELETE CASCADE,
+      canonical_food_id TEXT NOT NULL REFERENCES canonical_foods(id) ON DELETE CASCADE,
+      confidence REAL NOT NULL DEFAULT 1,
+      PRIMARY KEY(store_product_id,canonical_food_id)
+    );
+    CREATE INDEX store_product_foods_canonical ON store_product_foods(canonical_food_id);
+    PRAGMA user_version=13; COMMIT;`);
+  if (version < 13) seedStoreDomain(db);
   return db;
 }
 
@@ -123,6 +188,19 @@ function expandCatalog(db) {
     ['beans-bowl','Боул с фасолью и овощами','lunch','Соедините фасоль, готовый рис и свежие овощи.',[['beans',160],['rice',60],['tomato',120],['cucumber',120]]]
   ];
   for(const [id,name,image,instructions,ingredients] of recipes)add.run(id,'recipe',JSON.stringify({name,image,instructions,ingredients:ingredients.map(([foodId,grams])=>({foodId,grams})),sample:true}));
+}
+
+function seedStoreDomain(db) {
+  const now=new Date().toISOString();
+  const foods=[
+    ['oats','Овсяные хлопья','крупы'],['milk','Молоко','молочные продукты'],['berries','Ягоды','фрукты и ягоды'],
+    ['chicken','Куриная грудка','мясо и птица'],['buckwheat','Гречка','крупы'],['broccoli','Брокколи','овощи'],
+    ['yogurt','Йогурт без добавок','молочные продукты'],['eggs','Яйца','яйца'],['rice','Рис','крупы'],
+    ['tomato','Томаты','овощи'],['cucumber','Огурцы','овощи'],['salmon','Лосось','рыба'],['bread','Цельнозерновой хлеб','хлеб'],
+    ['cottage','Творог','молочные продукты'],['banana','Банан','фрукты и ягоды'],['pasta','Цельнозерновая паста','крупы'],['beans','Фасоль','бобовые']
+  ];
+  const add=db.prepare('INSERT OR IGNORE INTO canonical_foods(id,name,category,created,updated) VALUES(?,?,?,?,?)');
+  for(const [id,name,category] of foods)add.run(id,name,category,now,now);
 }
 
 export function createHabits(db, userId) {

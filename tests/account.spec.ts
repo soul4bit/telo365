@@ -13,6 +13,24 @@ async function finishOnboarding(page:any){
   await page.getByRole('button',{name:'\u041f\u0435\u0440\u0435\u0439\u0442\u0438 \u0432 \u043c\u043e\u0439 \u0434\u0435\u043d\u044c',exact:true}).click({force:true})
 }
 
+test('registration keeps invalid input local to its field',async({page})=>{
+  await page.goto('/register')
+  const submit=page.getByRole('button',{name:'\u0421\u043e\u0437\u0434\u0430\u0442\u044c \u0430\u043a\u043a\u0430\u0443\u043d\u0442',exact:true})
+  const email=page.getByLabel('Email',{exact:true}),password=page.getByLabel('\u041f\u0430\u0440\u043e\u043b\u044c',{exact:true})
+  await email.fill('not-an-email')
+  await email.blur()
+  await expect(page.getByText('\u0412\u0432\u0435\u0434\u0438 \u043a\u043e\u0440\u0440\u0435\u043a\u0442\u043d\u044b\u0439 email.',{exact:true})).toBeVisible()
+  await password.fill('short')
+  await password.blur()
+  await expect(page.getByText('\u041c\u0438\u043d\u0438\u043c\u0443\u043c 12 \u0441\u0438\u043c\u0432\u043e\u043b\u043e\u0432.',{exact:true})).toBeVisible()
+  await password.press('Enter')
+  await expect(page).toHaveURL(/\/register$/)
+  await page.getByRole('button',{name:'\u041f\u043e\u043a\u0430\u0437\u0430\u0442\u044c \u043f\u0430\u0440\u043e\u043b\u044c'}).click()
+  await expect(password).toHaveAttribute('type','text')
+  await expect(password).toHaveValue('short')
+  await expect(submit).toBeDisabled()
+})
+
 
 test('guest landing, registration and personal journal work across devices',async({page,browser},info)=>{
   test.skip(info.project.name==='mobile','The desktop flow opens a second mobile browser context; responsive flows are covered in dashboard and habits specs.')

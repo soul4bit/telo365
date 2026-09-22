@@ -115,7 +115,7 @@ test('account and journal integration', async t=>{
     const id=randomUUID();const create={id,programId:'full-body',date:day,finished:false};
     assert.equal((await req('/api/workouts','PUT',create)).status,200);
     assert.equal((await req('/api/workouts','PUT',create)).status,200);
-    let workout=(await req('/api/state')).value.workouts[0];assert.equal(workout.id,id);
+    let workout=(await req('/api/state')).value.workouts[0];assert.equal(workout.id,id);assert.match(workout.data.startedAt,/^\d{4}-\d{2}-\d{2}T/);
     assert.equal((await req('/api/workouts','PUT',{id,date:day,exercises:workout.data.exercises,finished:true})).status,400);
     for(const e of workout.data.exercises)for(const s of e.sets){s.done=true;s.weight=5;}
     assert.equal((await req('/api/workouts','PUT',{id,date:day,exercises:workout.data.exercises,finished:true})).status,200);

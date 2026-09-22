@@ -125,7 +125,7 @@ export function journal(ctx) {
     let data;
     if(!old) {
       const program=getItem(db,string(b.programId,'Программа'),u.id,'program');
-      data={name:program.name,programId:program.id,exercises:program.exercises.map(e=>{const exercise=getItem(db,e.exerciseId,u.id,'exercise');return {name:exercise.name,unit:exercise.unit,sets:Array.from({length:Math.round(e.sets)},()=>({reps:e.reps,weight:e.weight,done:false}))};})};
+      data={name:program.name,programId:program.id,startedAt:new Date().toISOString(),exercises:program.exercises.map(e=>{const exercise=getItem(db,e.exerciseId,u.id,'exercise');return {name:exercise.name,unit:exercise.unit,sets:Array.from({length:Math.round(e.sets)},()=>({reps:e.reps,weight:e.weight,done:false}))};})};
     } else {
       data=JSON.parse(old.data);
       if(!Array.isArray(b.exercises)||b.exercises.length!==data.exercises.length) fail(400,'Проверьте упражнения');

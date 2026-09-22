@@ -1,0 +1,7 @@
+.password-control{position:relative;display:flex}
+.password-control input{padding-right:46px}
+.password-toggle{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:36px;height:36px;border-radius:7px;color:#6f8665;background:transparent}
+.password-toggle:hover{background:#edf4e9;color:#417b32}
+.workspace-form>a.form-note{align-self:flex-start;margin:-10px 0 0;color:#5a7d4d;text-decoration:underline;text-underline-offset:3px}
+.workspace-form>a.form-note:hover{color:#315f2f}
+.auth-links strong{color:#417b32;font-weight:700;text-decoration:underline;text-underline-offset:3px}

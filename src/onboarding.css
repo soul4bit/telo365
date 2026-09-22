@@ -12,5 +12,11 @@
 .onboarding-age-mode button.selected{border-color:#73a867;background:#edf7e9;color:#326734;box-shadow:inset 0 0 0 1px #bfe1b6}
 .onboarding-card label small{font-size:10px;font-weight:500;line-height:1.4;color:#879a80}
 .onboarding-goal-weight{max-width:calc(50% - 7px)}
+.onboarding-goal-weight{margin-top:18px}
+.onboarding-goal-weight>p{margin:0 0 9px!important;font-size:12px!important;font-weight:700;color:#526c51!important}
+.onboarding-target-mode{display:flex;gap:7px;margin-bottom:10px}
+.onboarding-target-mode button{min-height:32px;padding:0 11px;border:1px solid #dce7d6;border-radius:8px;background:#fbfdf9;color:#61795c;font:700 11px inherit}
+.onboarding-target-mode button.selected{border-color:#73a867;background:#edf7e9;color:#326734;box-shadow:inset 0 0 0 1px #bfe1b6}
+.onboarding-choice-hint{margin:-15px 0 9px!important;font-size:11px!important;line-height:1.4!important;color:#7f9477!important}
 .onboarding-actions .primary-button:only-child{margin-left:auto}
 @media(max-width:600px){.onboarding-brand .logo>span{font-size:22px}.onboarding-brand .logo svg{width:27px;height:30px}.onboarding-goal-weight{max-width:none}}

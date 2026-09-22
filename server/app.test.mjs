@@ -146,6 +146,8 @@ test('account and journal integration', async t=>{
     assert.equal((await req('/api/onboarding','PUT',{step:5,data:exactAge},'start')).status,200);
     const saved=await req('/api/onboarding','GET',undefined,'start');assert.equal(saved.value.step,5);assert.equal(saved.value.data.heightCm,168);
     assert.equal(saved.value.data.birthDate,'1990-09-22');assert.equal(saved.value.data.age,undefined);assert.equal(saved.value.data.ageApproximate,false);assert.equal(saved.value.data.weightKg,70.5);
+    assert.equal((await req('/api/onboarding','PUT',{step:5,data:{...exactAge,targetWeightKg:null}},'start')).status,200);
+    assert.equal((await req('/api/onboarding','GET',undefined,'start')).value.data.targetWeightKg,undefined);
     const completed=await req('/api/onboarding/complete','POST',{data:draft},'start');assert.equal(completed.status,200);assert.equal(completed.value.completed,true);assert.equal(completed.value.plan.trainingDaysPerWeek,3);assert.equal(completed.value.plan.healthSafetyLevel,'standard');
     const state=(await req('/api/state','GET',undefined,'start')).value;assert.equal(state.user.onboardingCompleted,true);assert.ok(state.user.calories>=1400);assert.equal(state.weights.length,1);assert.equal(state.meals.length,4);assert.equal(state.nutritionProfile.exclusions,'\u043c\u043e\u043b\u043e\u043a\u043e');assert.ok(!completed.value.plan.nutrition.recipeIds.includes('oatmeal'));
     const restricted={...draft,acutePainOrExerciseRestriction:true};assert.equal((await req('/api/onboarding/complete','POST',{data:restricted},'start')).status,200);assert.equal((await req('/api/onboarding','GET',undefined,'start')).value.plan.healthSafetyLevel,'restricted');

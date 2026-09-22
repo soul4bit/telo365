@@ -197,3 +197,9 @@ test('signed-out user is redirected, landing has no overflow',async({page})=>{
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy()
   await page.goto('/privacy');await expect(page.getByRole('heading',{name:'Как мы обращаемся с данными',exact:true})).toBeVisible()
 })
+
+
+test('privacy has a direct health-data section',async({page})=>{
+  await page.goto('/privacy#health-data')
+  await expect(page.locator('#health-data h2')).toHaveText('\u0414\u0430\u043d\u043d\u044b\u0435 \u043e \u0437\u0434\u043e\u0440\u043e\u0432\u044c\u0435 \u0438 \u043e\u0433\u0440\u0430\u043d\u0438\u0447\u0435\u043d\u0438\u044f\u0445')
+})

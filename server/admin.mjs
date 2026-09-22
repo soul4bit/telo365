@@ -37,4 +37,13 @@ if(command==='backup') {
 }else if(command==='promote') {
   if(!argument||!existsSync(dbPath))throw new Error('Usage: admin.mjs promote REGISTERED_EMAIL');
   const db=openDatabase(dbPath);try {const result=db.prepare('UPDATE users SET role=? WHERE email=?').run('admin',argument.trim().toLowerCase());if(!result.changes)throw new Error('Registered account not found');console.log('Administrator role assigned');}finally{db.close()}
-}else throw new Error('Commands: backup [PATH], verify-backup PATH, restore-copy BACKUP NEW_PATH, promote EMAIL');
+}else if(command==='purge-users') {
+  if(argument!=='ALL_ACCOUNTS')throw new Error('Usage: admin.mjs purge-users ALL_ACCOUNTS');
+  if(!existsSync(dbPath))throw new Error('Database does not exist');
+  const db=openDatabase(dbPath);try {
+    const before={users:db.prepare('SELECT count(*) AS n FROM users').get().n,sessions:db.prepare('SELECT count(*) AS n FROM sessions').get().n,weights:db.prepare('SELECT count(*) AS n FROM weights').get().n,meals:db.prepare('SELECT count(*) AS n FROM meals').get().n,workouts:db.prepare('SELECT count(*) AS n FROM workouts').get().n,shopping:db.prepare('SELECT count(*) AS n FROM shopping').get().n};
+    db.exec('BEGIN IMMEDIATE; DELETE FROM users; COMMIT;');
+    const remaining=db.prepare('SELECT count(*) AS n FROM users').get().n;
+    console.log(JSON.stringify({purged:true,before,remainingUsers:remaining}));
+  }catch(error){try{db.exec('ROLLBACK;')}catch{}throw error}finally{db.close()}
+}else throw new Error('Commands: backup [PATH], verify-backup PATH, restore-copy BACKUP NEW_PATH, promote EMAIL, purge-users ALL_ACCOUNTS');

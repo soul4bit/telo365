@@ -39,6 +39,9 @@
 
 .onboarding-other-limitation{display:grid;gap:7px;margin:-4px 0 16px;font-size:12px;font-weight:700;color:#526c51}.onboarding-other-limitation input{width:100%}
 
+.onboarding-food-budget{align-items:end}.onboarding-money-input{position:relative}.onboarding-money-input input{width:100%;padding-right:38px}.onboarding-money-input span{position:absolute;right:13px;top:50%;transform:translateY(-50%);color:#5a7055;font-weight:700}.onboarding-budget-check{align-self:center;margin-top:17px!important}.onboarding-card label>.onboarding-choices{margin:2px 0 8px}.onboarding-card label>.onboarding-choices.compact{grid-template-columns:repeat(auto-fit,minmax(95px,1fr))}
+.onboarding-choice-field{display:flex;flex-direction:column;gap:9px;font-size:12px;font-weight:700;color:#526c51}.onboarding-choice-field>.onboarding-choices{margin:0!important}.onboarding-choice-field .onboarding-chips{margin-top:0}
+
 .onboarding-card input:focus,.onboarding-card select:focus,.onboarding-card textarea:focus{outline:0;border-color:#72a866;box-shadow:0 0 0 3px #75a96b24}
 
 .onboarding-area-context{margin:2px 0 16px}.onboarding-area-context>p{margin-bottom:9px!important}.onboarding-area-context details{margin:8px 0;border:1px solid #dce7d6;border-radius:10px;background:#fbfdf9}.onboarding-area-context summary{padding:12px 13px;color:#426541;font-size:12px;font-weight:700;cursor:pointer}.onboarding-area-context details .onboarding-choices{margin:0;padding:0 10px 11px}.onboarding-health-consent{display:block;margin:4px 0 16px}.onboarding-health-consent .onboarding-check{margin:0}.onboarding-health-consent a{display:inline-block;margin:5px 0 0 27px;font-size:11px}

@@ -1,15 +1,19 @@
 import { test, expect } from '@playwright/test'
 async function finishOnboarding(page:any){
   await expect(page.getByRole('heading',{name:'\u0420\u0430\u0441\u0441\u043a\u0430\u0436\u0438 \u043d\u0435\u043c\u043d\u043e\u0433\u043e \u043e \u0441\u0435\u0431\u0435'})).toBeVisible()
+  const next=page.getByRole('button',{name:'\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c',exact:true})
+  await expect(next).toBeDisabled()
   await page.getByLabel('\u0412\u043e\u0437\u0440\u0430\u0441\u0442',{exact:true}).fill('30')
   await page.getByLabel('\u0420\u043e\u0441\u0442, \u0441\u043c',{exact:true}).fill('170')
-  await page.getByLabel('\u0412\u0435\u0441, \u043a\u0433',{exact:true}).fill('70')
-  await page.getByRole('button',{name:'\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c',exact:true}).click({force:true})
+  await page.getByLabel('\u0412\u0435\u0441, \u043a\u0433',{exact:true}).fill('70,5')
+  await expect(next).toBeEnabled()
+  await next.click({force:true})
   await page.getByRole('button',{name:'\u0421\u043d\u0438\u0437\u0438\u0442\u044c \u0432\u0435\u0441',exact:true}).click({force:true})
   for(let i=0;i<2;i++)await page.getByRole('button',{name:'\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c',exact:true}).click({force:true})
   await page.getByRole('button',{name:'\u041d\u043e\u0432\u0438\u0447\u043e\u043a',exact:true}).click({force:true})
   for(let i=0;i<3;i++)await page.getByRole('button',{name:'\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c',exact:true}).click({force:true})
   await page.getByRole('button',{name:'\u0421\u043e\u0441\u0442\u0430\u0432\u0438\u0442\u044c \u043c\u043e\u0439 \u043f\u043b\u0430\u043d',exact:true}).click({force:true})
+  await expect(page.getByText('\u0423\u0441\u0440\u0435\u0434\u043d\u0451\u043d\u043d\u044b\u0439 \u043e\u0440\u0438\u0435\u043d\u0442\u0438\u0440 \u0431\u0435\u0437 \u0443\u043a\u0430\u0437\u0430\u043d\u0438\u044f \u043f\u043e\u043b\u0430',{exact:true})).toBeVisible()
   await page.getByRole('button',{name:'\u041f\u0435\u0440\u0435\u0439\u0442\u0438 \u0432 \u043c\u043e\u0439 \u0434\u0435\u043d\u044c',exact:true}).click({force:true})
 }
 

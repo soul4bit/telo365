@@ -22,17 +22,16 @@ export default function Marketing() {
     <header className="marketing-nav">
       <a href="/" aria-label="TELO365 — главная"><Logo /></a>
       <nav aria-label="Основная навигация" className={open ? 'is-open' : ''}>
-        <a href="#features" onClick={close}>Возможности</a><a href="#inside" onClick={close}>Как это выглядит</a><a href="#start" onClick={close}>Начать</a>
-        <a className="marketing-login" href="/login">Войти</a>
+        <a href="#features" onClick={close}>Возможности</a><a href="#inside" onClick={close}>Как это выглядит</a><a className="marketing-login" href="/login">Войти</a>
       </nav>
-      <a className="marketing-nav-cta" href="/register" onClick={() => track('nav_start')}>Начать</a>
+      <a className="marketing-nav-cta" href="/register" onClick={() => track('nav_start')}>Начать бесплатно</a>
       <button className="marketing-menu" aria-label={open ? 'Закрыть меню' : 'Открыть меню'} onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</button>
     </header>
 
     <main>
       <section className="marketing-hero" id="start">
         <div className="marketing-hero-copy"><span className="marketing-kicker"><Sparkles size={14} /> Тело в своём ритме</span><h1>Твоё тело.<br/><em>Каждый день.</em></h1><p>Питание, движение, полезные привычки и прогресс — в одном спокойном, понятном месте.</p><div className="marketing-actions"><a className="marketing-primary" href="/register" onClick={() => track('hero_start')}>Начать сегодня <ArrowRight size={18}/></a><a className="marketing-secondary" href="#features">Посмотреть возможности <ChevronRight size={17}/></a></div><span className="marketing-assurance"><Check size={15}/> Свой темп. Без запретов и гонки.</span></div>
-        <div className="marketing-hero-visual" aria-hidden="true"><div className="hero-glow"/><div className="hero-photo"/><div className="hero-note">Лучшая версия<br/>тебя — это реально <Heart size={17}/></div><div className="hero-score"><span>Сегодня</span><strong>5 из 6</strong><small>маленьких шагов</small><div><i/><i/><i/><i/><i/><i className="empty"/></div></div></div>
+        <div className="marketing-hero-visual" aria-hidden="true"><div className="hero-glow"/><div className="hero-photo"/><div className="hero-note">Маленькие шаги.<br/>Настоящий прогресс. <Heart size={17}/></div><div className="hero-score"><span>Сегодня</span><strong>5 из 6</strong><small>маленьких шагов</small><div><i/><i/><i/><i/><i/><i className="empty"/></div></div></div>
       </section>
 
       <section className="marketing-intro"><p>Не очередной план, который нужно выдержать.</p><h2>Пространство, где <span>забота о себе</span> становится частью обычного дня.</h2></section>
@@ -59,7 +58,7 @@ export function LegalPage({ page }: { page: 'about' | 'privacy' | 'terms' | 'con
 
 function ContactForm() { const [state, setState] = useState<'idle' | 'sent'>('idle'), [error, setError] = useState(''); async function submit(e: FormEvent<HTMLFormElement>) { e.preventDefault(); setError(''); const data = new FormData(e.currentTarget); try { await api('/api/public/feedback', 'POST', { name: data.get('name'), email: data.get('email'), message: data.get('message') }); setState('sent'); track('feedback_sent') } catch (reason) { setError(errorText(reason)) } } if (state === 'sent') return <div className="contact-success"><Check/><h2>Сообщение отправлено</h2><p>Спасибо. Мы прочитаем его и ответим на указанный адрес, когда подключим внешнюю доставку почты.</p></div>; return <form className="contact-form" onSubmit={submit}><label>Как к вам обращаться<input name="name" maxLength={80} required autoComplete="name"/></label><label>Email для ответа<input name="email" type="email" maxLength={254} required autoComplete="email"/></label><label>Сообщение<textarea name="message" maxLength={2500} required rows={6} placeholder="Расскажите, что хотите видеть в TELO365"/></label>{error && <p className="form-error" role="alert">{error}</p>}<button className="marketing-primary">Отправить сообщение <ArrowRight size={17}/></button><small>Отправляя форму, вы соглашаетесь с <a href="/privacy">политикой конфиденциальности</a>.</small></form> }
 
-function Footer() { return <footer className="marketing-footer"><a href="/"><Logo /></a><div className="marketing-footer-links"><a href="/about">О сервисе</a><a href="/privacy">Конфиденциальность</a><a href="/terms">Условия использования</a><a href="/contacts">Контакты</a></div><small>© {new Date().getFullYear()} TELO365</small></footer> }
+function Footer() { return <footer className="marketing-footer"><a href="/"><Logo /></a><div className="marketing-footer-links"><a href="/about">О сервисе</a><a href="/privacy">Конфиденциальность</a><a href="/terms">Условия использования</a><a href="/contacts">Контакты</a><a href="/contacts">Поддержка</a></div><small>© {new Date().getFullYear()} TELO365</small></footer> }
 
 const legal = {
   about: { label: 'О сервисе', title: 'TELO365 — пространство для ежедневной заботы о себе', lead: 'Мы создаём спокойный инструмент для тех, кто хочет лучше понимать своё тело без жёстких правил и бесконечных таблиц.', sections: [{ title: 'Зачем нужен TELO365', text: 'Сервис объединяет питание, тренировки, привычки, вес и покупки. Он помогает увидеть связь между небольшими действиями и самочувствием, а не требует идеального результата.' }, { title: 'Как развиваем сервис', text: 'Сейчас доступна ранняя версия. Мы постепенно добавляем функции, ориентируясь на реальные ежедневные задачи пользователей. Материалы в каталоге носят справочный характер и не заменяют консультацию врача или тренера.' }] },

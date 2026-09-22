@@ -18,7 +18,8 @@ export default function App(){
   if(path==='/onboarding')return <Onboarding/>
   if(['/login','/register','/recover'].includes(path))return <Auth mode={path.slice(1)}/>
   if(path==='/privacy')return <LegalPage page="privacy"/>
-  if(path==='/terms')return <LegalPage page="terms"/>
+    if(path==='/consent')return <LegalPage page="consent"/>
+if(path==='/terms')return <LegalPage page="terms"/>
   if(path==='/about')return <LegalPage page="about"/>
   if(path==='/contacts')return <LegalPage page="contacts"/>
   return <Marketing/>

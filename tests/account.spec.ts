@@ -201,5 +201,5 @@ test('signed-out user is redirected, landing has no overflow',async({page})=>{
 
 test('privacy has a direct health-data section',async({page})=>{
   await page.goto('/privacy#health-data')
-  await expect(page.locator('#health-data h2')).toHaveText('\u0414\u0430\u043d\u043d\u044b\u0435 \u043e \u0437\u0434\u043e\u0440\u043e\u0432\u044c\u0435 \u0438 \u043e\u0433\u0440\u0430\u043d\u0438\u0447\u0435\u043d\u0438\u044f\u0445')
+  await expect(page.locator('#health-data h2')).toHaveText('\u0414\u0430\u043d\u043d\u044b\u0435 \u043e \u0437\u0434\u043e\u0440\u043e\u0432\u044c\u0435 \u0438 \u043e\u0433\u0440\u0430\u043d\u0438\u0447\u0435\u043d\u0438\u044f\u0445');await page.goto('/consent');await expect(page.getByRole('heading',{name:'\u0421\u043e\u0433\u043b\u0430\u0441\u0438\u0435 \u043d\u0430 \u043e\u0431\u0440\u0430\u0431\u043e\u0442\u043a\u0443 \u043f\u0435\u0440\u0441\u043e\u043d\u0430\u043b\u044c\u043d\u044b\u0445 \u0434\u0430\u043d\u043d\u044b\u0445',exact:true})).toBeVisible()
 })

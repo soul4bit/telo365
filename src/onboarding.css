@@ -38,3 +38,5 @@
 .onboarding-health-link{color:#39753b;font-weight:700;text-decoration:underline;text-underline-offset:3px}.onboarding-health-link:hover{color:#244e29}
 
 .onboarding-other-limitation{display:grid;gap:7px;margin:-4px 0 16px;font-size:12px;font-weight:700;color:#526c51}.onboarding-other-limitation input{width:100%}
+
+.onboarding-card input:focus,.onboarding-card select:focus,.onboarding-card textarea:focus{outline:0;border-color:#72a866;box-shadow:0 0 0 3px #75a96b24}

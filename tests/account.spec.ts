@@ -105,7 +105,6 @@ test('registration keeps invalid input local to its field',async({page})=>{
 
 
 test('guest landing, registration and personal journal work across devices',async({page,browser},info)=>{
-  test.skip(info.project.name==='mobile','The desktop flow opens a second mobile browser context; responsive flows are covered in dashboard and habits specs.')
   const email=`browser-${info.project.name}-${Date.now()}@example.test`,password='Тестовая парольная фраза 2026!'
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message))
   await page.goto('/')
@@ -133,21 +132,23 @@ test('guest landing, registration and personal journal work across devices',asyn
   const navigate=async(name:string)=>{if(info.project.name==='mobile'){await page.getByRole('button',{name:'\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043c\u0435\u043d\u044e',exact:true}).click();await page.getByRole('navigation').getByRole('button',{name,exact:true}).click();await expect(page.getByRole('button',{name:'\u0417\u0430\u043a\u0440\u044b\u0442\u044c \u043c\u0435\u043d\u044e',exact:true})).toHaveCount(0)}else await page.getByRole('navigation').getByRole('button',{name,exact:true}).click()}
   await page.getByRole('button',{name:'Записать вес',exact:true}).first().click()
   await page.getByLabel('Вес, кг',{exact:true}).fill('72.5')
-  await page.getByRole('dialog').getByRole('button',{name:'Сохранить',exact:true}).click()
-  await expect(page.getByRole('dialog')).not.toBeVisible()
+  const weightDialog=page.getByRole('dialog',{name:'Запись веса'})
+  await weightDialog.getByRole('button',{name:'Сохранить',exact:true}).click()
+  await expect(weightDialog).not.toBeVisible()
   await expect(page.getByRole('button',{name:/Последняя запись веса/})).toContainText('72,5 кг')
   await page.getByRole('button',{name:'+250',exact:true}).click()
   await expect(page.locator('article').filter({has:page.getByRole('button',{name:'+250',exact:true})})).toContainText('250 /')
   await navigate('Питание')
   await page.getByRole('button',{name:'Свой продукт',exact:true}).click({force:true})
-  await page.getByRole('dialog').getByLabel('Название',{exact:true}).fill('Тестовые хлопья')
+  const customFoodDialog=page.getByRole('dialog',{name:'Свой продукт'})
+  await customFoodDialog.getByLabel('Название',{exact:true}).fill('Тестовые хлопья')
   await page.getByLabel('Калории, ккал',{exact:true}).fill('200')
   await page.getByLabel('Белки, г',{exact:true}).fill('10')
   await page.getByLabel('Жиры, г',{exact:true}).fill('5')
   await page.getByLabel('Углеводы, г',{exact:true}).fill('25')
   await page.getByLabel('Источник значений',{exact:true}).fill('Этикетка для теста')
-  await page.getByRole('dialog').getByRole('button',{name:'Сохранить',exact:true}).click()
-  await expect(page.getByRole('dialog')).not.toBeVisible()
+  await customFoodDialog.getByRole('button',{name:'Сохранить',exact:true}).click()
+  await expect(customFoodDialog).not.toBeVisible()
   await page.getByRole('button',{name:'Продукты',exact:true}).click()
   await page.getByRole('textbox',{name:'Найти в каталоге'}).fill('Тестовые хлопья')
   await page.getByRole('button',{name:'В мой день',exact:true}).click()

@@ -1,6 +1,12 @@
 import { digest, token, email, password, hashPassword, rateLimit, fail } from './security.mjs';
 import { transaction } from './database.mjs';
 
+export async function issueEmailAction(db,mailer,target,purpose){
+  const raw=token(),hashed=digest(raw),ttl=purpose==='verify'?86400000:1800000;
+  transaction(db,()=>{db.prepare('DELETE FROM email_tokens WHERE user_id=? AND purpose=?').run(target.id,purpose);db.prepare('INSERT INTO email_tokens VALUES(?,?,?,?,?)').run(hashed,target.id,purpose,target.email,Date.now()+ttl);});
+  try{await mailer.send(target.email,purpose,raw)}catch(error){db.prepare('DELETE FROM email_tokens WHERE token=?').run(hashed);throw error;}
+}
+
 export async function emailAuth(ctx) {
   const { db, mailer, path, method, body, user, req } = ctx;
   if (path === '/api/auth/mail' && method === 'GET') return { mode: mailer.mode };
@@ -16,16 +22,11 @@ export async function emailAuth(ctx) {
     rateLimit(db, `mail-send:${address}`, 5, 3600000);
     const target = verify ? user : db.prepare('SELECT * FROM users WHERE email=? AND email_verified=1').get(address);
     if (target && (!verify || !target.email_verified)) {
-      const raw = token(), purpose = verify ? 'verify' : 'reset', hashed = digest(raw);
-      transaction(db, () => {
-        db.prepare('DELETE FROM email_tokens WHERE user_id=? AND purpose=?').run(target.id, purpose);
-        db.prepare('INSERT INTO email_tokens VALUES(?,?,?,?,?)').run(hashed, target.id, purpose, address, Date.now() + (verify ? 86400000 : 1800000));
-      });
-      try { await mailer.send(address, purpose, raw); }
+      const purpose=verify?'verify':'reset';
+      try { await issueEmailAction(db,mailer,target,purpose); }
       catch {
-        db.prepare('DELETE FROM email_tokens WHERE token=?').run(hashed);
         console.error(JSON.stringify({event:'mail_failed',purpose}));
-        if (verify) fail(503, 'Не удалось передать письмо. Попробуйте позже.');
+        if (verify) fail(503, '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043f\u0435\u0440\u0435\u0434\u0430\u0442\u044c \u043f\u0438\u0441\u044c\u043c\u043e. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u043f\u043e\u0437\u0436\u0435.');
       }
     }
     return { ok:true, mode:mailer.mode, message: verify ? 'Запрос подтверждения принят.' : 'Если подтверждённый адрес есть в системе, письмо будет отправлено.' };

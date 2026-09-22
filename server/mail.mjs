@@ -1,30 +1,32 @@
 import nodemailer from 'nodemailer';
 
-// Shared contract with SoulCam: off, local capture, or TLS SMTP delivery.
-export function createMailer(env = process.env, brand = 'TELO365') {
-  const mode = env.MAIL_MODE || 'off';
-  if (!['off', 'capture', 'smtp'].includes(mode)) throw new Error('Invalid MAIL_MODE');
-  if (mode === 'off') return { mode, send: async () => { throw new Error('MAIL_DISABLED'); } };
-  const origin = new URL(env.MAIL_PUBLIC_URL);
-  if (origin.protocol !== 'https:' && !['127.0.0.1', 'localhost'].includes(origin.hostname)) throw new Error('MAIL_PUBLIC_URL requires HTTPS');
-  if (origin.username || origin.password || origin.search || origin.hash || origin.pathname !== '/') throw new Error('MAIL_PUBLIC_URL must be an origin');
-  const host = env.MAIL_HOST || '127.0.0.1', port = Number(env.MAIL_PORT || (mode === 'capture' ? 1025 : 587));
-  if (mode === 'capture' && !['127.0.0.1', 'localhost', '::1'].includes(host)) throw new Error('Capture SMTP requires loopback (use SSH tunnel between VMs)');
-  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid MAIL_PORT');
-  const from = env.MAIL_FROM;
-  if (!from || !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(from)) throw new Error('MAIL_FROM must be an email');
-  const transport = nodemailer.createTransport({ host, port, secure: mode === 'smtp' && port === 465,
-    requireTLS: mode === 'smtp', ignoreTLS: mode === 'capture',
-    auth: env.MAIL_USER ? { user: env.MAIL_USER, pass: env.MAIL_PASSWORD } : undefined,
-    connectionTimeout: 5000, greetingTimeout: 5000, socketTimeout: 8000,
-    disableFileAccess: true, disableUrlAccess: true, logger: false, debug: false });
-  return { mode, async send(to, purpose, token) {
-    if (!['verify', 'reset'].includes(purpose) || !/^[A-Za-z0-9_-]{43}$/.test(token)) throw new Error('Invalid mail action');
-    const link = `${origin.origin}/email/${purpose}#token=${token}`;
-    const title = purpose === 'verify' ? 'Подтверждение почты' : 'Восстановление пароля';
-    const text = `${brand}: ${title}\n\nОткройте ссылку и подтвердите действие:\n${link}\n\nСсылка действует ${purpose === 'verify' ? '24 часа' : '30 минут'} и используется один раз. Если вы не запрашивали письмо, ничего делать не нужно.\n${mode === 'capture' ? '\nТестовое письмо: доставка во внешние почтовые ящики отключена.' : ''}`;
-    const result = await transport.sendMail({ from: { name: brand, address: from }, to, subject: `${brand} — ${title}`, text,
-      headers: { 'X-Project': brand, 'Auto-Submitted': 'auto-generated' } });
-    if (!result.accepted?.length || result.rejected?.length) throw new Error('MAIL_NOT_ACCEPTED');
-  } };
+const copy={
+  verify:{title:'\u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u0435 \u043f\u043e\u0447\u0442\u044b',heading:'\u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u0435 email',lead:'\u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u0435 \u0430\u0434\u0440\u0435\u0441, \u0447\u0442\u043e\u0431\u044b \u0432\u043e\u0441\u0441\u0442\u0430\u043d\u0430\u0432\u043b\u0438\u0432\u0430\u0442\u044c \u0434\u043e\u0441\u0442\u0443\u043f \u043a \u0442\u0432\u043e\u0435\u043c\u0443 \u0440\u0438\u0442\u043c\u0443.',action:'\u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u044c \u043f\u043e\u0447\u0442\u0443',life:'24 \u0447\u0430\u0441\u0430'},
+  reset:{title:'\u0412\u043e\u0441\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d\u0438\u0435 \u043f\u0430\u0440\u043e\u043b\u044f',heading:'\u0412\u043e\u0441\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c \u0434\u043e\u0441\u0442\u0443\u043f',lead:'\u041d\u0430\u0436\u043c\u0438\u0442\u0435 \u043a\u043d\u043e\u043f\u043a\u0443, \u0447\u0442\u043e\u0431\u044b \u0432\u044b\u0431\u0440\u0430\u0442\u044c \u043d\u043e\u0432\u044b\u0439 \u043f\u0430\u0440\u043e\u043b\u044c \u0434\u043b\u044f \u0442\u0432\u043e\u0435\u0433\u043e \u0430\u043a\u043a\u0430\u0443\u043d\u0442\u0430.',action:'\u0412\u043e\u0441\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c \u043f\u0430\u0440\u043e\u043b\u044c',life:'30 \u043c\u0438\u043d\u0443\u0442'}
+};
+const ui={rhythm:'\u0422\u0412\u041e\u0419 \u041b\u0418\u0427\u041d\u042b\u0419 \u0420\u0418\u0422\u041c',expires:'\u0421\u0441\u044b\u043b\u043a\u0430 \u0434\u0435\u0439\u0441\u0442\u0432\u0443\u0435\u0442',once:'\u0438 \u0438\u0441\u043f\u043e\u043b\u044c\u0437\u0443\u0435\u0442\u0441\u044f \u043e\u0434\u0438\u043d \u0440\u0430\u0437.',ignore:'\u0415\u0441\u043b\u0438 \u0432\u044b \u043d\u0435 \u0437\u0430\u043f\u0440\u0430\u0448\u0438\u0432\u0430\u043b\u0438 \u044d\u0442\u043e \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0435, \u043f\u0440\u043e\u0441\u0442\u043e \u0438\u0433\u043d\u043e\u0440\u0438\u0440\u0443\u0439\u0442\u0435 \u043f\u0438\u0441\u044c\u043c\u043e. \u0412\u0430\u0448\u0438 \u0434\u0430\u043d\u043d\u044b\u0435 \u043e\u0441\u0442\u0430\u043d\u0443\u0442\u0441\u044f \u0432 \u0431\u0435\u0437\u043e\u043f\u0430\u0441\u043d\u043e\u0441\u0442\u0438.',tagline:'\u0422\u0432\u043e\u0451 \u0442\u0435\u043b\u043e. \u041a\u0430\u0436\u0434\u044b\u0439 \u0434\u0435\u043d\u044c.'};
+
+export function renderMail({brand='TELO365',origin,purpose,token}){
+  if(!['verify','reset'].includes(purpose)||!/^[A-Za-z0-9_-]{43}$/.test(token))throw new Error('Invalid mail action');
+  const message=copy[purpose],link=`${origin.origin}/email/${purpose}#token=${token}`;
+  const text=`${brand} \u2014 ${message.title}\n\n${message.lead}\n\n${message.action}:\n${link}\n\n${ui.expires} ${message.life} ${ui.once} ${ui.ignore}`;
+  const html=`<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#f4f7f2;color:#263b2b;font-family:Arial,Helvetica,sans-serif"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7f2"><tr><td align="center" style="padding:36px 16px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px"><tr><td style="padding:0 8px 17px;font-size:22px;font-weight:800;letter-spacing:-.5px;color:#1c3b2a">TELO<span style="color:#69a854">365</span></td></tr><tr><td style="overflow:hidden;border:1px solid #dfeadd;border-radius:18px;background:#ffffff"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:8px;background:#5b974d"></td></tr><tr><td style="padding:37px 38px 18px"><div style="display:inline-block;padding:7px 10px;border-radius:999px;background:#edf6e9;color:#4b8447;font-size:11px;font-weight:700;letter-spacing:.7px">${ui.rhythm}</div><h1 style="margin:20px 0 13px;font-size:28px;line-height:1.2;letter-spacing:-.8px;color:#243d2a">${message.heading}</h1><p style="margin:0;color:#617664;font-size:16px;line-height:1.65">${message.lead}</p><p style="margin:28px 0 24px"><a href="${link}" style="display:inline-block;padding:14px 20px;border-radius:9px;background:#417b32;color:#fff;text-decoration:none;font-size:15px;font-weight:700">${message.action}</a></p><p style="margin:0;color:#819181;font-size:12px;line-height:1.65">${ui.expires} ${message.life} ${ui.once}</p></td></tr><tr><td style="padding:17px 38px 30px;border-top:1px solid #edf2eb;color:#879586;font-size:11px;line-height:1.65">${ui.ignore}</td></tr></table></td></tr><tr><td style="padding:17px 8px 0;color:#8b988d;font-size:11px;line-height:1.6">TELO365 \u00b7 ${ui.tagline}</td></tr></table></td></tr></table></body></html>`;
+  return {title:message.title,text,html};
+}
+
+export function createMailer(env=process.env,brand='TELO365'){
+  const mode=env.MAIL_MODE||'off';
+  if(!['off','capture','smtp'].includes(mode))throw new Error('Invalid MAIL_MODE');
+  if(mode==='off')return {mode,send:async()=>{throw new Error('MAIL_DISABLED')}};
+  const origin=new URL(env.MAIL_PUBLIC_URL);
+  if(origin.protocol!=='https:'&&!['127.0.0.1','localhost'].includes(origin.hostname))throw new Error('MAIL_PUBLIC_URL requires HTTPS');
+  if(origin.username||origin.password||origin.search||origin.hash||origin.pathname!=='/')throw new Error('MAIL_PUBLIC_URL must be an origin');
+  const host=env.MAIL_HOST||'127.0.0.1',port=Number(env.MAIL_PORT||(mode==='capture'?1025:587));
+  if(mode==='capture'&&!['127.0.0.1','localhost','::1'].includes(host))throw new Error('Capture SMTP requires loopback');
+  if(!Number.isInteger(port)||port<1||port>65535)throw new Error('Invalid MAIL_PORT');
+  const from=env.MAIL_FROM;
+  if(!from||!/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(from))throw new Error('MAIL_FROM must be an email');
+  if(mode==='smtp'&&(!env.MAIL_USER||!env.MAIL_PASSWORD))throw new Error('SMTP credentials are required');
+  const transport=nodemailer.createTransport({host,port,secure:mode==='smtp'&&port===465,requireTLS:mode==='smtp',ignoreTLS:mode==='capture',auth:env.MAIL_USER?{user:env.MAIL_USER,pass:env.MAIL_PASSWORD}:undefined,connectionTimeout:5000,greetingTimeout:5000,socketTimeout:8000,disableFileAccess:true,disableUrlAccess:true,logger:false,debug:false});
+  return {mode,async send(to,purpose,token){const message=renderMail({brand,origin,purpose,token});const result=await transport.sendMail({from:{name:brand,address:from},to,subject:`${brand} \u2014 ${message.title}`,text:message.text,html:message.html,headers:{'X-Project':brand,'Auto-Submitted':'auto-generated'}});if(!result.accepted?.length||result.rejected?.length)throw new Error('MAIL_NOT_ACCEPTED');}};
 }

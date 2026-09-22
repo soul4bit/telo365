@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { request } from 'node:http';
 import { createApplication } from './app.mjs';
-import { createMailer } from './mail.mjs';
+import { createMailer, renderMail } from './mail.mjs';
 
 test('email confirmation and password reset are single-use and revoke sessions',async()=>{
   const letters=[];
@@ -15,11 +15,11 @@ test('email confirmation and password reset are single-use and revoke sessions',
   try {
     const password='Initial long password 2026',email='mail@example.test';
     const reg=await call('/api/auth/register',{email,password,name:'Mail test',accepted:true});
-    assert.equal(reg.status,200);const cookie=reg.cookie;
+    assert.equal(reg.status,200);const cookie=reg.cookie;assert.equal(letters.length,1);assert.equal(letters[0].purpose,'verify');
     assert.equal((await call('/api/auth/email/request',{})).status,401);
-    await call('/api/auth/email/forgot',{email});assert.equal(letters.length,0,'unverified email cannot reset');
+    await call('/api/auth/email/forgot',{email});assert.equal(letters.length,1,'unverified email cannot reset');
     assert.equal((await call('/api/auth/email/request',{},cookie)).status,200);
-    const first=letters.at(-1);assert.equal(first.purpose,'verify');
+    const first=letters.at(-1);assert.equal(letters.length,2);assert.equal(first.purpose,'verify');
     assert.notEqual(app.db.prepare('SELECT token FROM email_tokens').get().token,first.token);
     assert.equal((await call('/api/auth/email/verify',{token:first.token},'', 'GET')).status,405);
     assert.equal((await call('/api/auth/email/verify',{token:first.token})).status,200);
@@ -43,4 +43,7 @@ test('email confirmation and password reset are single-use and revoke sessions',
 test('mail capture cannot target a remote SMTP server and defaults to disabled',()=>{
   assert.equal(createMailer({}).mode,'off');
   assert.throws(()=>createMailer({MAIL_MODE:'capture',MAIL_HOST:'smtp.example.com',MAIL_PUBLIC_URL:'https://telo365.ru',MAIL_FROM:'no-reply@telo365.ru'}));
+  assert.throws(()=>createMailer({MAIL_MODE:'smtp',MAIL_HOST:'smtp.example.com',MAIL_PUBLIC_URL:'https://telo365.ru',MAIL_FROM:'no-reply@telo365.ru'}),/SMTP credentials are required/);
 });
+
+test('mail template carries TELO365 styling and one-time action link',()=>{const message=renderMail({origin:new URL('https://telo365.ru'),purpose:'verify',token:'a'.repeat(43)});assert.match(message.html,/TELO365/);assert.match(message.html,/background:#417b32/);assert.match(message.html,/email\/verify#token=/);assert.match(message.text,/\u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u0435/);});

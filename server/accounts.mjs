@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { createHabits, transaction } from './database.mjs';
 import { hydrationGoal, hydrationProfile } from './hydration.mjs';
+import { issueEmailAction } from './email-auth.mjs';
 import { boolean, checkPassword, digest, email, fail, hashPassword, numeric, password, rateLimit, string, timezone, token } from './security.mjs';
 
 export const profile = u => ({id:u.id,email:u.email,emailVerified:!!u.email_verified,name:u.name,goal:u.goal,target:u.target,targetLow:u.target_low,targetHigh:u.target_high,timezone:u.timezone,calories:u.calories,hydration:JSON.parse(u.hydration||'{}'),role:u.role});
@@ -32,8 +33,10 @@ export async function accounts(ctx) {
       const encoded=await hashPassword(pw),code=token(),id=randomUUID();
       if(db.prepare('SELECT id FROM users WHERE email=?').get(address)) fail(409,'Не удалось создать аккаунт с этим email. Войдите или восстановите доступ');
       transaction(db,()=>{db.prepare('INSERT INTO users(id,email,password,recovery,name,timezone,created) VALUES(?,?,?,?,?,?,?)').run(id,address,encoded,digest(code),name,zone,new Date().toISOString());createHabits(db,id);db.prepare('INSERT INTO onboarding(user_id,step,completed,data,updated) VALUES(?,1,0,?,?)').run(id,'{}',new Date().toISOString());});
+      let emailVerification='not-configured';
+      if(ctx.mailer.mode!=='off')try{await issueEmailAction(db,ctx.mailer,{id,email:address},'verify');emailVerification=ctx.mailer.mode==='smtp'?'sent':'captured'}catch{emailVerification='failed';console.error(JSON.stringify({event:'mail_failed',purpose:'verify',stage:'registration'}));}
       setSession(ctx,id);
-      return {user:profile(db.prepare('SELECT * FROM users WHERE id=?').get(id)),recoveryCode:code};
+      return {user:profile(db.prepare('SELECT * FROM users WHERE id=?').get(id)),recoveryCode:code,emailVerification};
     }
     const account=db.prepare('SELECT * FROM users WHERE email=?').get(address);
     if(path.endsWith('/login')) {

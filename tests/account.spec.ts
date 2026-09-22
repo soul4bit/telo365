@@ -45,6 +45,7 @@ async function finishOnboarding(page:any){
   await setupChoices.nth(0).getByRole('button',{name:'\u0412 \u0437\u0430\u043b\u0435',exact:true}).click()
   await expect(setupChoices.nth(0).getByRole('button',{name:'\u0414\u043e\u043c\u0430',exact:true})).toHaveClass(/selected/)
   await expect(setupChoices.nth(0).getByRole('button',{name:'\u0412 \u0437\u0430\u043b\u0435',exact:true})).toHaveClass(/selected/)
+  await expect(setupChoices.nth(1).getByRole('button',{name:'\u041d\u0435 \u0437\u043d\u0430\u044e \u0442\u043e\u0447\u043d\u043e \u2014 \u043e\u0431\u044b\u0447\u043d\u044b\u0439 \u0437\u0430\u043b',exact:true})).toBeVisible()
   await setupChoices.nth(1).getByRole('button',{name:'\u041d\u0438\u0447\u0435\u0433\u043e',exact:true}).click()
   await setupChoices.nth(1).getByRole('button',{name:'\u0413\u0430\u043d\u0442\u0435\u043b\u0438',exact:true}).click()
   await expect(setupChoices.nth(1).getByRole('button',{name:'\u041d\u0438\u0447\u0435\u0433\u043e',exact:true})).not.toHaveClass(/selected/)

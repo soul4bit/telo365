@@ -144,6 +144,7 @@ test('account and journal integration', async t=>{
     assert.equal((await req('/api/onboarding','PUT',{step:1,data:{...draft,age:17,ageSource:'age'}},'start')).status,400);
     assert.equal((await req('/api/onboarding','PUT',{step:4,data:{...draft,equipment:['none','dumbbells']}},'start')).status,400);
     assert.equal((await req('/api/onboarding','PUT',{step:4,data:{...draft,equipment:['other']}},'start')).status,400);assert.equal((await req('/api/onboarding','PUT',{step:4,data:{...draft,equipment:['other'],otherEquipment:'kettlebell'}},'start')).status,200);
+    assert.equal((await req('/api/onboarding','PUT',{step:4,data:{...draft,equipment:['standard_gym']}},'start')).status,400);assert.equal((await req('/api/onboarding','PUT',{step:4,data:{...draft,trainingLocations:['gym'],equipment:['standard_gym']}},'start')).status,200);
     const exactAge={...draft,age:30,birthDate:'1990-09-22',ageSource:'birthDate',weightKg:'70,5'};
     assert.equal((await req('/api/onboarding','PUT',{step:5,data:exactAge},'start')).status,200);
     const saved=await req('/api/onboarding','GET',undefined,'start');assert.equal(saved.value.step,5);assert.equal(saved.value.data.heightCm,168);

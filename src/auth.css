@@ -8,3 +8,6 @@
 .password-hint.is-valid{color:#4f8942}
 .field-error{display:block;color:#a15242;font-size:10px;font-weight:400;line-height:1.55;margin-top:-2px}
 .consent-error{margin-top:-14px;padding-left:27px}
+.workspace-form input.is-invalid:not([type=checkbox]){border-color:#d47b6b;background:#fff9f7}
+.workspace-form input.is-invalid:not([type=checkbox]):focus{outline-color:#d47b6b}
+.workspace-form input:-webkit-autofill,.workspace-form input:-webkit-autofill:hover,.workspace-form input:-webkit-autofill:focus{-webkit-text-fill-color:#34492b;-webkit-box-shadow:0 0 0 1000px #fafcf8 inset;box-shadow:0 0 0 1000px #fafcf8 inset;transition:background-color 5000s ease-in-out 0s}

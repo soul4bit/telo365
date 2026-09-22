@@ -9,7 +9,7 @@ export const STORE_CHAINS=Object.freeze([
 ]);
 
 export const STORE_CHAIN_SLUGS=Object.freeze(STORE_CHAINS.map(chain=>chain.slug));
-export const SHOPPING_PRIORITIES=Object.freeze(['lowest_price','balanced','familiar','no_preference']);
+export const SHOPPING_PRIORITIES=Object.freeze(['cheapest','balanced','familiar','indifferent']);
 
 export class StoreProvider {
   constructor({id,chains}) { this.id=id;this.chains=chains; }
@@ -35,3 +35,5 @@ export class StoreProvider {
 export const productPriceType=product=>product.loyaltyPriceMinor!=null?'loyalty':product.promoPriceMinor!=null?'promo':product.priceMinor!=null?'current':product.regularPriceMinor!=null?'regular':null;
 export const productPriceMinor=product=>{const type=productPriceType(product);return type==='loyalty'?product.loyaltyPriceMinor:type==='promo'?product.promoPriceMinor:type==='current'?product.priceMinor:type==='regular'?product.regularPriceMinor:null;};
 export const isPriceReady=product=>Number.isInteger(productPriceMinor(product))&&productPriceMinor(product)>=0&&Number.isInteger(product.packageAmount)&&product.packageAmount>0;
+
+export const normalizeShoppingPriority=value=>({lowest_price:'cheapest',no_preference:'indifferent'}[value]||value||'indifferent');

@@ -1,14 +1,14 @@
-import { productPriceMinor } from './types.mjs';
+import { normalizeShoppingPriority, productPriceMinor } from './types.mjs';
 import { canonicalFoods, finishStoreSync, latestStoreSyncs, searchStoredProducts, startStoreSync, storeLocations, storedProduct, storedProductsForFoods, upsertStoreLocation, upsertStoredProduct } from './repository.mjs';
 
-const priceRank={lowest_price:0,balanced:1,familiar:2,no_preference:3};
+const priceRank={cheapest:0,balanced:1,familiar:2,indifferent:3};
 export function consumedCostMinor(product,amount) {
   const price=productPriceMinor(product);
   if(price===null||!Number.isInteger(product.packageAmount)||product.packageAmount<=0||!Number.isFinite(amount)||amount<0)return null;
   return Math.round(price*amount/product.packageAmount);
 }
 export function purchaseCostMinor(product) { const price=productPriceMinor(product);return Number.isInteger(price)&&price>=0?price:null; }
-export function chooseStoreProduct(products,{shoppingPriority='no_preference',preferredStores=[],usedProductIds=[]}={}) {
+export function chooseStoreProduct(products,{shoppingPriority='indifferent',preferredStores=[],usedProductIds=[]}={}) { shoppingPriority=normalizeShoppingPriority(shoppingPriority);
   const ready=products.filter(product=>purchaseCostMinor(product)!==null);
   if(!ready.length)return null;
   const preferred=new Set(preferredStores),used=new Set(usedProductIds);
@@ -16,7 +16,7 @@ export function chooseStoreProduct(products,{shoppingPriority='no_preference',pr
     const price=purchaseCostMinor(a)-purchaseCostMinor(b);
     const familiar=(used.has(b.id)?1:0)-(used.has(a.id)?1:0);
     const chain=(preferred.has(b.chain)?1:0)-(preferred.has(a.chain)?1:0);
-    if(shoppingPriority==='lowest_price')return price||chain||a.name.localeCompare(b.name,'ru');
+    if(shoppingPriority==='cheapest')return price||chain||a.name.localeCompare(b.name,'ru');
     if(shoppingPriority==='familiar')return familiar||chain||price||a.name.localeCompare(b.name,'ru');
     if(shoppingPriority==='balanced')return chain||price||a.name.localeCompare(b.name,'ru');
     return chain||price||a.name.localeCompare(b.name,'ru');

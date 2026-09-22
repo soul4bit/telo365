@@ -98,7 +98,7 @@ export function openDatabase(path) {
       food_likes TEXT NOT NULL DEFAULT '[]',
       preferred_store_chains TEXT NOT NULL DEFAULT '[]',
       custom_stores TEXT NOT NULL DEFAULT '[]',
-      shopping_priority TEXT NOT NULL DEFAULT 'no_preference',
+      shopping_priority TEXT NOT NULL DEFAULT 'indifferent',
       updated TEXT NOT NULL
     );
     CREATE TABLE canonical_foods(

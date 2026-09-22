@@ -84,3 +84,4 @@
 @keyframes onboarding-orbit{to{transform:rotate(1turn)}}
 @media(max-width:600px){.onboarding-step-heading{min-height:36px;margin-top:8px}.onboarding-step-art{width:48px;height:34px}.onboarding-step-art svg,.onboarding-step-art *{animation:none!important}.onboarding-choices>button.selected{transform:none}}
 @media(prefers-reduced-motion:reduce){.onboarding-step-content,.onboarding-step-art svg,.onboarding-step-art *,.onboarding-choices>button,.onboarding-choices>button.selected svg,.onboarding-progress b,.onboarding-building-steps i{animation:none!important;transition:none!important;transform:none!important}}
+.onboarding-step-content>p{margin-bottom:23px;font-size:13px;line-height:1.75;color:#72866c}

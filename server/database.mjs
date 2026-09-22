@@ -9,7 +9,7 @@ export function openDatabase(path) {
   if (path !== ':memory:') chmodSync(path, 0o600);
   db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
   const version = db.prepare('PRAGMA user_version').get().user_version;
-  if (version > 10) throw new Error('Database is newer than this application');
+  if (version > 11) throw new Error('Database is newer than this application');
   if (version === 0) {
     db.exec(`BEGIN IMMEDIATE;
       CREATE TABLE users(id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, recovery TEXT NOT NULL,
@@ -70,6 +70,17 @@ export function openDatabase(path) {
     ALTER TABLE users ADD COLUMN target_low REAL;
     ALTER TABLE users ADD COLUMN target_high REAL;
     PRAGMA user_version=10; COMMIT;`);
+  if (version < 11) {
+    db.exec('BEGIN IMMEDIATE');
+    const add=db.prepare('INSERT OR IGNORE INTO catalog(id,kind,owner,data) VALUES(?,?,NULL,?)');
+    const programs=[
+      ['upper-body','Верх тела','Грудь, спина и руки в спокойном темпе.',35,[['press',3,10,0],['row',3,10,0],['plank',3,40,0]]],
+      ['lower-body','Низ тела','Ноги, ягодицы и кор для уверенного движения.',30,[['squat',4,12,0],['plank',3,45,0]]],
+      ['quick-start','Короткая тренировка','Быстрое занятие, когда нужно просто начать.',20,[['squat',2,12,0],['press',2,10,0],['plank',2,30,0]]],
+    ];
+    for(const [id,name,description,minutes,exercises] of programs)add.run(id,'program',JSON.stringify({name,description,minutes,exercises:exercises.map(([exerciseId,sets,reps,weight])=>({exerciseId,sets,reps,weight}))}));
+    db.exec('PRAGMA user_version=11; COMMIT;');
+  }
   return db;
 }
 

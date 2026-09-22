@@ -35,6 +35,7 @@ async function finishOnboarding(page:any){
   await lifestyleChoices.nth(1).getByRole('button',{name:'\u0037\u2013\u0038 \u0447',exact:true}).click()
   await lifestyleChoices.nth(2).getByRole('button',{name:'0',exact:true}).click()
   await lifestyleChoices.nth(3).getByRole('button',{name:'3',exact:true}).click()
+  await expect(next).toBeDisabled()
   await lifestyleChoices.nth(4).getByRole('button',{name:'30 \u043c\u0438\u043d',exact:true}).click()
   await expect(next).toBeEnabled()
   await next.click({force:true})

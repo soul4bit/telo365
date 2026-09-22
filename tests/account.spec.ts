@@ -56,6 +56,12 @@ test('guest landing, registration and personal journal work across devices',asyn
   await page.getByRole('checkbox').check()
   await expect(submit).toBeEnabled()
   await submit.click()
+  await expect(page.getByText('TELO365',{exact:true}).first()).toBeVisible()
+  await expect(page.getByRole('button',{name:'Назад',exact:true})).toHaveCount(0)
+  await page.getByRole('button',{name:'Дата рождения',exact:true}).click()
+  await expect(page.getByLabel('Дата рождения',{exact:true})).toHaveAttribute('type','date')
+  await expect(page.getByLabel('Возраст',{exact:true})).toHaveCount(0)
+  await page.getByRole('button',{name:'Возраст',exact:true}).click()
   await finishOnboarding(page)
   await expect(page.getByRole('heading',{name:'Мой день',exact:true})).toBeVisible()
   const navigate=async(name:string)=>{if(info.project.name==='mobile'){await page.getByRole('button',{name:'\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043c\u0435\u043d\u044e',exact:true}).click();await page.getByRole('navigation').getByRole('button',{name,exact:true}).click();await expect(page.getByRole('button',{name:'\u0417\u0430\u043a\u0440\u044b\u0442\u044c \u043c\u0435\u043d\u044e',exact:true})).toHaveCount(0)}else await page.getByRole('navigation').getByRole('button',{name,exact:true}).click()}

@@ -139,3 +139,11 @@
   .nutrition-layout{grid-template-columns:minmax(0,1fr)}
   .nutrition-layout>*{min-width:0}
 }
+
+@media(max-width:900px){
+  .nutrition-today{grid-template-columns:minmax(0,1fr)!important}
+  .nutrition-today-heading{align-items:flex-start}
+  .nutrition-status{flex-wrap:wrap;align-items:flex-start;gap:14px}
+  .nutrition-status>div+div{padding-left:14px}
+  .nutrition-macro-line{justify-content:flex-start}
+}

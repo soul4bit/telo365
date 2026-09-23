@@ -130,6 +130,8 @@ test('mobile keeps a static My Day hero',async({page},info)=>{
   await expect(nutritionHero).toHaveCSS('background-image',/nutrition-hero-poster/)
   await expect(page.locator('.nutrition-hero-video')).toHaveCount(0)
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy()
+  await page.setViewportSize({width:800,height:900})
+  await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
   expect(errors).toEqual([])
 })
 

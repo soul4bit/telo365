@@ -263,6 +263,44 @@ dialog{overflow-y:auto;overscroll-behavior:contain}
 @media(max-width:560px){.recovery-today-card{gap:10px;padding:14px!important}.recovery-today-card h2{font-size:20px}.recovery-guidance li{padding:7px 8px;font-size:9px;white-space:normal}.recovery-state{padding:14px;gap:14px}.recovery-state h3{font-size:16px}.personal-exercise{grid-template-columns:28px minmax(0,1fr);min-height:0}.personal-exercise-actions{grid-column:2;justify-content:flex-start}.other-programs-head{align-items:flex-start;gap:12px}.other-programs-head p{font-size:9px}.other-program-grid{grid-template-columns:1fr}.other-program-card{grid-template-columns:29px minmax(0,1fr);padding:10px}.other-programs-toggle{font-size:9px}.exercise-technique-placeholder{min-height:220px}.exercise-3d-viewer,.exercise-3d-canvas,.exercise-3d-skeleton,.exercise-3d-fallback{min-height:230px}.exercise-3d-controls>span{display:none}}
 @media(prefers-reduced-motion:reduce){.exercise-3d-skeleton{animation:none}}
 
+/* Training hero: the poster remains visible until the video enters the viewport. */
+.workout-hero{
+  position:relative;
+  isolation:isolate;
+  min-height:286px;
+  display:flex;
+  align-items:center;
+  overflow:hidden;
+  margin:0 0 20px;
+  border:1px solid #e0ebdc;
+  border-radius:18px;
+  padding:38px;
+  background:linear-gradient(120deg,rgba(239,246,234,.94),rgba(232,241,226,.5)),url('/images/workout.jpg') 76% center/cover;
+}
+.workout-hero-media{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.workout-hero-video{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:78% center;opacity:0;transition:opacity .42s ease-out}
+.workout-hero-video.is-ready.is-active{opacity:1}
+.workout-hero-media.is-crossfading .workout-hero-video{transition-duration:.95s}
+.workout-hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,rgba(247,249,243,.98) 0%,rgba(244,248,240,.93) 35%,rgba(239,245,235,.59) 57%,rgba(239,245,235,.08) 82%)}
+.workout-hero-content{position:relative;z-index:2;max-width:470px;animation:workout-hero-content-in .28s ease-out both}
+.workout-hero-content h2{margin:15px 0 12px;color:#263f2d;font-size:clamp(31px,3.25vw,45px);line-height:1.08;letter-spacing:-1.5px}
+.workout-hero-content p{max-width:410px;margin:0;color:#566d58;font-size:13px;line-height:1.75}
+.workout-hero-cta{margin-top:22px;text-decoration:none}
+@keyframes workout-hero-content-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:768px){
+  .workout-hero{min-height:320px;padding:30px 26px;align-items:flex-end;background-position:78% center}
+  .workout-hero-video{object-position:82% center}
+  .workout-hero::after{background:linear-gradient(90deg,rgba(247,249,243,.98) 0%,rgba(244,248,240,.94) 49%,rgba(239,245,235,.58) 72%,rgba(239,245,235,.14) 100%)}
+  .workout-hero-content{max-width:360px}
+}
+@media(max-width:640px){
+  .workout-hero{min-height:320px;border-radius:15px;padding:26px 22px;background:linear-gradient(145deg,rgba(239,246,234,.96),rgba(224,238,218,.72)),url('/images/workout.jpg') 72% center/cover}
+  .workout-hero-content h2{font-size:34px}
+  .workout-hero-content p{max-width:310px;font-size:12px}
+  .workout-hero-cta{min-height:44px;padding:12px 16px;font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){.workout-hero-content{animation:none}.workout-hero-video{transition:none}}
+
 
 /* Active workout: keep the personal day visible when a manual session is open. */
 .planned-day-external-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(235px,.76fr);gap:20px;align-items:center;padding:17px 18px!important;background:linear-gradient(120deg,#f7faf4,#fff)!important}

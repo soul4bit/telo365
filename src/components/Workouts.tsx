@@ -3,6 +3,7 @@ import { Activity, ArrowRight, CalendarDays, Check, ChevronLeft, ChevronRight, C
 import { type CatalogItem, type ExerciseLog, type ExerciseMedia, type Mutate, type State, type TrainingDay, type TrainingPlan, type Workout } from '../api'
 import { getExercise3DAsset } from '../exercise3d'
 import { Dialog, Empty, ErrorMessage, errorText, Title } from './ui'
+import WorkoutHero from './WorkoutHero'
 
 const Exercise3DViewer=lazy(()=>import('./Exercise3DViewer'))
 
@@ -43,11 +44,12 @@ export default function Workouts({data,mutate,busy}:{data:State;mutate:Mutate;bu
   const sessionProps=active?{workout:active,mutate,catalogExercises:exerciseById,onTechnique:setTechnique,outsidePlan:activeOutsidePlan,plannedDay:todayDay,onCompleted:(value:WorkoutCompletion)=>{setCompletion(value);setEditing(null)}}:null
   const todayTitle=active?(activeOutsidePlan?'Внеплановая тренировка':words.workout):isRecoveryDay?words.todayRecovery:words.workout
   return <>
+    <WorkoutHero/>
     <section className="workout-overview personal-workout-overview">
-      <TodayCard plan={plan} day={todayDay} active={active} finished={finished} outsidePlan={activeOutsidePlan} busy={busy||creating} onStart={startPersonal} onOpen={setEditing} onOpenRecovery={()=>document.getElementById('recovery-today')?.scrollIntoView({block:'start'})}/>
+      <TodayCard plan={plan} day={todayDay} active={active} finished={finished} outsidePlan={activeOutsidePlan} busy={busy||creating} onStart={startPersonal} onOpen={setEditing} onOpenRecovery={()=>document.getElementById('today-workout')?.scrollIntoView({block:'start'})}/>
       <WeekCard plan={plan} week={week} logs={data.workouts} selectedDate={data.date}/>
     </section>
-    <section id={isRecovery?'recovery-today':undefined} className={`card personal-workout-plan ${isRecovery?'is-recovery-plan':''}`}>
+    <section id="today-workout" className={`card personal-workout-plan ${isRecovery?'is-recovery-plan':''}`}>
       <Title>{todayTitle}</Title>
       <ErrorMessage error={error}/>
       {plan?.status==='needs_review'?<SafetyState message={plan.safety.message}/>:completion?<CompletedWorkout summary={completion} close={()=>setCompletion(null)}/>:sessionProps?<WorkoutSession {...sessionProps}/>:isRecovery&&todayDay?<RecoveryState day={todayDay} busy={busy||creating} onOpen={startPersonal}/>:todayDay?.exercises.length?<div className="personal-exercise-list">{todayDay.exercises.map((item,index)=>{const exercise=exerciseById.get(overrides[item.exerciseId]||item.exerciseId)||exerciseById.get(item.exerciseId);return <PlannedExercise key={item.exerciseId} item={item} exercise={exercise} index={index} onReplace={()=>cycleVariant(item)} onTechnique={setTechnique}/>})}</div>:<Empty>{words.noPlan}</Empty>}

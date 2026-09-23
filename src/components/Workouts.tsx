@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Activity, ArrowRight, CalendarDays, Check, ChevronLeft, ChevronRight, CircleHelp, Clock3, Dumbbell, Play, Repeat2, ShieldCheck, Video } from 'lucide-react'
 import { type CatalogItem, type ExerciseLog, type ExerciseMedia, type Mutate, type State, type TrainingDay, type TrainingPlan, type Workout } from '../api'
-import { getExercise3DAsset } from '../exercise3d'
+import { getAvailableTrainerAvatars, getExercise3DAsset, type TrainerAvatar } from '../exercise3d'
 import { Dialog, Empty, ErrorMessage, errorText, Title } from './ui'
 import WorkoutHero from './WorkoutHero'
 
@@ -13,6 +13,12 @@ const words={
   noPlan:'Персональный план появится после завершения стартовой анкеты.',otherDescription:'Дополнительные варианты для самостоятельного занятия.',showAll:'Показать все программы',hideAll:'Скрыть программы',noPrograms:'Подходящих дополнительных программ сейчас нет.',techniquePlaceholder:'Видео техники появится здесь.'
 }
 const noMedia:ExerciseMedia={shortVideoUrl:null,posterUrl:null,duration:null,angle:null,trainerName:null}
+const trainerAvatarStorageKey='telo365.technique-trainer-avatar'
+const initialTrainerAvatar=():TrainerAvatar=>{
+  if(typeof window==='undefined')return 'female'
+  const saved=window.localStorage.getItem(trainerAvatarStorageKey)
+  return saved==='male'||saved==='female'?saved:'female'
+}
 const dayName=(date:string)=>new Intl.DateTimeFormat('ru-RU',{weekday:'short',timeZone:'UTC'}).format(new Date(`${date}T12:00:00Z`)).replace('.','')
 const intensityLabel=(value:string)=>({light:'лёгкая',moderate:'умеренная',hard:'высокая'}[value]||value)
 const equipmentLabel=(items:string[])=>(items||[]).map(item=>({dumbbells:'гантели',adjustable_dumbbells:'разборные гантели',bands:'резинки',bench:'скамья',pullup_bar:'турник'}[item]||item)).join(' · ')
@@ -27,6 +33,8 @@ const defaultTechniqueTips=['Двигайся плавно и подконтро
 
 export default function Workouts({data,mutate,busy,onGoHome}:{data:State;mutate:Mutate;busy:boolean;onGoHome?:()=>void}){
   const [editing,setEditing]=useState<Workout|null>(null),[error,setError]=useState(''),[creating,setCreating]=useState(false),[overrides,setOverrides]=useState<Record<string,string>>({}),[technique,setTechnique]=useState<TechniqueItem|null>(null),[showAllPrograms,setShowAllPrograms]=useState(false),[completion,setCompletion]=useState<WorkoutCompletion|null>(null)
+  const [trainerAvatar,setTrainerAvatar]=useState<TrainerAvatar>(initialTrainerAvatar)
+  useEffect(()=>{try{window.localStorage.setItem(trainerAvatarStorageKey,trainerAvatar)}catch{/* Storage is optional for the technique viewer. */}},[trainerAvatar])
   const plan=data.trainingPlan as TrainingPlan|undefined|null
   const week=plan?.currentWeek
   const todayDay=week?.days.find(day=>day.date===data.date)
@@ -62,7 +70,7 @@ export default function Workouts({data,mutate,busy,onGoHome}:{data:State;mutate:
       {visiblePrograms.length?<div className="other-program-grid">{visiblePrograms.map(program=><article className="other-program-card" key={program.id}><span className="other-program-icon"><Activity size={17}/></span><div><h3>{program.name}</h3><small><Clock3 size={13}/>{program.minutes} {'мин'}</small><p>{program.description}</p></div><button className="text-button other-program-open" disabled={busy||creating} onClick={()=>startGeneric(program)}>{'Открыть'} <ArrowRight size={14}/></button></article>)}</div>:<p className="form-note">{words.noPrograms}</p>}
     </section>}
     {editing&&<Dialog title={editing.data.name} close={()=>setEditing(null)}><WorkoutSession workout={editing} mutate={mutate} catalogExercises={exerciseById} onTechnique={setTechnique} outsidePlan={!!todayDay&&!(editing.data.planId===plan?.id&&editing.data.trainingDayId===todayDay.id)} onCompleted={value=>{setCompletion(value);setEditing(null)}}/></Dialog>}
-    {technique&&<TechniqueDialog item={technique} close={()=>setTechnique(null)}/>}
+    {technique&&<TechniqueDialog item={technique} trainerAvatar={trainerAvatar} setTrainerAvatar={setTrainerAvatar} close={()=>setTechnique(null)}/>}
   </>
 }
 
@@ -87,7 +95,19 @@ function SessionLog({workout,onOpen}:{workout:Workout;onOpen:()=>void}){
   </article>
 }
 function SafetyState({message}:{message:string}){return <div className="workout-safety-state"><ShieldCheck size={22}/><div><strong>Сперва ориентируйся на ограничения специалиста</strong><p>{message}</p></div></div>}
-function TechniqueDialog({item,close}:{item:{exerciseId:string;name:string;media:ExerciseMedia};close:()=>void}){const [reduced,setReduced]=useState(()=>typeof window!=='undefined'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);useEffect(()=>{const query=window.matchMedia('(prefers-reduced-motion: reduce)'),update=()=>setReduced(query.matches);query.addEventListener('change',update);return()=>query.removeEventListener('change',update)},[]);const asset=getExercise3DAsset(item.exerciseId),showVideo=!reduced&&!!item.media.shortVideoUrl,tips=item.exerciseId==='squat'?squatTechniqueTips:defaultTechniqueTips;return <Dialog className="technique-dialog" title={`${words.technique}: ${item.name}`} close={close}><div className="technique-dialog-layout"><div className="exercise-technique-video" data-exercise-id={item.exerciseId}>{asset?.ready?<Suspense fallback={<div className="exercise-3d-skeleton" aria-label="Загружаем 3D-технику"/>}><Exercise3DViewer {...asset}/></Suspense>:showVideo?<video autoPlay muted playsInline loop controls={false} preload="metadata" poster={item.media.posterUrl||undefined}><source src={item.media.shortVideoUrl||undefined} type="video/mp4"/></video>:item.media.posterUrl?<img src={item.media.posterUrl} alt=""/>:<div className="exercise-technique-placeholder"><Video size={28}/><strong>Демонстрация техники скоро будет доступна</strong><p>Пока ориентируйся на ключевые моменты упражнения.</p></div>}</div><aside className="technique-guidance"><span className="eyebrow">КЛЮЧЕВЫЕ МОМЕНТЫ</span><h3>{item.name}</h3><ul>{tips.map(tip=><li key={tip}>{tip}</li>)}</ul><p>Работай в комфортной амплитуде. При боли или выраженном дискомфорте остановись.</p></aside></div></Dialog>}
+function TechniqueDialog({item,trainerAvatar,setTrainerAvatar,close}:{item:{exerciseId:string;name:string;media:ExerciseMedia};trainerAvatar:TrainerAvatar;setTrainerAvatar:(avatar:TrainerAvatar)=>void;close:()=>void}){
+  const [reduced,setReduced]=useState(()=>typeof window!=='undefined'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+  useEffect(()=>{const query=window.matchMedia('(prefers-reduced-motion: reduce)'),update=()=>setReduced(query.matches);query.addEventListener('change',update);return()=>query.removeEventListener('change',update)},[])
+  const asset=getExercise3DAsset(item.exerciseId,trainerAvatar)
+  const avatars=getAvailableTrainerAvatars(asset?.animationClip)
+  const canSelectTrainer=!!asset?.ready&&avatars.length===2
+  const showVideo=!reduced&&!!item.media.shortVideoUrl
+  const tips=item.exerciseId==='squat'?squatTechniqueTips:defaultTechniqueTips
+  return <Dialog className="technique-dialog" title={`${words.technique}: ${item.name}`} close={close}>
+    {canSelectTrainer&&<div className="trainer-avatar-switch"><span>Тренер</span><div role="group" aria-label="Выбор 3D-тренера">{avatars.map(avatar=><button key={avatar.id} type="button" aria-pressed={trainerAvatar===avatar.id} className={trainerAvatar===avatar.id?'is-active':''} onClick={()=>setTrainerAvatar(avatar.id)}>{avatar.label}</button>)}</div></div>}
+    <div className="technique-dialog-layout"><div className="exercise-technique-video" data-exercise-id={item.exerciseId}>{asset?.ready?<Suspense fallback={<div className="exercise-3d-skeleton" aria-label="Загружаем 3D-технику"/>}><Exercise3DViewer key={`${asset.modelUrl}:${asset.animationUrl}:${asset.animationClip}`} {...asset}/></Suspense>:showVideo?<video autoPlay muted playsInline loop controls={false} preload="metadata" poster={item.media.posterUrl||undefined}><source src={item.media.shortVideoUrl||undefined} type="video/mp4"/></video>:item.media.posterUrl?<img src={item.media.posterUrl} alt=""/>:<div className="exercise-technique-placeholder"><Video size={28}/><strong>Демонстрация техники скоро будет доступна</strong><p>Пока ориентируйся на ключевые моменты упражнения.</p></div>}</div><aside className="technique-guidance"><span className="eyebrow">КЛЮЧЕВЫЕ МОМЕНТЫ</span><h3>{item.name}</h3><ul>{tips.map(tip=><li key={tip}>{tip}</li>)}</ul><p>Работай в комфортной амплитуде. При боли или выраженном дискомфорте остановись.</p></aside></div>
+  </Dialog>
+}
 
 function WorkoutSession({workout,mutate,catalogExercises,onTechnique,outsidePlan,onCompleted}:{workout:Workout;mutate:Mutate;catalogExercises:Map<string,CatalogItem>;onTechnique:(value:TechniqueItem)=>void;outsidePlan:boolean;onCompleted:(value:WorkoutCompletion)=>void}){
   const [exercises,setExercises]=useState<ExerciseLog[]>(structuredClone(workout.data.exercises)),[activeIndex,setActiveIndex]=useState(0),[saving,setSaving]=useState(false),[error,setError]=useState(''),[feedbackOpen,setFeedbackOpen]=useState(false),[feedback,setFeedback]=useState<'easy'|'normal'|'hard'|null>(null),[painOrDiscomfort,setPainOrDiscomfort]=useState<boolean|null>(null),[restRemaining,setRestRemaining]=useState<number|null>(null),[restNextSet,setRestNextSet]=useState<number|null>(null),[replacementOpen,setReplacementOpen]=useState(false),[rpeHelpOpen,setRpeHelpOpen]=useState(false),[confirmNext,setConfirmNext]=useState(false)

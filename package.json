@@ -13,7 +13,8 @@
     "backup": "node server/admin.mjs backup",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "verify:trainer-assets": "node scripts/verify-trainer-assets.mjs"
   },
   "dependencies": {
     "@react-three/fiber": "^9.8.0",

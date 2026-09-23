@@ -16,10 +16,23 @@ export type Exercise3DViewerProps={
   playbackMode?:ExercisePlaybackMode
   posterUrl?:string|null
   available?:boolean
+  /** Real trainer assets must contain a real skinned mesh before playback. */
+  requireSkinnedMesh?:boolean
 }
 
 const cameraPositions:Record<ExerciseCameraPreset,[number,number,number]>={
   front:[0,1.35,3.35],threeQuarter:[2.45,1.45,2.7],side:[3.35,1.3,0],low:[2.7,.9,3]
+}
+
+function assertAnimationCompatibility(scene:THREE.Object3D,clip:THREE.AnimationClip,requireSkinnedMesh:boolean){
+  const names=new Set<string>()
+  let hasSkinnedMesh=false
+  scene.traverse(node=>{if(node.name)names.add(node.name);if((node as THREE.SkinnedMesh).isSkinnedMesh)hasSkinnedMesh=true})
+  if(requireSkinnedMesh&&!hasSkinnedMesh)throw new Error('The selected trainer does not contain a SkinnedMesh')
+  const missing=[...new Set(clip.tracks.flatMap(track=>{
+    try{return [THREE.PropertyBinding.parseTrackName(track.name).nodeName]}catch{return []}
+  }).filter((name):name is string=>!!name&&!names.has(name)))]
+  if(missing.length)throw new Error(`Animation targets are missing from the trainer rig: ${missing.join(', ')}`)
 }
 
 function useReducedMotion(){
@@ -47,7 +60,7 @@ function CameraControls({resetKey}:{resetKey:number}){
   return null
 }
 
-function Humanoid({modelUrl,animationUrl,animationClip,playing,speed,resetKey,onReady}:{modelUrl:string;animationUrl:string;animationClip:string;playing:boolean;speed:number;resetKey:number;onReady:()=>void}){
+function Humanoid({modelUrl,animationUrl,animationClip,playing,speed,resetKey,onReady,requireSkinnedMesh=false}:{modelUrl:string;animationUrl:string;animationClip:string;playing:boolean;speed:number;resetKey:number;onReady:()=>void;requireSkinnedMesh?:boolean}){
   // useLoader caches by URL: the base trainer and an already opened clip are reused.
   const base=useLoader(GLTFLoader,modelUrl)
   const animationGltf=useLoader(GLTFLoader,animationUrl)
@@ -55,39 +68,42 @@ function Humanoid({modelUrl,animationUrl,animationClip,playing,speed,resetKey,on
   const mixer=useMemo(()=>new THREE.AnimationMixer(scene),[scene])
   const clip=useMemo(()=>animationGltf.animations.find(item=>item.name===animationClip)||animationGltf.animations[0],[animationClip,animationGltf.animations])
   if(!clip)throw new Error(`Animation clip "${animationClip}" is missing in ${animationUrl}`)
-  const action=useMemo(()=>mixer.clipAction(clip),[clip,mixer])
+  const compatibleClip=useMemo(()=>{assertAnimationCompatibility(scene,clip,requireSkinnedMesh);return clip},[clip,requireSkinnedMesh,scene])
+  const action=useMemo(()=>mixer.clipAction(compatibleClip),[compatibleClip,mixer])
 
   useEffect(()=>{onReady()},[onReady])
   useEffect(()=>{
     action.reset().setLoop(THREE.LoopRepeat,Infinity).play()
-    return()=>{action.stop();mixer.uncacheAction(clip)}
-  },[action,clip,mixer])
+    return()=>{action.stop();mixer.stopAllAction();mixer.uncacheAction(compatibleClip,scene);mixer.uncacheRoot(scene)}
+  },[action,compatibleClip,mixer,scene])
   useEffect(()=>{action.timeScale=speed;action.paused=!playing},[action,playing,speed])
   useEffect(()=>{action.reset().play();action.paused=!playing},[action,playing,resetKey])
   useFrame((_state,delta)=>{if(playing)mixer.update(delta)})
   return <group position={[0,-1.05,0]}><primitive object={scene}/></group>
 }
 
-function ThreeScene({modelUrl,animationUrl,animationClip,cameraPreset,playing,speed,resetKey,onReady}:{modelUrl:string;animationUrl:string;animationClip:string;cameraPreset:ExerciseCameraPreset;playing:boolean;speed:number;resetKey:number;onReady:()=>void}){
+function ThreeScene({modelUrl,animationUrl,animationClip,cameraPreset,playing,speed,resetKey,onReady,requireSkinnedMesh=false}:{modelUrl:string;animationUrl:string;animationClip:string;cameraPreset:ExerciseCameraPreset;playing:boolean;speed:number;resetKey:number;onReady:()=>void;requireSkinnedMesh?:boolean}){
   return <Canvas className="exercise-3d-canvas" dpr={[1,1.5]} frameloop={playing?'always':'demand'} camera={{position:cameraPositions[cameraPreset],fov:34}} gl={{alpha:true,antialias:true,powerPreference:'low-power'}}>
     <ambientLight intensity={1.25}/><directionalLight position={[3,5,4]} intensity={1.65}/><directionalLight position={[-3,2,1]} intensity={.45}/>
-    <Suspense fallback={null}><Humanoid modelUrl={modelUrl} animationUrl={animationUrl} animationClip={animationClip} playing={playing} speed={speed} resetKey={resetKey} onReady={onReady}/></Suspense>
+    <Suspense fallback={null}><Humanoid key={`${modelUrl}:${animationUrl}:${animationClip}`} modelUrl={modelUrl} animationUrl={animationUrl} animationClip={animationClip} playing={playing} speed={speed} resetKey={resetKey} onReady={onReady} requireSkinnedMesh={requireSkinnedMesh}/></Suspense>
     <mesh rotation={[-Math.PI/2,0,0]} position={[0,-1.06,0]} receiveShadow><circleGeometry args={[2.1,48]}/><meshBasicMaterial color="#eff5eb" transparent opacity={.82}/></mesh>
     <CameraControls resetKey={resetKey}/>
   </Canvas>
 }
 
-export default function Exercise3DViewer({modelUrl,animationUrl,animationClip,cameraPreset,playbackSpeed,playbackMode='loop',posterUrl,available=true}:Exercise3DViewerProps){
+export default function Exercise3DViewer({modelUrl,animationUrl,animationClip,cameraPreset,playbackSpeed,playbackMode='loop',posterUrl,available=true,requireSkinnedMesh=false}:Exercise3DViewerProps){
   const reducedMotion=useReducedMotion(),[playing,setPlaying]=useState(true),[speed,setSpeed]=useState(playbackSpeed),[ready,setReady]=useState(false),[failed,setFailed]=useState(false),[resetKey,setResetKey]=useState(0)
+  const assetKey=`${modelUrl}:${animationUrl}:${animationClip}:${requireSkinnedMesh}`
   const markReady=useCallback(()=>setReady(true),[])
   const reportError=useCallback((error:Error)=>{console.info(`[Exercise3DViewer] 3D asset is not available for ${animationClip} (${modelUrl}, ${animationUrl}): ${error.message}`);setFailed(true)},[animationClip,animationUrl,modelUrl])
   useEffect(()=>setSpeed(playbackSpeed),[playbackSpeed])
+  useEffect(()=>{setReady(false);setFailed(false);setPlaying(true);setResetKey(value=>value+1)},[assetKey])
   if(reducedMotion)return <ViewerFallback posterUrl={posterUrl} label="Статичная техника" description="Анимация отключена в настройках уменьшения движения."/>
   if(!available)return <ViewerFallback posterUrl={posterUrl} label="Демонстрация техники готовится" description="Скоро здесь появится интерактивный показ упражнения."/>
   if(failed)return <ViewerFallback posterUrl={posterUrl} label="Демонстрация техники скоро будет доступна" description="Пока можно ориентироваться на ключевые моменты упражнения справа."/>
   return <section className="exercise-3d-viewer" aria-label="3D-демонстрация техники" data-playback-mode={playbackMode}>
     {!ready&&<div className="exercise-3d-skeleton" aria-hidden="true"/>}
-    <ViewerErrorBoundary onError={reportError}><ThreeScene modelUrl={modelUrl} animationUrl={animationUrl} animationClip={animationClip} cameraPreset={cameraPreset} playing={playing} speed={speed} resetKey={resetKey} onReady={markReady}/></ViewerErrorBoundary>
+    <ViewerErrorBoundary key={assetKey} onError={reportError}><ThreeScene modelUrl={modelUrl} animationUrl={animationUrl} animationClip={animationClip} cameraPreset={cameraPreset} playing={playing} speed={speed} resetKey={resetKey} onReady={markReady} requireSkinnedMesh={requireSkinnedMesh}/></ViewerErrorBoundary>
     <div className="exercise-3d-controls"><button className="icon-button" type="button" aria-label={playing?'Пауза анимации':'Запустить анимацию'} onClick={()=>setPlaying(value=>!value)}>{playing?<Pause size={15}/>:<Play size={15}/>}</button><button className="icon-button" type="button" aria-label="Вернуть начало анимации и ракурс" onClick={()=>setResetKey(value=>value+1)}><RotateCcw size={14}/></button><div role="group" aria-label="Скорость анимации"><button className={speed===.5?'is-active':''} type="button" onClick={()=>setSpeed(.5)}>0.5×</button><button className={speed===1?'is-active':''} type="button" onClick={()=>setSpeed(1)}>1×</button></div><span><Rotate3D size={14}/>Поверни модель</span></div>
   </section>
 }

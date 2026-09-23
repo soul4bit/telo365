@@ -40,6 +40,10 @@ function reportRig(id,rig){
 }
 
 function compareRigs(left,right){
+  if(!left.bones.length||!right.bones.length){
+    console.log('male/female rig comparison skipped: one or both models have no skinned bones')
+    return
+  }
   const leftBones=new Map(left.bones.map(bone=>[bone.name,bone]))
   const rightBones=new Map(right.bones.map(bone=>[bone.name,bone]))
   const missingFromFemale=[...leftBones.keys()].filter(name=>!rightBones.has(name))

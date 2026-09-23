@@ -9,13 +9,14 @@ import type { ExerciseCameraPreset, ExercisePlaybackMode } from '../exercise3d'
 
 export type Exercise3DViewerProps={
   modelUrl:string
-  animationUrl:string
-  animationClip:string
+  animationUrl?:string
+  animationClip?:string
   cameraPreset:ExerciseCameraPreset
   playbackSpeed:number
   playbackMode?:ExercisePlaybackMode
   posterUrl?:string|null
   available?:boolean
+  mode?:'animation'|'preview'
   /** Real trainer assets must contain a real skinned mesh before playback. */
   requireSkinnedMesh?:boolean
 }
@@ -82,28 +83,36 @@ function Humanoid({modelUrl,animationUrl,animationClip,playing,speed,resetKey,on
   return <group position={[0,-1.05,0]}><primitive object={scene}/></group>
 }
 
-function ThreeScene({modelUrl,animationUrl,animationClip,cameraPreset,playing,speed,resetKey,onReady,requireSkinnedMesh=false}:{modelUrl:string;animationUrl:string;animationClip:string;cameraPreset:ExerciseCameraPreset;playing:boolean;speed:number;resetKey:number;onReady:()=>void;requireSkinnedMesh?:boolean}){
+function StaticTrainer({modelUrl,onReady}:{modelUrl:string;onReady:()=>void}){
+  const base=useLoader(GLTFLoader,modelUrl)
+  const scene=useMemo(()=>cloneSkeleton(base.scene),[base.scene])
+  useEffect(()=>{onReady()},[onReady])
+  return <group position={[0,-1.05,0]}><primitive object={scene}/></group>
+}
+
+function ThreeScene({modelUrl,animationUrl,animationClip,cameraPreset,playing,speed,resetKey,onReady,requireSkinnedMesh=false,mode='animation'}:{modelUrl:string;animationUrl?:string;animationClip?:string;cameraPreset:ExerciseCameraPreset;playing:boolean;speed:number;resetKey:number;onReady:()=>void;requireSkinnedMesh?:boolean;mode?:'animation'|'preview'}){
+  if(mode==='animation'&&(!animationUrl||!animationClip))throw new Error('Animation mode requires animationUrl and animationClip')
   return <Canvas className="exercise-3d-canvas" dpr={[1,1.5]} frameloop={playing?'always':'demand'} camera={{position:cameraPositions[cameraPreset],fov:34}} gl={{alpha:true,antialias:true,powerPreference:'low-power'}}>
     <ambientLight intensity={1.25}/><directionalLight position={[3,5,4]} intensity={1.65}/><directionalLight position={[-3,2,1]} intensity={.45}/>
-    <Suspense fallback={null}><Humanoid key={`${modelUrl}:${animationUrl}:${animationClip}`} modelUrl={modelUrl} animationUrl={animationUrl} animationClip={animationClip} playing={playing} speed={speed} resetKey={resetKey} onReady={onReady} requireSkinnedMesh={requireSkinnedMesh}/></Suspense>
+    <Suspense fallback={null}>{mode==='preview'?<StaticTrainer key={modelUrl} modelUrl={modelUrl} onReady={onReady}/>:<Humanoid key={`${modelUrl}:${animationUrl}:${animationClip}`} modelUrl={modelUrl} animationUrl={animationUrl!} animationClip={animationClip!} playing={playing} speed={speed} resetKey={resetKey} onReady={onReady} requireSkinnedMesh={requireSkinnedMesh}/>}</Suspense>
     <mesh rotation={[-Math.PI/2,0,0]} position={[0,-1.06,0]} receiveShadow><circleGeometry args={[2.1,48]}/><meshBasicMaterial color="#eff5eb" transparent opacity={.82}/></mesh>
     <CameraControls resetKey={resetKey}/>
   </Canvas>
 }
 
-export default function Exercise3DViewer({modelUrl,animationUrl,animationClip,cameraPreset,playbackSpeed,playbackMode='loop',posterUrl,available=true,requireSkinnedMesh=false}:Exercise3DViewerProps){
+export default function Exercise3DViewer({modelUrl,animationUrl,animationClip,cameraPreset,playbackSpeed,playbackMode='loop',posterUrl,available=true,requireSkinnedMesh=false,mode='animation'}:Exercise3DViewerProps){
   const reducedMotion=useReducedMotion(),[playing,setPlaying]=useState(true),[speed,setSpeed]=useState(playbackSpeed),[ready,setReady]=useState(false),[failed,setFailed]=useState(false),[resetKey,setResetKey]=useState(0)
-  const assetKey=`${modelUrl}:${animationUrl}:${animationClip}:${requireSkinnedMesh}`
+  const assetKey=`${mode}:${modelUrl}:${animationUrl||''}:${animationClip||''}:${requireSkinnedMesh}`
   const markReady=useCallback(()=>setReady(true),[])
-  const reportError=useCallback((error:Error)=>{console.info(`[Exercise3DViewer] 3D asset is not available for ${animationClip} (${modelUrl}, ${animationUrl}): ${error.message}`);setFailed(true)},[animationClip,animationUrl,modelUrl])
+  const reportError=useCallback((error:Error)=>{console.info(`[Exercise3DViewer] 3D asset is not available for ${animationClip||'static preview'} (${modelUrl}, ${animationUrl||'none'}): ${error.message}`);setFailed(true)},[animationClip,animationUrl,modelUrl])
   useEffect(()=>setSpeed(playbackSpeed),[playbackSpeed])
   useEffect(()=>{setReady(false);setFailed(false);setPlaying(true);setResetKey(value=>value+1)},[assetKey])
-  if(reducedMotion)return <ViewerFallback posterUrl={posterUrl} label="Статичная техника" description="Анимация отключена в настройках уменьшения движения."/>
+  if(reducedMotion&&mode==='animation')return <ViewerFallback posterUrl={posterUrl} label="Статичная техника" description="Анимация отключена в настройках уменьшения движения."/>
   if(!available)return <ViewerFallback posterUrl={posterUrl} label="Демонстрация техники готовится" description="Скоро здесь появится интерактивный показ упражнения."/>
   if(failed)return <ViewerFallback posterUrl={posterUrl} label="Демонстрация техники скоро будет доступна" description="Пока можно ориентироваться на ключевые моменты упражнения справа."/>
-  return <section className="exercise-3d-viewer" aria-label="3D-демонстрация техники" data-playback-mode={playbackMode}>
+  return <section className="exercise-3d-viewer" aria-label={mode==='preview'?'3D-предпросмотр модели':'3D-демонстрация техники'} data-playback-mode={playbackMode}>
     {!ready&&<div className="exercise-3d-skeleton" aria-hidden="true"/>}
-    <ViewerErrorBoundary key={assetKey} onError={reportError}><ThreeScene modelUrl={modelUrl} animationUrl={animationUrl} animationClip={animationClip} cameraPreset={cameraPreset} playing={playing} speed={speed} resetKey={resetKey} onReady={markReady} requireSkinnedMesh={requireSkinnedMesh}/></ViewerErrorBoundary>
-    <div className="exercise-3d-controls"><button className="icon-button" type="button" aria-label={playing?'Пауза анимации':'Запустить анимацию'} onClick={()=>setPlaying(value=>!value)}>{playing?<Pause size={15}/>:<Play size={15}/>}</button><button className="icon-button" type="button" aria-label="Вернуть начало анимации и ракурс" onClick={()=>setResetKey(value=>value+1)}><RotateCcw size={14}/></button><div role="group" aria-label="Скорость анимации"><button className={speed===.5?'is-active':''} type="button" onClick={()=>setSpeed(.5)}>0.5×</button><button className={speed===1?'is-active':''} type="button" onClick={()=>setSpeed(1)}>1×</button></div><span><Rotate3D size={14}/>Поверни модель</span></div>
+    <ViewerErrorBoundary key={assetKey} onError={reportError}><ThreeScene modelUrl={modelUrl} animationUrl={animationUrl} animationClip={animationClip} cameraPreset={cameraPreset} playing={mode==='preview'?false:playing} speed={speed} resetKey={resetKey} onReady={markReady} requireSkinnedMesh={requireSkinnedMesh} mode={mode}/></ViewerErrorBoundary>
+    <div className="exercise-3d-controls">{mode==='animation'&&<><button className="icon-button" type="button" aria-label={playing?'Пауза анимации':'Запустить анимацию'} onClick={()=>setPlaying(value=>!value)}>{playing?<Pause size={15}/>:<Play size={15}/>}</button><button className="icon-button" type="button" aria-label="Вернуть начало анимации и ракурс" onClick={()=>setResetKey(value=>value+1)}><RotateCcw size={14}/></button><div role="group" aria-label="Скорость анимации"><button className={speed===.5?'is-active':''} type="button" onClick={()=>setSpeed(.5)}>0.5×</button><button className={speed===1?'is-active':''} type="button" onClick={()=>setSpeed(1)}>1×</button></div></>}<span><Rotate3D size={14}/>Поверни модель</span></div>
   </section>
 }

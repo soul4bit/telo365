@@ -11,7 +11,7 @@ import { marketing } from './marketing.mjs';
 import { createStoreCatalog } from './stores/catalog.mjs';
 import { fail, readJson, rateLimit } from './security.mjs';
 
-const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.jpg':'image/jpeg','.png':'image/png','.webp':'image/webp','.mp4':'video/mp4','.ttf':'font/ttf','.txt':'text/plain; charset=utf-8'};
+const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.jpg':'image/jpeg','.png':'image/png','.webp':'image/webp','.mp4':'video/mp4','.glb':'model/gltf-binary','.ttf':'font/ttf','.txt':'text/plain; charset=utf-8'};
 export function createApplication(options={}) {
   const production=options.production??process.env.NODE_ENV==='production';
   const origins=(options.origins||process.env.TELO_ORIGINS||'http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:4173').split(',');

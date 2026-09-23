@@ -32,6 +32,13 @@ export type TrainerAvatarOption = {
   verifiedClips:readonly string[]
 }
 
+export type TrainerPreviewAsset = {
+  id:TrainerAvatar
+  label:string
+  modelUrl:string
+  cameraPreset:ExerciseCameraPreset
+}
+
 const legacyTrainerModel='/media/exercises/models/telo-trainer.glb'
 const placeholderPoster='/media/exercises/poster-placeholder.svg'
 
@@ -41,6 +48,14 @@ export const trainerAvatarOptions:Record<TrainerAvatar,TrainerAvatarOption>={
   male:{id:'male',label:'Мужчина',modelUrl:'/media/exercises/models/telo-trainer-male.glb',animationBasePath:'/media/exercises/animations/male',rigId:'telo-humanoid-v1',verified:false,verifiedClips:[]},
   female:{id:'female',label:'Женщина',modelUrl:'/media/exercises/models/telo-trainer-female.glb',animationBasePath:'/media/exercises/animations/female',rigId:'telo-humanoid-v1',verified:false,verifiedClips:[]}
 }
+
+// These are real base-mesh exports for visual review only. They have no skin,
+// no materials and no exercise animations, so they must never unlock technique.
+export const trainerPreviewAssets:Record<TrainerAvatar,TrainerPreviewAsset>={
+  male:{id:'male',label:'Мужчина',modelUrl:'/media/exercises/models/telo-trainer-male.glb',cameraPreset:'threeQuarter'},
+  female:{id:'female',label:'Женщина',modelUrl:'/media/exercises/models/telo-trainer-female.glb',cameraPreset:'threeQuarter'}
+}
+export const getTrainerPreviewAsset=(avatar:TrainerAvatar)=>trainerPreviewAssets[avatar]
 
 // A selector is useful only when both real models and the current exercise's
 // specifically validated clips are present. This prevents unverified retargeting.

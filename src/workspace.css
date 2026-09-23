@@ -377,3 +377,10 @@ dialog{overflow-y:auto;overscroll-behavior:contain}
 .workout-next-confirm .soft-button{margin:0;padding:7px 9px;font-size:10px}
 @media(max-width:700px){.outside-plan-status{align-items:flex-start;flex-direction:column}.outside-plan-status .soft-button{align-self:flex-start}.workout-live-progress{justify-items:start;text-align:left}.workout-live-top{align-items:flex-start;flex-direction:column}.workout-next-confirm{align-items:flex-start;flex-direction:column}.workout-next-confirm>div{width:100%;justify-content:space-between}}
 @media(max-width:520px){.workout-set-head,.workout-live-set{grid-template-columns:.85fr .8fr 1.25fr 32px}.personal-week-title b{font-size:7px}.workout-live-progress span{font-size:8px}}
+
+/* The rest interval is actionable during a session, so it gets a clearer rhythm. */
+.workout-rest{display:grid;grid-template-columns:auto minmax(110px,1fr) auto;align-items:center;gap:14px;padding:12px 14px}
+.workout-rest strong{font-size:21px;line-height:1;font-variant-numeric:tabular-nums}
+.workout-rest-progress{height:5px;overflow:hidden;border-radius:999px;background:#dbead6}
+.workout-rest-progress b{display:block;height:100%;border-radius:inherit;background:#5a9651;transition:width .45s linear}
+@media(max-width:520px){.workout-rest{grid-template-columns:1fr auto;gap:9px;padding:12px}.workout-rest-progress{grid-column:1/-1;width:100%}.workout-rest strong{font-size:19px}}

@@ -112,9 +112,23 @@ test('registration keeps invalid input local to its field',async({page})=>{
 })
 
 
+test('mobile keeps a static My Day hero',async({page},info)=>{
+  test.skip(info.project.name!=='mobile','Mobile-only assertion')
+  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>{if(message.type()==='error')errors.push(message.text())})
+  await page.goto('/register')
+  await page.getByLabel('\u0418\u043c\u044f').fill('\u0422\u0435\u0441\u0442')
+  await page.getByLabel('Email',{exact:true}).fill(`hero-mobile-${Date.now()}@example.test`)
+  await page.getByLabel('\u041f\u0430\u0440\u043e\u043b\u044c',{exact:true}).fill('Mobile hero test password 2026!')
+  await page.getByRole('checkbox').check()
+  await page.getByRole('button',{name:'\u0421\u043e\u0437\u0434\u0430\u0442\u044c \u0430\u043a\u043a\u0430\u0443\u043d\u0442',exact:true}).click()
+  await finishOnboarding(page)
+  await expect(page.locator('.workspace-hero-video')).toHaveCount(0)
+  expect(errors).toEqual([])
+})
+
 test('guest landing, registration and personal journal work across devices',async({page,browser},info)=>{
   const email=`browser-${info.project.name}-${Date.now()}@example.test`,password='Тестовая парольная фраза 2026!'
-  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message))
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',message=>{if(message.type()==='error')errors.push(message.text())})
   await page.goto('/')
   await expect(page.getByRole('heading',{name:'Твоё тело. Каждый день.'})).toBeVisible()
   await page.getByRole('link',{name:'\u041d\u0430\u0447\u0430\u0442\u044c \u0441\u0435\u0433\u043e\u0434\u043d\u044f'}).click()
@@ -136,13 +150,22 @@ test('guest landing, registration and personal journal work across devices',asyn
   await expect(page.getByLabel('Возраст',{exact:true})).toHaveCount(0)
   await page.getByRole('button',{name:'Возраст',exact:true}).click()
   await finishOnboarding(page)
-  const heroVideo=page.locator('.workspace-hero-video')
-  await expect(heroVideo).toHaveAttribute('poster','/images/hero.png')
-  await expect(heroVideo.locator('source')).toHaveAttribute('src','/video/hero-telo365.web.mp4')
-  await expect(heroVideo).toHaveJSProperty('autoplay',true)
-  await expect(heroVideo).toHaveJSProperty('muted',true)
-  await expect(heroVideo).toHaveJSProperty('loop',true)
-  await expect(heroVideo).toHaveJSProperty('playsInline',true)
+  const heroVideo=page.locator('.workspace-hero-video--primary')
+  if(info.project.name==='mobile')await expect(heroVideo).toHaveCount(0)
+  else{
+    await expect(heroVideo).toHaveAttribute('poster','/images/hero.png')
+    await expect(heroVideo.locator('source')).toHaveAttribute('src','/video/hero-telo365.web.mp4')
+    await expect(heroVideo).toHaveJSProperty('autoplay',true)
+    await expect(heroVideo).toHaveJSProperty('muted',true)
+    await expect(heroVideo).toHaveJSProperty('playsInline',true)
+    const walkVideo=page.locator('.workspace-hero-video--walk')
+    await expect(walkVideo).toHaveCount(1,{timeout:2500})
+    await expect.poll(()=>walkVideo.evaluate(video=>video.readyState>=2),{timeout:5000}).toBe(true)
+    await heroVideo.evaluate(video=>video.dispatchEvent(new Event('ended')))
+    await expect(walkVideo).toHaveClass(/is-active/)
+    await walkVideo.evaluate(video=>video.dispatchEvent(new Event('ended')))
+    await expect(heroVideo).toHaveClass(/is-active/)
+  }
   await expect(page.getByRole('heading',{name:'Мой день',exact:true})).toBeVisible()
   const navigate=async(name:string)=>{if(info.project.name==='mobile'){await page.getByRole('button',{name:'\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043c\u0435\u043d\u044e',exact:true}).click();await page.getByRole('navigation').getByRole('button',{name,exact:true}).click();await expect(page.getByRole('button',{name:'\u0417\u0430\u043a\u0440\u044b\u0442\u044c \u043c\u0435\u043d\u044e',exact:true})).toHaveCount(0)}else await page.getByRole('navigation').getByRole('button',{name,exact:true}).click()}
   await page.getByRole('button',{name:'Записать вес',exact:true}).first().click()

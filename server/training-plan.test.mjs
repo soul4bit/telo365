@@ -4,118 +4,154 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openDatabase } from './database.mjs';
-import { canUseGenericProgram, exerciseLibrary, generateTrainingPlan, progressRecommendation, sessionFromTrainingDay } from './training-plan.mjs';
+import { canUseGenericProgram, exerciseLibrary, generateTrainingPlan, materializeTrainingPlan, progressRecommendation, sessionFromTrainingDay } from './training-plan.mjs';
 
 const referenceDate='2026-09-23';
 const base={
   primaryGoal:'wellbeing',age:31,heightCm:176,weightKg:74,activityLevel:'light',
-  trainingDaysPerWeek:3,trainingDurationMinutes:30,trainingLocations:['home'],
+  trainingDaysPerWeek:2,trainingDurationMinutes:30,trainingLocations:['home'],
   equipment:['dumbbells','bands','bench'],trainingExperience:'beginner',limitations:['none'],
-  medicationConsideration:'no'
+  medicationConsideration:'no',preferredTrainingDays:[1,3,5]
 };
-const activeDays=plan=>plan.currentWeek.days.filter(day=>day.exercises.length>0);
-const hardDayPairs=plan=>plan.currentWeek.days.filter(day=>day.intensity==='hard').map(day=>day.weekday).some((day,index,days)=>index>0&&day-days[index-1]===1);
+const strengthDays=plan=>plan.currentWeek.days.filter(day=>day.exercises.length>0);
+const catalogueById=new Map(exerciseLibrary.map(item=>[item.id,item]));
 
-test('migration creates a personal-plan store and seeds the shared exercise catalogue',()=>{
+function assertEquipmentMatches(plan){
+  const equipment=new Set((plan.source.equipment||[]).filter(item=>item!=='none'));
+  for(const day of strengthDays(plan))for(const entry of day.exercises){
+    const exercise=catalogueById.get(entry.exerciseId);
+    assert.ok(exercise,`unknown exercise ${entry.exerciseId}`);
+    assert.ok(exercise.equipment.every(item=>equipment.has(item)||(item==='dumbbells'&&equipment.has('adjustable_dumbbells'))),`${entry.exerciseId} needs unavailable equipment`);
+  }
+}
+
+test('migration creates a personal-plan store and seeds the normalized exercise catalogue',()=>{
   const folder=mkdtempSync(join(tmpdir(),'telo365-training-plan-'));
   try {
     const db=openDatabase(join(folder,'test.sqlite'));
     assert.equal(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='training_plans'").get().name,'training_plans');
     assert.ok(db.prepare("SELECT count(*) AS count FROM catalog WHERE kind='exercise' AND owner IS NULL").get().count>=exerciseLibrary.length);
+    assert.equal(db.prepare('PRAGMA user_version').get().user_version,17);
     db.close();
   } finally { rmSync(folder,{recursive:true,force:true}); }
 });
 
-test('exercise seed catalogue contains basic home exercise coverage and empty media placeholders',()=>{
-  assert.ok(exerciseLibrary.length>=20);
+test('exercise catalogue is normalized and keeps local media placeholders',()=>{
+  assert.ok(exerciseLibrary.length>=25);
   for(const item of exerciseLibrary){
+    for(const key of ['id','name','movementPattern','primaryMuscles','secondaryMuscles','equipment','difficulty','locations','cautionTags','contraindicationTags','alternatives','animationKey','instructions','defaultRestSeconds'])assert.ok(key in item,`${item.id} lacks ${key}`);
+    assert.ok(Array.isArray(item.primaryMuscles));
+    assert.ok(Array.isArray(item.secondaryMuscles));
     assert.equal(item.media.shortVideoUrl,null);
     assert.equal(item.media.posterUrl,null);
-    assert.ok(Array.isArray(item.techniqueTips));
   }
-  assert.ok(exerciseLibrary.some(item=>item.equipment.includes('dumbbells')));
-  assert.ok(exerciseLibrary.some(item=>item.equipment.includes('bands')));
-  assert.ok(exerciseLibrary.some(item=>item.equipment.includes('bench')));
-  assert.ok(exerciseLibrary.some(item=>item.equipment.includes('pullup_bar')));
+  for(const pattern of ['squat','hinge','horizontal_push','horizontal_pull','vertical_push','vertical_pull','carry','core','locomotion','mobility'])assert.ok(exerciseLibrary.some(item=>item.movementPattern===pattern),`missing ${pattern}`);
 });
 
-test('generator schedules the requested 2, 3, 4 and 5 weekly training days with recovery spacing',()=>{
-  for(const count of [2,3,4,5]){
-    const plan=generateTrainingPlan({userId:'user-1',onboarding:{...base,trainingDaysPerWeek:count},referenceDate});
-    assert.equal(plan.status,'active');
-    assert.equal(plan.adjustment.requestedDaysPerWeek,count);
-    assert.equal(plan.adjustment.plannedDaysPerWeek,count);
-    assert.equal(activeDays(plan).length,count);
-    assert.equal(hardDayPairs(plan),false);
-    if(count===2||count===3) assert.ok(activeDays(plan).every(day=>day.type==='full_body'));
-    if(count===4) assert.deepEqual(activeDays(plan).map(day=>day.type),['upper','lower','upper','lower']);
-    if(count===5){const recovery=plan.currentWeek.days.find(day=>day.recoveryDay&&day.exercises.length>0);assert.ok(recovery);assert.ok(sessionFromTrainingDay(plan,recovery.id));}
-  }
+test('novice at home with dumbbells gets conservative Strength A and Strength B',()=>{
+  const plan=generateTrainingPlan({userId:'user-1',onboarding:base,referenceDate});
+  const days=strengthDays(plan);
+  assert.equal(plan.status,'active');
+  assert.equal(plan.adjustment.plannedDaysPerWeek,2);
+  assert.deepEqual(days.map(day=>day.name),['Тренировка A','Тренировка B']);
+  assert.notDeepEqual(days[0].exercises.map(item=>item.exerciseId),days[1].exercises.map(item=>item.exerciseId));
+  assert.ok(days.every(day=>day.intensity==='light'));
+  assert.ok(days.every(day=>day.exercises.every(item=>item.sets===2&&item.targetRpe<=5)));
+  assertEquipmentMatches(plan);
 });
 
-test('generator uses only bodyweight exercises when no equipment is available',()=>{
-  const plan=generateTrainingPlan({userId:'user-1',onboarding:{...base,equipment:['none'],trainingDaysPerWeek:2},referenceDate});
-  const equipmentById=new Map(exerciseLibrary.map(item=>[item.id,item.equipment]));
-  for(const day of activeDays(plan)) for(const item of day.exercises) assert.deepEqual(equipmentById.get(item.exerciseId),[]);
-});
-
-test('adjustable dumbbells meet dumbbell exercise requirements',()=>{
-  const plan=generateTrainingPlan({userId:'user-1',onboarding:{...base,equipment:['adjustable_dumbbells'],trainingDaysPerWeek:2},referenceDate});
-  assert.ok(activeDays(plan).some(day=>day.exercises.some(item=>['dumbbell-floor-press','dumbbell-row'].includes(item.exerciseId))));
-});
-
-test('body-area and intensity restrictions filter exercises and reduce an overly ambitious start',()=>{
-  const plan=generateTrainingPlan({
-    userId:'user-1',
-    onboarding:{...base,trainingDaysPerWeek:5,limitations:['knees','cardio'],areaStatusByArea:{knees:['pain']},medicationConsideration:'yes'},
-    referenceDate
-  });
+test('novice treats five available days as an upper bound and leaves recovery days',()=>{
+  const plan=generateTrainingPlan({userId:'user-1',onboarding:{...base,trainingDaysPerWeek:5},referenceDate});
   assert.equal(plan.adjustment.requestedDaysPerWeek,5);
   assert.equal(plan.adjustment.plannedDaysPerWeek,2);
   assert.equal(plan.adjustment.reduced,true);
-  assert.ok(plan.adjustment.reasons.includes('physical_constraints'));
-  assert.ok(activeDays(plan).every(day=>day.intensity==='light'));
-  const exercisesById=new Map(exerciseLibrary.map(item=>[item.id,item]));
-  for(const day of activeDays(plan)) for(const item of day.exercises){
-    const exercise=exercisesById.get(item.exerciseId);
-    assert.equal(exercise?.contraindications.includes('knees'),false);
+  assert.ok(plan.adjustment.reasons.includes('beginner_conservative_start'));
+  assert.equal(strengthDays(plan).length,2);
+  assert.equal(plan.currentWeek.days.filter(day=>day.recoveryDay).length,5);
+});
+
+test('three-day A/B cycle changes to B/A/B in the following week',()=>{
+  const plan=generateTrainingPlan({userId:'user-1',onboarding:{...base,trainingExperience:'some',trainingDaysPerWeek:3},referenceDate});
+  assert.deepEqual(strengthDays(plan).map(day=>day.name),['Тренировка A','Тренировка B','Тренировка A']);
+  const next=materializeTrainingPlan(plan,'2026-09-28');
+  assert.deepEqual(strengthDays(next).map(day=>day.name),['Тренировка B','Тренировка A','Тренировка B']);
+});
+
+test('no equipment only selects bodyweight exercises',()=>{
+  const plan=generateTrainingPlan({userId:'user-1',onboarding:{...base,equipment:['none']},referenceDate});
+  for(const day of strengthDays(plan))for(const item of day.exercises)assert.deepEqual(catalogueById.get(item.exerciseId).equipment,[]);
+});
+
+test('20-minute training keeps a compact prescription',()=>{
+  const plan=generateTrainingPlan({userId:'user-1',onboarding:{...base,trainingDurationMinutes:20},referenceDate});
+  for(const day of strengthDays(plan)){
+    assert.ok(day.exercises.length<=3);
+    assert.ok(day.exercises.every(item=>item.sets===2&&item.restSeconds<=60));
   }
 });
 
-test('a protection-only knee note keeps non-impact exercise options available',()=>{
-  const plan=generateTrainingPlan({userId:'user-1',onboarding:{...base,limitations:['knees'],areaStatusByArea:{knees:['protect']}},referenceDate});
-  assert.equal(plan.status,'active');
-  assert.ok(activeDays(plan).some(day=>day.exercises.some(item=>item.exerciseId==='squat')));
+test('knee limitation lowers exercise priority and strict knee context filters irritating alternatives',()=>{
+  const plan=generateTrainingPlan({userId:'user-1',onboarding:{...base,limitations:['knees'],areaStatusByArea:{knees:['pain']}},referenceDate});
+  assert.equal(plan.adjustment.plannedDaysPerWeek,2);
+  for(const day of strengthDays(plan))for(const item of day.exercises){
+    const selected=catalogueById.get(item.exerciseId);
+    assert.equal(selected.cautionTags.includes('knees'),false,`${selected.id} should not be selected under knee pain`);
+    for(const alternative of item.alternatives)assert.equal(catalogueById.get(alternative.exerciseId).cautionTags.includes('knees'),false,`${alternative.exerciseId} should respect knee limitation`);
+  }
 });
 
-test("generic programs respect an active plan restrictions",()=>{
-  const cautious=generateTrainingPlan({userId:'user-1',onboarding:{...base,limitations:['knees'],areaStatusByArea:{knees:['pain']}},referenceDate});
-  assert.equal(canUseGenericProgram(cautious,{exercises:[{exerciseId:'squat'}]}),false);
-  assert.equal(canUseGenericProgram(cautious,{exercises:[{exerciseId:'push-up-wall'}]}),true);
-  const cardio=generateTrainingPlan({userId:'user-1',onboarding:{...base,limitations:['cardio']},referenceDate});
-  assert.equal(canUseGenericProgram(cardio,{intensity:'hard',exercises:[{exerciseId:'push-up-wall'}]}),false);
-  assert.equal(canUseGenericProgram(cardio,{intensity:'light',exercises:[{exerciseId:'push-up-wall'}]}),true);
+test('cardiovascular caution keeps the automatic plan light and excludes hard generic programs',()=>{
+  const plan=generateTrainingPlan({userId:'user-1',onboarding:{...base,trainingDaysPerWeek:5,limitations:['cardio'],medicationConsideration:'yes'},referenceDate});
+  assert.equal(plan.adjustment.plannedDaysPerWeek,2);
+  assert.ok(strengthDays(plan).every(day=>day.intensity==='light'));
+  assert.equal(canUseGenericProgram(plan,{intensity:'hard',exercises:[{exerciseId:'push-up-wall'}]}),false);
 });
 
-test('a recommendation to avoid unspecified exercises waits for clarification',()=>{
-  const plan=generateTrainingPlan({userId:'user-1',onboarding:{...base,medicationConsideration:'yes',medicationGuidance:['avoid_exercises']},referenceDate});
+test('experienced user can receive four balanced split sessions with recovery spacing',()=>{
+  const plan=generateTrainingPlan({userId:'user-1',onboarding:{...base,trainingExperience:'advanced',trainingDaysPerWeek:4,trainingDurationMinutes:60},referenceDate});
+  const days=strengthDays(plan);
+  assert.equal(days.length,4);
+  assert.deepEqual(days.map(day=>day.name),['Верх тела A','Низ тела A','Верх тела B','Низ тела B']);
+  assert.ok(days.every(day=>day.intensity==='moderate'));
+  assert.ok(days.every(day=>day.exercises.some(item=>item.targetRpe===7)));
+  assertEquipmentMatches(plan);
+});
+
+test('direct doctor restriction produces a safe review state with no standard session',()=>{
+  const plan=generateTrainingPlan({userId:'user-1',onboarding:{...base,doctorExerciseRestriction:true},referenceDate});
   assert.equal(plan.status,'needs_review');
   assert.equal(plan.adjustment.plannedDaysPerWeek,0);
-  assert.ok(plan.adjustment.reasons.includes('specialist_restrictions'));
+  assert.equal(strengthDays(plan).length,0);
+  assert.equal(sessionFromTrainingDay(plan,'day-1-A'),null);
 });
 
-test('a missing clearance after injury does not create an automatic training session',()=>{
-  const plan=generateTrainingPlan({userId:'user-1',onboarding:{...base,limitations:['injury'],returnToExerciseClearance:'no'},referenceDate});
-  assert.equal(plan.status,'needs_review');
-  assert.equal(plan.adjustment.plannedDaysPerWeek,0);
+test('selected alternatives are compatible with equipment and strict limitations',()=>{
+  const plan=generateTrainingPlan({userId:'user-1',onboarding:{...base,limitations:['knees'],areaStatusByArea:{knees:['pain']}},referenceDate});
+  const equipment=new Set(base.equipment);
+  for(const day of strengthDays(plan))for(const item of day.exercises)for(const alternative of item.alternatives){
+    const candidate=catalogueById.get(alternative.exerciseId);
+    assert.ok(candidate.equipment.every(value=>equipment.has(value)));
+    assert.equal(candidate.cautionTags.includes('knees'),false);
+    assert.ok(['same_pattern','equipment','reduce_knee_load','reduce_shoulder_load'].includes(alternative.reason));
+  }
 });
 
-test('direct restriction does not create an automatic training session',()=>{
-  const plan=generateTrainingPlan({userId:'user-1',onboarding:{...base,doctorExerciseRestriction:true,trainingDaysPerWeek:3},referenceDate});
-  assert.equal(plan.status,'needs_review');
-  assert.equal(plan.adjustment.plannedDaysPerWeek,0);
-  assert.equal(activeDays(plan).length,0);
-  assert.equal(sessionFromTrainingDay(plan,'day-1-full_body'),null);
+test('every generated strength exercise carries two to four usable alternatives',()=>{
+  const scenarios=[base,{...base,equipment:['none']},{...base,limitations:['knees'],areaStatusByArea:{knees:['pain']}}];
+  for(const onboarding of scenarios){
+    const plan=generateTrainingPlan({userId:'user-1',onboarding,referenceDate});
+    for(const day of strengthDays(plan))for(const item of day.exercises){
+      assert.ok(item.alternatives.length>=2&&item.alternatives.length<=4,`${item.exerciseId} needs 2–4 alternatives`);
+    }
+  }
+});
+
+test('one feedback entry is stored as context without changing the plan, repeated hard feedback is conservative',()=>{
+  const unchanged=generateTrainingPlan({userId:'user-1',onboarding:{...base,trainingDaysPerWeek:3,trainingExperience:'some'},recentFeedback:[{rpe:9,painOrDiscomfort:true}],referenceDate});
+  assert.equal(unchanged.adjustment.plannedDaysPerWeek,3);
+  const cautious=generateTrainingPlan({userId:'user-1',onboarding:{...base,trainingDaysPerWeek:5,trainingExperience:'regular'},recentFeedback:[{rpe:9,painOrDiscomfort:true},{rpe:8,painOrDiscomfort:true}],referenceDate});
+  assert.equal(cautious.adjustment.plannedDaysPerWeek,2);
+  assert.ok(cautious.adjustment.reasons.includes('recent_feedback'));
 });
 
 test('post-workout rule based progression remains conservative after pain or high effort',()=>{

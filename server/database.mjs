@@ -10,7 +10,7 @@ export function openDatabase(path) {
   if (path !== ':memory:') chmodSync(path, 0o600);
   db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
   const version = db.prepare('PRAGMA user_version').get().user_version;
-  if (version > 16) throw new Error('Database is newer than this application');
+  if (version > 17) throw new Error('Database is newer than this application');
   if (version === 0) {
     db.exec(`BEGIN IMMEDIATE;
       CREATE TABLE users(id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, recovery TEXT NOT NULL,
@@ -212,6 +212,11 @@ export function openDatabase(path) {
   if (version < 16) db.exec(`BEGIN IMMEDIATE;
     PRAGMA user_version=16; COMMIT;`);
   if (version < 16) seedTrainingExercises(db);
+  // Planner v1 normalizes the exercise catalogue. Re-seed shared entries so
+  // existing installations receive the new movement, caution and media fields.
+  if (version < 17) db.exec(`BEGIN IMMEDIATE;
+    PRAGMA user_version=17; COMMIT;`);
+  if (version < 17) seedTrainingExercises(db);
   return db;
 }
 

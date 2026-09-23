@@ -17,6 +17,7 @@ function alternativeReason(source,candidate) {
   return 'same_pattern';
 }
 function movementPatternOf(exercise) {
+  if(typeof exercise.movementPattern==='string')return exercise.movementPattern;
   const id=String(exercise.id||'');
   if(/squat|lunge|step/.test(id))return 'squat';
   if(/deadlift|rdl|bridge|calf/.test(id))return 'hinge';
@@ -24,7 +25,7 @@ function movementPatternOf(exercise) {
   if(/row|pull|curl/.test(id))return 'pull';
   if(/plank|bug|bird-dog|pallof/.test(id))return 'core';
   if(/mobility|walking/.test(id))return 'mobility';
-  return String(exercise.primaryMuscles||'general');
+  return Array.isArray(exercise.primaryMuscles)?exercise.primaryMuscles.join('_')||'general':String(exercise.primaryMuscles||'general');
 }
 function exerciseAlternatives(db,userId,source,variantIds=[],movementPattern='same_pattern') {
   return [...new Set(variantIds||[])].map(exerciseId=>{
@@ -149,7 +150,7 @@ export async function journal(ctx) {
   }
   const mealId=path.match(/^\/api\/meals\/([^/]+)$/)?.[1];
   if(mealId&&method==='DELETE') {owned(db,'meals',mealId,u.id);db.prepare('DELETE FROM meals WHERE id=? AND user_id=?').run(mealId,u.id);return {ok:true};}
-  if(method==='GET'&&path==='/api/training-plan') return readTrainingPlan(db,u,date(url.searchParams.get('date')||today(u.timezone)));
+  if(method==='GET'&&path==='/api/training-plan') return ensureTrainingPlan(db,u,date(url.searchParams.get('date')||today(u.timezone)));
   if(path==='/api/workouts'&&method==='PUT') {
     const id=string(b.id,'\u0418\u0434\u0435\u043d\u0442\u0438\u0444\u0438\u043a\u0430\u0442\u043e\u0440',80),d=date(b.date),old=db.prepare('SELECT * FROM workouts WHERE id=?').get(id);
     if(old&&old.user_id!==u.id) fail(404,'\u0422\u0440\u0435\u043d\u0438\u0440\u043e\u0432\u043a\u0430 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u0430');
@@ -197,7 +198,10 @@ export async function journal(ctx) {
     }
     const finished=boolean(b.finished??false);
     if(finished&&(d>today(u.timezone)||!data.exercises.every(e=>e.sets.every(s=>s.done)))) fail(400,'\u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u043e\u0442\u043c\u0435\u0442\u044c\u0442\u0435 \u0432\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u043d\u044b\u0435 \u043f\u043e\u0434\u0445\u043e\u0434\u044b');
-    const feedback=b.feedback&&typeof b.feedback==='object'?{rpe:numeric(b.feedback.rpe,'RPE',1,10),allSetsCompleted:!!boolean(b.feedback.allSetsCompleted),painOrDiscomfort:!!boolean(b.feedback.painOrDiscomfort)}:null;
+    const feedback=b.feedback&&typeof b.feedback==='object'?(()=>{
+      const rpe=numeric(b.feedback.rpe,'RPE',1,10),perceivedDifficulty=['easy','normal','hard'].includes(b.feedback.perceivedDifficulty)?b.feedback.perceivedDifficulty:(rpe<=5?'easy':rpe>=8?'hard':'normal'),painOrDiscomfort=!!boolean(b.feedback.painOrDiscomfort),discomfortArea=typeof b.feedback.discomfortArea==='string'?b.feedback.discomfortArea.trim().slice(0,80)||null:null;
+      return {rpe,perceivedDifficulty,allSetsCompleted:!!boolean(b.feedback.allSetsCompleted),painOrDiscomfort,discomfortArea:painOrDiscomfort?discomfortArea:null};
+    })():null;
     if(finished&&data.planId&&!feedback) fail(400,'\u041e\u0446\u0435\u043d\u0438 \u0441\u043b\u043e\u0436\u043d\u043e\u0441\u0442\u044c \u0438 \u0441\u0430\u043c\u043e\u0447\u0443\u0432\u0441\u0442\u0432\u0438\u0435 \u043f\u043e\u0441\u043b\u0435 \u0442\u0440\u0435\u043d\u0438\u0440\u043e\u0432\u043a\u0438');
     if(finished&&feedback) {
       data.feedback=feedback;

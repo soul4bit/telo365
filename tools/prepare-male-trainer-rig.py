@@ -66,16 +66,49 @@ for collection in list(bpy.data.collections):
     if collection != working_collection and collection.users == 0:
         bpy.data.collections.remove(collection)
 
-# Intentional preview material: no claim of skin texture or photorealism.
-skin = bpy.data.materials.new("TELO preview skin — flat PBR, no texture")
-skin.use_nodes = True
-principled = skin.node_tree.nodes.get("Principled BSDF")
-principled.inputs["Base Color"].default_value = (0.46, 0.235, 0.16, 1.0)
-principled.inputs["Roughness"].default_value = 0.58
-principled.inputs["Specular IOR Level"].default_value = 0.28
+# Intentional preview material: no skin texture or photorealism. The sport look
+# uses one material plus a per-corner colour palette. It keeps the export as one
+# mesh primitive / one SkinnedMesh while preserving the source mesh weights.
+sport_preview = bpy.data.materials.new("TELO preview sport look - flat PBR")
+sport_preview.use_nodes = True
+nodes = sport_preview.node_tree.nodes
+principled = nodes.get("Principled BSDF")
+principled.inputs["Roughness"].default_value = 0.64
+principled.inputs["Specular IOR Level"].default_value = 0.22
+palette_node = nodes.new("ShaderNodeVertexColor")
+palette_node.layer_name = "TELO_Sport_Palette"
+sport_preview.node_tree.links.new(palette_node.outputs["Color"], principled.inputs["Base Color"])
 body.data.materials.clear()
-body.data.materials.append(skin)
+body.data.materials.append(sport_preview)
+palette = body.data.color_attributes.get("TELO_Sport_Palette")
+if palette is not None:
+    body.data.color_attributes.remove(palette)
+palette = body.data.color_attributes.new("TELO_Sport_Palette", "BYTE_COLOR", "CORNER")
+palette_colors = {
+    "skin": (0.46, 0.235, 0.16, 1.0),
+    "shirt": (0.075, 0.27, 0.16, 1.0),
+    "shorts": (0.045, 0.12, 0.075, 1.0),
+}
 
+# A deliberately simple, neutral athletic outfit for web preview. The selected
+# faces retain the same weights; vertex colours avoid extra garment geometry or
+# extra glTF primitives.
+sport_faces = {"shirt": 0, "shorts": 0}
+for polygon in body.data.polygons:
+    center = polygon.center
+    x, y, z = center.x, center.y, center.z
+    torso_width = 0.205 + max(0.0, min(0.07, (1.42 - z) * 0.18))
+    sleeve = 1.22 <= z <= 1.41 and torso_width < abs(x) <= torso_width + 0.105 and abs(y) < 0.135
+    if 1.02 <= z <= 1.46 and (abs(x) <= torso_width or sleeve):
+        colour = palette_colors["shirt"]
+        sport_faces["shirt"] += 1
+    elif 0.72 <= z < 1.075 and abs(x) <= 0.225:
+        colour = palette_colors["shorts"]
+        sport_faces["shorts"] += 1
+    else:
+        colour = palette_colors["skin"]
+    for loop_index in polygon.loop_indices:
+        palette.data[loop_index].color = colour
 eye_white = bpy.data.materials.new("TELO preview eye white")
 eye_white.use_nodes = True
 eye_bsdf = eye_white.node_tree.nodes.get("Principled BSDF")
@@ -298,6 +331,8 @@ report = {
     "bodyTriangles": sum(len(poly.vertices)-2 for poly in body.data.polygons),
     "uvLayers": [uv.name for uv in body.data.uv_layers],
     "materials": [mat.name for mat in body.data.materials],
+    "colorAttributes": [attribute.name for attribute in body.data.color_attributes],
+    "sportFaceCounts": sport_faces,
     "armatureBones": [bone.name for bone in rig.data.bones],
     "vertexGroupInfluences": groups,
     "missingRequiredGroups": missing_groups,

@@ -10,6 +10,31 @@ import { canUseGenericProgram, ensureTrainingPlan, progressRecommendation, readT
 
 const parseMeal=r=>({...r,snapshot:JSON.parse(r.snapshot),eaten:!!r.eaten});
 const parseWorkout=r=>({...r,data:JSON.parse(r.data),finished:!!r.finished});
+function alternativeReason(source,candidate) {
+  if(source.contraindications?.includes('knees')&&!candidate.contraindications?.includes('knees'))return 'reduce_knee_load';
+  if(source.contraindications?.includes('shoulders')&&!candidate.contraindications?.includes('shoulders'))return 'reduce_shoulder_load';
+  if(JSON.stringify(source.equipment||[])!==JSON.stringify(candidate.equipment||[]))return 'equipment';
+  return 'same_pattern';
+}
+function movementPatternOf(exercise) {
+  const id=String(exercise.id||'');
+  if(/squat|lunge|step/.test(id))return 'squat';
+  if(/deadlift|rdl|bridge|calf/.test(id))return 'hinge';
+  if(/press|push-up/.test(id))return 'push';
+  if(/row|pull|curl/.test(id))return 'pull';
+  if(/plank|bug|bird-dog|pallof/.test(id))return 'core';
+  if(/mobility|walking/.test(id))return 'mobility';
+  return String(exercise.primaryMuscles||'general');
+}
+function exerciseAlternatives(db,userId,source,variantIds=[],movementPattern='same_pattern') {
+  return [...new Set(variantIds||[])].map(exerciseId=>{
+    const candidate=getItem(db,exerciseId,userId,'exercise');
+    return {exerciseId:candidate.id,reason:alternativeReason(source,candidate),movementPattern};
+  });
+}
+function withPlannedSets(sets) {
+  return sets.map(set=>({plannedReps:set.reps,plannedWeight:set.weight,reps:set.reps,weight:set.weight,done:false}));
+}
 function limitCount(db,table,user,max) { if(db.prepare(`SELECT count(*) AS n FROM ${table} WHERE user_id=?`).get(user).n>=max) fail(409,'Достигнут лимит записей. Удалите ненужные записи'); }
 function owned(db,table,id,user) { const row=db.prepare(`SELECT * FROM ${table} WHERE id=? AND user_id=?`).get(id,user);if(!row) fail(404,'Запись не найдена');return row; }
 function habitData(body) {
@@ -134,13 +159,18 @@ export async function journal(ctx) {
     if(!old&&b.planId&&b.trainingDayId) {
       const plan=ensureTrainingPlan(db,u,d);
       if(!plan||plan.id!==b.planId) fail(400,'\u041f\u043b\u0430\u043d \u0442\u0440\u0435\u043d\u0438\u0440\u043e\u0432\u043e\u043a \u043d\u0435 \u0430\u043a\u0442\u0443\u0430\u043b\u0435\u043d');
+      const sourceDay=plan.currentWeek?.days?.find(day=>day.id===String(b.trainingDayId));
       data=sessionFromTrainingDay(plan,String(b.trainingDayId),b.exerciseOverrides&&typeof b.exerciseOverrides==='object'?b.exerciseOverrides:{});
       if(!data) fail(400,'\u0414\u043b\u044f \u044d\u0442\u043e\u0433\u043e \u0434\u043d\u044f \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u0443\u044e \u0442\u0440\u0435\u043d\u0438\u0440\u043e\u0432\u043a\u0443 \u043f\u043e\u043a\u0430 \u043d\u0435 \u0437\u0430\u043f\u0443\u0441\u043a\u0430\u0435\u043c');
+      data.exercises=data.exercises.map((exercise,index)=>{
+        const source=sourceDay?.exercises?.[index],catalogExercise=getItem(db,exercise.exerciseId,u.id,'exercise');
+        return {...exercise,alternatives:exerciseAlternatives(db,u.id,catalogExercise,source?.variants||[],movementPatternOf(catalogExercise)),sets:withPlannedSets(exercise.sets)};
+      });
     } else if(!old) {
       const program=getItem(db,string(b.programId,'\u041f\u0440\u043e\u0433\u0440\u0430\u043c\u043c\u0430'),u.id,'program');
       const personalPlan=readTrainingPlan(db,u,d);
       if(!canUseGenericProgram(personalPlan,program)) fail(400,'\u042d\u0442\u0430 \u043f\u0440\u043e\u0433\u0440\u0430\u043c\u043c\u0430 \u043f\u043e\u043a\u0430 \u043d\u0435 \u043f\u043e\u0434\u0445\u043e\u0434\u0438\u0442 \u043a \u0443\u0447\u0442\u0451\u043d\u043d\u044b\u043c \u043e\u0433\u0440\u0430\u043d\u0438\u0447\u0435\u043d\u0438\u044f\u043c.');
-      data={name:program.name,programId:program.id,intensity:'moderate',minutes:program.minutes||null,startedAt:new Date().toISOString(),exercises:program.exercises.map(e=>{const exercise=getItem(db,e.exerciseId,u.id,'exercise');return {exerciseId:exercise.id,name:exercise.name,unit:exercise.unit,equipment:exercise.equipment||[],variants:exercise.variants||[],restSeconds:75,targetRpe:6,notes:'',sets:Array.from({length:Math.round(e.sets)},()=>({reps:e.reps,weight:e.weight,done:false}))};}),feedback:null,progressRecommendation:null};
+      data={name:program.name,programId:program.id,intensity:'moderate',minutes:program.minutes||null,startedAt:new Date().toISOString(),exercises:program.exercises.map(e=>{const exercise=getItem(db,e.exerciseId,u.id,'exercise');return {exerciseId:exercise.id,name:exercise.name,unit:exercise.unit,equipment:exercise.equipment||[],alternatives:exerciseAlternatives(db,u.id,exercise,exercise.variants||[],movementPatternOf(exercise)),restSeconds:75,targetRpe:6,notes:'',sets:withPlannedSets(Array.from({length:Math.round(e.sets)},()=>({reps:e.reps,weight:e.weight})))};}),feedback:null,progressRecommendation:null};
     } else {
       data=JSON.parse(old.data);
       if(!Array.isArray(b.exercises)||b.exercises.length!==data.exercises.length) fail(400,'\u041f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 \u0443\u043f\u0440\u0430\u0436\u043d\u0435\u043d\u0438\u044f');
@@ -151,7 +181,7 @@ export async function journal(ctx) {
         const replacementId=typeof incoming.exerciseId==='string'?incoming.exerciseId:e.exerciseId;
         if(replacementId!==e.exerciseId){
           const current=getItem(db,e.exerciseId,u.id,'exercise');
-          let allowed=Array.isArray(e.variants)?e.variants:[];
+          let allowed=Array.isArray(e.alternatives)?e.alternatives.map(item=>item.exerciseId):Array.isArray(e.variants)?e.variants:[];
           if(!allowed.length&&data.planId&&data.trainingDayId){
             const activePlan=readTrainingPlan(db,u,d),plannedDay=activePlan?.currentWeek?.days?.find(day=>day.id===data.trainingDayId);
             allowed=plannedDay?.exercises?.find(item=>item.exerciseId===e.exerciseId)?.variants||[];
@@ -160,9 +190,9 @@ export async function journal(ctx) {
           if(!allowed.includes(replacementId)) fail(400,'Для этого упражнения нельзя выбрать такую замену');
           const replacement=getItem(db,replacementId,u.id,'exercise'),personalPlan=readTrainingPlan(db,u,d);
           if(personalPlan&&!canUseGenericProgram(personalPlan,{intensity:data.intensity||'moderate',exercises:[{exerciseId:replacement.id}]})) fail(400,'Эта замена пока не подходит к учтённым ограничениям.');
-          next={...next,exerciseId:replacement.id,name:replacement.name,unit:replacement.unit,equipment:replacement.equipment||[],variants:replacement.variants||[]};
+          next={...next,exerciseId:replacement.id,name:replacement.name,unit:replacement.unit,equipment:replacement.equipment||[],alternatives:exerciseAlternatives(db,u.id,replacement,replacement.variants||[],movementPatternOf(replacement))};
         }
-        return {...next,sets:sets.map(s=>{if(!s||typeof s!=='object')fail(400,'\u041f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 \u043f\u043e\u0434\u0445\u043e\u0434\u044b');return {reps:numeric(s.reps,'\u041f\u043e\u0432\u0442\u043e\u0440\u0435\u043d\u0438\u044f',1,3600),weight:numeric(s.weight,'\u041d\u0430\u0433\u0440\u0443\u0437\u043a\u0430',0,500),done:!!boolean(s.done)};})};
+        return {...next,sets:sets.map((s,setIndex)=>{if(!s||typeof s!=='object')fail(400,'\u041f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 \u043f\u043e\u0434\u0445\u043e\u0434\u044b');const planned=e.sets[setIndex]||{};return {plannedReps:numeric(planned.plannedReps??planned.reps,'\u041f\u043b\u0430\u043d\u043e\u0432\u044b\u0435 \u043f\u043e\u0432\u0442\u043e\u0440\u0435\u043d\u0438\u044f',1,3600),plannedWeight:numeric(planned.plannedWeight??planned.weight??0,'\u041f\u043b\u0430\u043d\u043e\u0432\u0430\u044f \u043d\u0430\u0433\u0440\u0443\u0437\u043a\u0430',0,500),reps:numeric(s.reps,'\u041f\u043e\u0432\u0442\u043e\u0440\u0435\u043d\u0438\u044f',1,3600),weight:numeric(s.weight,'\u041d\u0430\u0433\u0440\u0443\u0437\u043a\u0430',0,500),done:!!boolean(s.done)};})};
       });
     }
     const finished=boolean(b.finished??false);

@@ -115,10 +115,10 @@ test('account and journal integration', async t=>{
     const id=randomUUID();const create={id,programId:'full-body',date:day,finished:false};
     assert.equal((await req('/api/workouts','PUT',create)).status,200);
     assert.equal((await req('/api/workouts','PUT',create)).status,200);
-    let workout=(await req('/api/state')).value.workouts[0];assert.equal(workout.id,id);assert.match(workout.data.startedAt,/^\d{4}-\d{2}-\d{2}T/);
+    let workout=(await req('/api/state')).value.workouts[0];assert.equal(workout.id,id);assert.match(workout.data.startedAt,/^\d{4}-\d{2}-\d{2}T/);assert.ok(workout.data.exercises.every(item=>Array.isArray(item.alternatives)));assert.ok(workout.data.exercises.every(item=>item.sets.every(set=>set.plannedReps===set.reps&&set.plannedWeight===set.weight)));const alternative=workout.data.exercises.flatMap(item=>item.alternatives)[0];assert.equal(typeof alternative.exerciseId,'string');assert.equal(typeof alternative.reason,'string');assert.equal(typeof alternative.movementPattern,'string');
     const replacement=structuredClone(workout.data.exercises),squat=replacement.find(item=>item.exerciseId==='squat');assert.ok(squat);squat.exerciseId='box-squat';
     assert.equal((await req('/api/workouts','PUT',{id,date:day,exercises:replacement,finished:false})).status,200);
-    workout=(await req('/api/state')).value.workouts[0];assert.equal(workout.data.exercises.find(item=>item.name==='Приседания до скамьи').exerciseId,'box-squat');
+    workout=(await req('/api/state')).value.workouts[0];assert.equal(workout.data.exercises.find(item=>item.name==='Приседания до скамьи').exerciseId,'box-squat');assert.ok(Array.isArray(workout.data.exercises.find(item=>item.exerciseId==='box-squat').alternatives));
     const invalidReplacement=structuredClone(workout.data.exercises);invalidReplacement.find(item=>item.exerciseId==='box-squat').exerciseId='push-up';
     assert.equal((await req('/api/workouts','PUT',{id,date:day,exercises:invalidReplacement,finished:false})).status,400);
     assert.equal((await req('/api/workouts','PUT',{id,date:day,exercises:workout.data.exercises,finished:true})).status,400);

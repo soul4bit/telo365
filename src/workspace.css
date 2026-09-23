@@ -292,12 +292,18 @@ dialog{overflow-y:auto;overscroll-behavior:contain}
 .workout-rest>div{display:grid;gap:2px}
 .workout-rest span{font-size:9px;color:#63905e;text-transform:uppercase;letter-spacing:.7px}
 .workout-rest strong{font-variant-numeric:tabular-nums}
+.workout-rest small{color:#62815d;font-size:9px}
+.workout-set-table.is-unweighted .workout-set-head,.workout-set-table.is-unweighted .workout-live-set{grid-template-columns:1.1fr 1fr 38px}
 .workout-feedback-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.workout-feedback-options.is-binary{grid-template-columns:repeat(2,minmax(0,1fr));max-width:210px}
 .workout-feedback-options button{min-height:39px;border:1px solid #dbe8d6;border-radius:9px;background:#fbfdf9;color:#587254;font:700 11px/1 inherit}
 .workout-feedback-options button.is-selected{border-color:#75aa6d;background:#eaf5e5;color:#39763b;box-shadow:inset 0 0 0 1px #c5e0bf}
+.workout-feedback h4{margin:4px 0 -4px;color:#526d50;font-size:11px}
+.workout-feedback-summary{margin:-4px 0 2px;color:#70836d;font-size:10px;line-height:1.5}
 .workout-feedback-note{margin:0;color:#7b8b77;font-size:10px;line-height:1.55}
 .workout-completion-stats{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
 .workout-completion-stats span{display:flex;gap:4px;padding:5px 7px;border:1px solid #e0ebdc;border-radius:7px;background:#fbfdf9;color:#7b8d77;font-size:9px}
 .workout-completion-stats b{color:#426840;font-weight:750}
 .workout-complete{padding:8px 0!important}
 @media(max-width:700px){.planned-day-external-card{grid-template-columns:1fr;gap:13px;padding:14px!important}.outside-plan-session{padding:11px}.workout-feedback-options{gap:5px}.workout-feedback-options button{font-size:10px}.workout-completion-stats{display:grid;grid-template-columns:1fr}.workout-completion-stats span{justify-content:space-between}}
+@media(max-width:520px){.workout-set-table.is-unweighted .workout-set-head,.workout-set-table.is-unweighted .workout-live-set{grid-template-columns:1fr 1fr 32px}}

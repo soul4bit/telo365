@@ -34,8 +34,8 @@ class ViewerErrorBoundary extends Component<{children:ReactNode;onError:()=>void
   render(){return this.state.failed?null:this.props.children}
 }
 
-function ViewerFallback({posterUrl,label,retry}:{posterUrl?:string|null;label:string;retry?:()=>void}){
-  return <div className="exercise-3d-fallback">{posterUrl?<img src={posterUrl} alt=""/>:<Rotate3D size={28}/>}<div><strong>{label}</strong><p>Добавим демонстрацию техники, когда подготовим модель упражнения.</p>{retry&&<button className="text-button" onClick={retry}>Повторить</button>}</div></div>
+function ViewerFallback({posterUrl,label,description,retry}:{posterUrl?:string|null;label:string;description?:string;retry?:()=>void}){
+  return <div className="exercise-3d-fallback">{posterUrl?<img src={posterUrl} alt=""/>:<Rotate3D size={28}/>}<div><strong>{label}</strong><p>{description||'Добавим демонстрацию техники, когда подготовим модель упражнения.'}</p>{retry&&<button className="text-button" onClick={retry}>Повторить</button>}</div></div>
 }
 
 function CameraControls(){
@@ -77,8 +77,8 @@ export default function Exercise3DViewer({modelUrl,animationUrl,animationClip,ca
   const markReady=useCallback(()=>setReady(true),[])
   useEffect(()=>setSpeed(playbackSpeed),[playbackSpeed])
   if(reducedMotion)return <ViewerFallback posterUrl={posterUrl} label="Статичная техника"/>
-  if(!available)return <ViewerFallback posterUrl={posterUrl} label="3D-техника скоро"/>
-  if(failed)return <ViewerFallback posterUrl={posterUrl} label="Не удалось загрузить 3D-модель" retry={()=>{setFailed(false);setReady(false);setRetryKey(value=>value+1)}}/>
+  if(!available)return <ViewerFallback posterUrl={posterUrl} label="Демонстрация техники готовится" description="Скоро здесь появится интерактивный показ упражнения."/>
+  if(failed)return <ViewerFallback posterUrl={posterUrl} label="Не удалось загрузить демонстрацию" description="Проверь подключение и попробуй загрузить демонстрацию снова." retry={()=>{setFailed(false);setReady(false);setRetryKey(value=>value+1)}}/>
   return <section className="exercise-3d-viewer" aria-label="3D-демонстрация техники">
     {!ready&&<div className="exercise-3d-skeleton" aria-hidden="true"/>}
     <ViewerErrorBoundary key={retryKey} onError={()=>setFailed(true)}><ThreeScene modelUrl={modelUrl} animationUrl={animationUrl} animationClip={animationClip} cameraPreset={cameraPreset} playing={playing} speed={speed} onReady={markReady}/></ViewerErrorBoundary>

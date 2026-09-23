@@ -36,7 +36,7 @@ export default function Dashboard(){
     <div className="page-content"><div className="page-heading"><div><span className="eyebrow">ЗАБОТА О СЕБЕ КАЖДЫЙ ДЕНЬ</span><h1>{navigation.find(n=>n[0]===section)?.[1]||'Управление сервисом'}</h1></div><span className="sync-status">{busy?'Сохраняем…':'Записи в твоём аккаунте'}</span></div><ErrorMessage error={error}/>
     {section==='home'&&<><section className="hero workspace-hero">
         <div className="workspace-hero-media" aria-hidden="true">
-          <video className="workspace-hero-video" autoPlay muted loop playsInline preload="metadata" poster="/images/hero.png" tabIndex={-1} onError={event=>{event.currentTarget.style.display='none'}}>
+          <video className="workspace-hero-video" autoPlay muted loop playsInline preload="metadata" poster="/images/hero.png" tabIndex={-1} onCanPlay={event=>{event.currentTarget.classList.add('is-ready')}} onError={event=>{event.currentTarget.style.display='none'}}>
             <source src="/video/hero-telo365.web.mp4" type="video/mp4" />
           </video>
         </div>

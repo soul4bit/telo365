@@ -10,7 +10,7 @@ const isStaticMode=()=>typeof window!=='undefined'&&window.matchMedia(staticMedi
  * after the primary clip has started, so it can crossfade the loop without
  * making the first page render download two videos at once.
  */
-export default function WorkoutHero(){
+export default function WorkoutHero({hasActiveWorkout=false}:{hasActiveWorkout?:boolean}){
   const root=useRef<HTMLElement>(null)
   const primary=useRef<HTMLVideoElement>(null)
   const buffer=useRef<HTMLVideoElement>(null)
@@ -110,7 +110,7 @@ export default function WorkoutHero(){
       <span className="eyebrow">ТРЕНИРОВКИ · ТВОЙ РИТМ</span>
       <h2 id="workout-hero-title">Двигайся в своём ритме</h2>
       <p>Персональный план с учётом твоего уровня, времени и возможностей.</p>
-      <a className="primary-button workout-hero-cta" href="#today-workout" aria-label="Открыть тренировку на сегодня">Открыть тренировку <span aria-hidden="true">→</span></a>
+      <a className="primary-button workout-hero-cta" href="#today-workout" aria-label={hasActiveWorkout?'Продолжить активную тренировку':'Начать тренировку на сегодня'}>{hasActiveWorkout?'Продолжить тренировку':'Начать тренировку'} <span aria-hidden="true">→</span></a>
     </div>
   </section>
 }

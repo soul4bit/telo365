@@ -350,3 +350,28 @@ dialog{overflow-y:auto;overscroll-behavior:contain}
 .workout-complete{padding:8px 0!important}
 @media(max-width:700px){.planned-day-external-card{grid-template-columns:1fr;gap:13px;padding:14px!important}.outside-plan-session{padding:11px}.workout-feedback-options{gap:5px}.workout-feedback-options button{font-size:10px}.workout-completion-stats{display:grid;grid-template-columns:1fr}.workout-completion-stats span{justify-content:space-between}}
 @media(max-width:520px){.workout-set-table.is-unweighted .workout-set-head,.workout-set-table.is-unweighted .workout-live-set{grid-template-columns:1fr 1fr 32px}}
+
+/* Keep the active session informative without repeating its status in each block. */
+.planned-day-external-card{gap:13px;padding:14px 16px!important}
+.outside-plan-status{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid #dbe9d6;border-radius:9px;background:#fbfdf9;color:#5f785b;font-size:10px;line-height:1.4}
+.outside-plan-status strong{color:#345637}
+.outside-plan-status .soft-button{flex:0 0 auto;margin:0;padding:6px 9px;font-size:10px}
+.personal-week-title{display:flex;align-items:center;gap:6px;min-width:0}
+.personal-week-title strong{min-width:0}
+.personal-week-title b{flex:0 0 auto;padding:3px 5px;border-radius:999px;background:#ddefd6;color:#397a36;font-size:8px;line-height:1;text-transform:uppercase;letter-spacing:.35px}
+.personal-workout-plan .workout-live-form{gap:12px}
+.personal-workout-plan .workout-live-top{padding:11px 13px}
+.personal-workout-plan .workout-live-exercise{padding:14px}
+.workout-live-progress{display:grid;justify-items:end;gap:4px;text-align:right}
+.workout-live-progress small{color:#60795d;font-size:10px}
+.workout-live-progress span{color:#758970;font-size:9px;line-height:1.35}
+.workout-rpe button{display:inline-grid;place-items:center;width:14px;height:14px;padding:0;border:1px solid #bdd5b8;border-radius:50%;background:#f8fcf6;color:#598a54;font:700 9px/1 inherit;cursor:pointer}
+.workout-rpe-tooltip{max-width:210px;padding:5px 7px;border:1px solid #d6e6d1;border-radius:7px;background:#f5faf2;color:#5d775a;font-size:9px;line-height:1.4}
+.workout-technique-button{border-color:#bcd9b6!important;background:#edf7e9!important;color:#427b3d!important;font-weight:750}
+.workout-set-head,.workout-live-set{grid-template-columns:.85fr .8fr 1.25fr 38px}
+.workout-next-confirm{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid #e1eadc;border-radius:10px;background:#fbfdf9}
+.workout-next-confirm p{margin:0;color:#5d7459;font-size:10px;line-height:1.45}
+.workout-next-confirm>div{display:flex;flex:0 0 auto;align-items:center;gap:7px}
+.workout-next-confirm .soft-button{margin:0;padding:7px 9px;font-size:10px}
+@media(max-width:700px){.outside-plan-status{align-items:flex-start;flex-direction:column}.outside-plan-status .soft-button{align-self:flex-start}.workout-live-progress{justify-items:start;text-align:left}.workout-live-top{align-items:flex-start;flex-direction:column}.workout-next-confirm{align-items:flex-start;flex-direction:column}.workout-next-confirm>div{width:100%;justify-content:space-between}}
+@media(max-width:520px){.workout-set-head,.workout-live-set{grid-template-columns:.85fr .8fr 1.25fr 32px}.personal-week-title b{font-size:7px}.workout-live-progress span{font-size:8px}}

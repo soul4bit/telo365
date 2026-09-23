@@ -382,5 +382,6 @@ dialog{overflow-y:auto;overscroll-behavior:contain}
 .workout-rest{display:grid;grid-template-columns:auto minmax(110px,1fr) auto;align-items:center;gap:14px;padding:12px 14px}
 .workout-rest strong{font-size:21px;line-height:1;font-variant-numeric:tabular-nums}
 .workout-rest-progress{height:5px;overflow:hidden;border-radius:999px;background:#dbead6}
-.workout-rest-progress b{display:block;height:100%;border-radius:inherit;background:#5a9651;transition:width .45s linear}
+.workout-rest-progress b{display:block;height:100%;border-radius:inherit;background:#5a9651;transition:width .12s linear}
 @media(max-width:520px){.workout-rest{grid-template-columns:1fr auto;gap:9px;padding:12px}.workout-rest-progress{grid-column:1/-1;width:100%}.workout-rest strong{font-size:19px}}
+@media(prefers-reduced-motion:reduce){.workout-rest-progress b{transition:none}}

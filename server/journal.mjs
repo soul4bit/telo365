@@ -6,6 +6,7 @@ import { getItem, mealSnapshot, readCatalog, saveItem } from './catalog.mjs';
 import { analyzeMealPhoto } from './vision.mjs';
 import { onboarding } from './onboarding.mjs';
 import { stores } from './stores/index.mjs';
+import { canUseGenericProgram, ensureTrainingPlan, progressRecommendation, readTrainingPlan, sessionFromTrainingDay } from './training-plan.mjs';
 
 const parseMeal=r=>({...r,snapshot:JSON.parse(r.snapshot),eaten:!!r.eaten});
 const parseWorkout=r=>({...r,data:JSON.parse(r.data),finished:!!r.finished});
@@ -25,6 +26,7 @@ export function state(db,user,day) {
   const catalog=readCatalog(db,user.id);
   const nutritionProfile=db.prepare('SELECT data FROM nutrition_profiles WHERE user_id=?').get(user.id);
   const onboardingRow=db.prepare('SELECT completed,plan FROM onboarding WHERE user_id=?').get(user.id);
+  const trainingPlan=ensureTrainingPlan(db,user,selected);
   return {
     user:{...profile(user),onboardingCompleted:!onboardingRow||!!onboardingRow.completed},today:today(user.timezone),date:selected,
     weights:db.prepare('SELECT date,value FROM weights WHERE user_id=? ORDER BY date').all(user.id),
@@ -35,7 +37,7 @@ export function state(db,user,day) {
     workouts:db.prepare('SELECT * FROM workouts WHERE user_id=? ORDER BY date DESC,rowid DESC LIMIT 100').all(user.id).map(parseWorkout),
     shopping:db.prepare('SELECT id,name,amount,unit,checked,generated FROM shopping WHERE user_id=? ORDER BY generated DESC,name').all(user.id),
     catalog:catalog.map(i=>i.kind==='recipe'?{...i,nutrition:mealSnapshot(db,i.id,user.id)}:i),
-    nutritionProfile:nutritionProfile?JSON.parse(nutritionProfile.data):null,onboardingPlan:onboardingRow?.plan?JSON.parse(onboardingRow.plan):null,
+    nutritionProfile:nutritionProfile?JSON.parse(nutritionProfile.data):null,onboardingPlan:onboardingRow?.plan?JSON.parse(onboardingRow.plan):null,trainingPlan,
   };
 }
 
@@ -122,26 +124,39 @@ export async function journal(ctx) {
   }
   const mealId=path.match(/^\/api\/meals\/([^/]+)$/)?.[1];
   if(mealId&&method==='DELETE') {owned(db,'meals',mealId,u.id);db.prepare('DELETE FROM meals WHERE id=? AND user_id=?').run(mealId,u.id);return {ok:true};}
+  if(method==='GET'&&path==='/api/training-plan') return readTrainingPlan(db,u,date(url.searchParams.get('date')||today(u.timezone)));
   if(path==='/api/workouts'&&method==='PUT') {
-    const id=string(b.id,'Идентификатор',80),d=date(b.date);const old=db.prepare('SELECT * FROM workouts WHERE id=?').get(id);
-    if(old&&old.user_id!==u.id) fail(404,'Тренировка не найдена');
+    const id=string(b.id,'\u0418\u0434\u0435\u043d\u0442\u0438\u0444\u0438\u043a\u0430\u0442\u043e\u0440',80),d=date(b.date),old=db.prepare('SELECT * FROM workouts WHERE id=?').get(id);
+    if(old&&old.user_id!==u.id) fail(404,'\u0422\u0440\u0435\u043d\u0438\u0440\u043e\u0432\u043a\u0430 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u0430');
     if(old&&b.programId&&b.programId===JSON.parse(old.data).programId&&!b.exercises) return {id};
     if(!old) limitCount(db,'workouts',u.id,10000);
     let data;
-    if(!old) {
-      const program=getItem(db,string(b.programId,'Программа'),u.id,'program');
-      data={name:program.name,programId:program.id,startedAt:new Date().toISOString(),exercises:program.exercises.map(e=>{const exercise=getItem(db,e.exerciseId,u.id,'exercise');return {name:exercise.name,unit:exercise.unit,sets:Array.from({length:Math.round(e.sets)},()=>({reps:e.reps,weight:e.weight,done:false}))};})};
+    if(!old&&b.planId&&b.trainingDayId) {
+      const plan=ensureTrainingPlan(db,u,d);
+      if(!plan||plan.id!==b.planId) fail(400,'\u041f\u043b\u0430\u043d \u0442\u0440\u0435\u043d\u0438\u0440\u043e\u0432\u043e\u043a \u043d\u0435 \u0430\u043a\u0442\u0443\u0430\u043b\u0435\u043d');
+      data=sessionFromTrainingDay(plan,String(b.trainingDayId),b.exerciseOverrides&&typeof b.exerciseOverrides==='object'?b.exerciseOverrides:{});
+      if(!data) fail(400,'\u0414\u043b\u044f \u044d\u0442\u043e\u0433\u043e \u0434\u043d\u044f \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u0443\u044e \u0442\u0440\u0435\u043d\u0438\u0440\u043e\u0432\u043a\u0443 \u043f\u043e\u043a\u0430 \u043d\u0435 \u0437\u0430\u043f\u0443\u0441\u043a\u0430\u0435\u043c');
+    } else if(!old) {
+      const program=getItem(db,string(b.programId,'\u041f\u0440\u043e\u0433\u0440\u0430\u043c\u043c\u0430'),u.id,'program');
+      const personalPlan=readTrainingPlan(db,u,d);
+      if(!canUseGenericProgram(personalPlan,program)) fail(400,'\u042d\u0442\u0430 \u043f\u0440\u043e\u0433\u0440\u0430\u043c\u043c\u0430 \u043f\u043e\u043a\u0430 \u043d\u0435 \u043f\u043e\u0434\u0445\u043e\u0434\u0438\u0442 \u043a \u0443\u0447\u0442\u0451\u043d\u043d\u044b\u043c \u043e\u0433\u0440\u0430\u043d\u0438\u0447\u0435\u043d\u0438\u044f\u043c.');
+      data={name:program.name,programId:program.id,intensity:'moderate',minutes:program.minutes||null,startedAt:new Date().toISOString(),exercises:program.exercises.map(e=>{const exercise=getItem(db,e.exerciseId,u.id,'exercise');return {exerciseId:exercise.id,name:exercise.name,unit:exercise.unit,equipment:exercise.equipment||[],restSeconds:75,targetRpe:6,notes:'',sets:Array.from({length:Math.round(e.sets)},()=>({reps:e.reps,weight:e.weight,done:false}))};}),feedback:null,progressRecommendation:null};
     } else {
       data=JSON.parse(old.data);
-      if(!Array.isArray(b.exercises)||b.exercises.length!==data.exercises.length) fail(400,'Проверьте упражнения');
+      if(!Array.isArray(b.exercises)||b.exercises.length!==data.exercises.length) fail(400,'\u041f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 \u0443\u043f\u0440\u0430\u0436\u043d\u0435\u043d\u0438\u044f');
       data.exercises=data.exercises.map((e,i)=>{
         const sets=b.exercises[i]?.sets;
-        if(!Array.isArray(sets)||sets.length<1||sets.length>20) fail(400,'Проверьте подходы');
-        return {...e,sets:sets.map(s=>{if(!s||typeof s!=='object')fail(400,'Проверьте подходы');return {reps:numeric(s.reps,'Повторения',1,3600),weight:numeric(s.weight,'Нагрузка',0,500),done:!!boolean(s.done)};})};
+        if(!Array.isArray(sets)||sets.length<1||sets.length>20) fail(400,'\u041f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 \u043f\u043e\u0434\u0445\u043e\u0434\u044b');
+        return {...e,sets:sets.map(s=>{if(!s||typeof s!=='object')fail(400,'\u041f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 \u043f\u043e\u0434\u0445\u043e\u0434\u044b');return {reps:numeric(s.reps,'\u041f\u043e\u0432\u0442\u043e\u0440\u0435\u043d\u0438\u044f',1,3600),weight:numeric(s.weight,'\u041d\u0430\u0433\u0440\u0443\u0437\u043a\u0430',0,500),done:!!boolean(s.done)};})};
       });
     }
     const finished=boolean(b.finished??false);
-    if(finished&&(d>today(u.timezone)||!data.exercises.every(e=>e.sets.every(s=>s.done)))) fail(400,'Сначала отметьте выполненные подходы');
+    if(finished&&(d>today(u.timezone)||!data.exercises.every(e=>e.sets.every(s=>s.done)))) fail(400,'\u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u043e\u0442\u043c\u0435\u0442\u044c\u0442\u0435 \u0432\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u043d\u044b\u0435 \u043f\u043e\u0434\u0445\u043e\u0434\u044b');
+    if(finished&&data.planId) {
+      const feedback=b.feedback&&typeof b.feedback==='object'?{rpe:numeric(b.feedback.rpe,'RPE',1,10),allSetsCompleted:!!boolean(b.feedback.allSetsCompleted),painOrDiscomfort:!!boolean(b.feedback.painOrDiscomfort)}:null;
+      if(!feedback) fail(400,'\u041e\u0446\u0435\u043d\u0438 \u0441\u043b\u043e\u0436\u043d\u043e\u0441\u0442\u044c \u0438 \u0441\u0430\u043c\u043e\u0447\u0443\u0432\u0441\u0442\u0432\u0438\u0435 \u043f\u043e\u0441\u043b\u0435 \u0442\u0440\u0435\u043d\u0438\u0440\u043e\u0432\u043a\u0438');
+      data.feedback=feedback;data.progressRecommendation=progressRecommendation(feedback);
+    }
     db.prepare('INSERT INTO workouts VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET date=excluded.date,finished=excluded.finished,data=excluded.data').run(id,u.id,d,finished,JSON.stringify(data));return {id};
   }
   const workoutId=path.match(/^\/api\/workouts\/([^/]+)$/)?.[1];

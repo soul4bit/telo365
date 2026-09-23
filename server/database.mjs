@@ -2,6 +2,7 @@ import { DatabaseSync, backup } from 'node:sqlite';
 import { mkdirSync, chmodSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { seedTrainingExercises } from './training-plan.mjs';
 
 export function openDatabase(path) {
   if (path !== ':memory:') mkdirSync(dirname(resolve(path)), { recursive: true, mode: 0o700 });
@@ -9,7 +10,7 @@ export function openDatabase(path) {
   if (path !== ':memory:') chmodSync(path, 0o600);
   db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
   const version = db.prepare('PRAGMA user_version').get().user_version;
-  if (version > 14) throw new Error('Database is newer than this application');
+  if (version > 16) throw new Error('Database is newer than this application');
   if (version === 0) {
     db.exec(`BEGIN IMMEDIATE;
       CREATE TABLE users(id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, recovery TEXT NOT NULL,
@@ -197,6 +198,20 @@ export function openDatabase(path) {
     );
     CREATE INDEX store_price_observations_product_fetched ON store_price_observations(store_product_id,fetched_at DESC);
     PRAGMA user_version=14; COMMIT;`);
+  if (version < 15) db.exec(`BEGIN IMMEDIATE;
+    CREATE TABLE training_plans(
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+      status TEXT NOT NULL,
+      data TEXT NOT NULL,
+      created TEXT NOT NULL,
+      updated TEXT NOT NULL
+    );
+    CREATE INDEX training_plans_updated ON training_plans(updated DESC);
+    PRAGMA user_version=15; COMMIT;`);
+  if (version < 16) db.exec(`BEGIN IMMEDIATE;
+    PRAGMA user_version=16; COMMIT;`);
+  if (version < 16) seedTrainingExercises(db);
   return db;
 }
 

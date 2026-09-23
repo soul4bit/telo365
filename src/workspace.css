@@ -147,3 +147,55 @@
   .nutrition-status>div+div{padding-left:14px}
   .nutrition-macro-line{justify-content:flex-start}
 }
+
+/* Personal training plan */
+.personal-workout-overview{grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr);align-items:stretch}
+.personal-workout-plan{display:flex;flex-direction:column;gap:15px;margin-bottom:20px}
+.personal-workout-plan>.title{margin-bottom:0}
+.personal-exercise-list{display:grid;gap:10px}
+.personal-exercise{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:12px;align-items:center;padding:13px;border:1px solid #e1ece0;border-radius:12px;background:#fbfdf9}
+.personal-exercise-number{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#eaf5e5;color:#437a3f;font-size:11px;font-weight:800}
+.personal-exercise h3{margin:0;color:#29492f;font-size:14px}
+.personal-exercise p{margin:5px 0 2px;color:#697b67;font-size:10px;line-height:1.5}
+.personal-exercise small{display:block;color:#779072;font-size:9px}
+.personal-exercise-actions{display:flex;align-items:center;gap:7px}
+.personal-exercise-actions .text-button{display:inline-flex;align-items:center;gap:5px;padding:6px 7px;border-radius:7px;font-size:10px;white-space:nowrap}
+.personal-exercise-actions .text-button:disabled{color:#97a595;cursor:not-allowed}
+.personal-week-list{display:grid;gap:7px;margin-top:15px;position:relative;z-index:1}
+.personal-week-list>div{display:grid;grid-template-columns:27px minmax(0,1fr) auto;column-gap:8px;align-items:center;min-height:38px;padding:7px 0;border-bottom:1px solid #e9f0e6}
+.personal-week-list>div:last-child{border-bottom:0}
+.personal-week-list>div>span{grid-row:span 2;display:grid;place-items:center;width:25px;height:25px;border-radius:50%;background:#edf5e9;color:#5c8059;font-size:9px;font-weight:800;text-transform:capitalize}
+.personal-week-list strong{overflow:hidden;color:#425c43;font-size:11px;line-height:1.25;text-overflow:ellipsis;white-space:nowrap}
+.personal-week-list small{overflow:hidden;color:#81917e;font-size:9px;line-height:1.25;text-overflow:ellipsis;white-space:nowrap}
+.personal-week-list i{grid-column:3;grid-row:span 2;max-width:72px;overflow:hidden;color:#71846e;font-size:9px;font-style:normal;text-align:right;text-overflow:ellipsis;white-space:nowrap}
+.personal-week-list .is-current>span{background:#ddefd6;color:#397a36}
+.personal-week-list .is-current strong{color:#315d34}
+.personal-week-list .is-recovery{opacity:.62}
+.personal-week-list .is-recovery>span{background:#f2f5f0}
+.workout-safety-state{display:flex;align-items:flex-start;gap:12px;padding:15px;border:1px solid #f0dfbd;border-radius:12px;background:#fffaf0;color:#695935}
+.workout-safety-state>svg{flex:0 0 auto;color:#a77925}
+.workout-safety-state strong{display:block;font-size:13px}
+.workout-safety-state p{margin:5px 0 0;color:#84734c;font-size:11px;line-height:1.55}
+.workout-autosave{margin:0;color:#688766;font-size:10px}
+.workout-feedback,.workout-complete{display:flex;flex-direction:column;gap:12px;padding:2px 0}
+.workout-feedback h3{margin:0;color:#2f5232;font-size:19px}
+.workout-feedback>label:not(.consent){display:grid;gap:8px;color:#526750;font-size:11px;font-weight:700}
+.workout-feedback input[type=range]{accent-color:#56974f}
+.workout-feedback .consent{font-size:11px}
+.workout-complete{display:grid;grid-template-columns:auto 1fr auto;align-items:center}
+.workout-complete h3{margin:4px 0;color:#315233;font-size:17px}
+.workout-complete p{margin:0;color:#72816f;font-size:10px;line-height:1.5}
+.exercise-technique-video{overflow:hidden;min-height:180px;border-radius:12px;background:#edf3ea}
+.exercise-technique-video video,.exercise-technique-video img{display:block;width:100%;min-height:180px;object-fit:cover}
+.workout-other-programs{margin-bottom:20px}
+.workout-other-programs .form-note{margin:4px 0 14px;max-width:650px;font-size:10px;line-height:1.6}
+.workout-other-programs .soft-button{margin:0 13px;margin-top:auto;justify-content:center;padding:9px 10px;font-size:10px}
+@media(max-width:900px){.personal-workout-overview{grid-template-columns:1fr}.personal-week-list>div{min-height:36px}}
+@media(max-width:560px){.personal-exercise{grid-template-columns:28px minmax(0,1fr);gap:9px;padding:11px}.personal-exercise-number{width:25px;height:25px}.personal-exercise h3{font-size:13px}.personal-exercise-actions{grid-column:2;justify-content:flex-start;flex-wrap:wrap}.personal-week-list i{max-width:64px;font-size:8px}.workout-complete{grid-template-columns:auto 1fr}.workout-complete .primary-button{grid-column:1/-1;width:100%;justify-content:center}.exercise-technique-video,.exercise-technique-video video,.exercise-technique-video img{min-height:220px}.workout-live-top{position:static}}
+
+/* Keep a long workout session usable inside the compact mobile dialog. */
+dialog{overflow-y:auto;overscroll-behavior:contain}
+.workout-live-form .workout-live-top{position:static;box-shadow:none}
+.workout-live-set{position:relative}
+.workout-set-toggle{position:relative;z-index:1;min-width:29px}
+@media(max-width:520px){.workout-set-toggle{min-width:29px;width:29px;height:29px}}

@@ -1,4 +1,20 @@
 import { test, expect } from '@playwright/test'
+async function expectNutritionSummary(page:any,eaten:string,planned?:string){
+  const card=page.locator('.nutrition-today')
+  const status=card.locator('.nutrition-status')
+  await expect(status.locator('>div').first()).toContainText(eaten)
+  if(planned)await expect(status.locator('>div').nth(1)).toContainText(planned)
+  const unlabeledValues=await card.evaluate(node=>{
+    const values=new Set<string>()
+    for(const element of node.querySelectorAll('strong,b,span,small')){
+      const value=element.textContent?.trim()||''
+      if(['0','00','undefined','null'].includes(value))values.add(value)
+    }
+    return [...values]
+  })
+  expect(unlabeledValues).toEqual([])
+}
+
 async function finishOnboarding(page:any){
   await expect(page.getByRole('heading',{name:'\u0420\u0430\u0441\u0441\u043a\u0430\u0436\u0438 \u043d\u0435\u043c\u043d\u043e\u0433\u043e \u043e \u0441\u0435\u0431\u0435'})).toBeVisible()
   const next=page.getByRole('button',{name:'\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c',exact:true})
@@ -125,6 +141,14 @@ test('mobile keeps a static My Day hero',async({page},info)=>{
   await expect(page.locator('.workspace-hero-video')).toHaveCount(0)
   await page.getByRole('button',{name:'\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043c\u0435\u043d\u044e',exact:true}).click()
   await page.getByRole('navigation').getByRole('button',{name:'\u041f\u0438\u0442\u0430\u043d\u0438\u0435',exact:true}).click()
+  const nutritionSummary=page.locator('.nutrition-today')
+  await expectNutritionSummary(page,'0 \u043a\u043a\u0430\u043b \u0441\u044a\u0435\u0434\u0435\u043d\u043e')
+  await page.getByLabel('\u0414\u0430\u0442\u0430 \u0434\u043d\u0435\u0432\u043d\u0438\u043a\u0430',{exact:true}).fill('2030-01-15')
+  await expect(nutritionSummary.locator('time')).toContainText('15')
+  await expectNutritionSummary(page,'0 \u043a\u043a\u0430\u043b \u0441\u044a\u0435\u0434\u0435\u043d\u043e','0 \u043a\u043a\u0430\u043b')
+  await page.getByRole('button',{name:'\u0421\u0435\u0433\u043e\u0434\u043d\u044f',exact:true}).click()
+  await expect(nutritionSummary.locator('time')).not.toContainText('15')
+  await expectNutritionSummary(page,'0 \u043a\u043a\u0430\u043b \u0441\u044a\u0435\u0434\u0435\u043d\u043e')
   const nutritionHero=page.locator('.nutrition-hero')
   await expect(nutritionHero).toBeVisible()
   await expect(nutritionHero).toHaveCSS('background-image',/nutrition-hero-poster/)
@@ -186,6 +210,14 @@ test('guest landing, registration and personal journal work across devices',asyn
   await page.getByRole('button',{name:'+250',exact:true}).click()
   await expect(page.locator('article').filter({has:page.getByRole('button',{name:'+250',exact:true})})).toContainText('250 /')
   await navigate('Питание')
+  const nutritionSummary=page.locator('.nutrition-today')
+  await expectNutritionSummary(page,'0 \u043a\u043a\u0430\u043b \u0441\u044a\u0435\u0434\u0435\u043d\u043e')
+  await page.getByLabel('\u0414\u0430\u0442\u0430 \u0434\u043d\u0435\u0432\u043d\u0438\u043a\u0430',{exact:true}).fill('2030-01-15')
+  await expect(nutritionSummary.locator('time')).toContainText('15')
+  await expectNutritionSummary(page,'0 \u043a\u043a\u0430\u043b \u0441\u044a\u0435\u0434\u0435\u043d\u043e','0 \u043a\u043a\u0430\u043b')
+  await page.getByRole('button',{name:'\u0421\u0435\u0433\u043e\u0434\u043d\u044f',exact:true}).click()
+  await expect(nutritionSummary.locator('time')).not.toContainText('15')
+  await expectNutritionSummary(page,'0 \u043a\u043a\u0430\u043b \u0441\u044a\u0435\u0434\u0435\u043d\u043e')
   await page.getByRole('button',{name:'Свой продукт',exact:true}).click({force:true})
   const nutritionHero=page.locator('.nutrition-hero')
   await expect(nutritionHero).toBeVisible()
@@ -220,7 +252,7 @@ test('guest landing, registration and personal journal work across devices',asyn
   await page.getByLabel('Уже съедено').check()
   await page.getByRole('button',{name:'Сохранить приём пищи'}).click()
   await expect(page.getByRole('dialog')).not.toBeVisible()
-  await expect(page.locator('.nutrition-status')).toContainText('300')
+  await expectNutritionSummary(page,'300 \u043a\u043a\u0430\u043b \u0441\u044a\u0435\u0434\u0435\u043d\u043e')
   await navigate('Покупки')
   await page.getByRole('button',{name:'Обновить из плана'}).click()
   await expect(page.getByRole('button',{name:'Тестовые хлопья: купить',exact:true})).toBeVisible()

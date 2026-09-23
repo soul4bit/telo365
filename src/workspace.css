@@ -202,12 +202,13 @@ dialog{overflow-y:auto;overscroll-behavior:contain}
 
 /* Compact personal-training states */
 .personal-workout-overview{grid-template-columns:minmax(0,.85fr) minmax(300px,1.15fr);align-items:start}
-.recovery-today-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;padding:21px!important;background:linear-gradient(120deg,#f7faf4,#fff)!important}
-.recovery-today-card h2{margin:6px 0 7px;color:#315333;font-size:22px;letter-spacing:-.6px}
+.recovery-today-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:18px!important;background:linear-gradient(120deg,#f7faf4,#fff)!important}
+.recovery-today-card h2{margin:5px 0 6px;color:#315333;font-size:20px;letter-spacing:-.6px}
 .recovery-today-card p{margin:0;color:#70816f;font-size:11px;line-height:1.6}
 .recovery-guidance{display:flex;flex-wrap:wrap;gap:7px;margin:0;padding:0;list-style:none}
 .recovery-guidance li{border:1px solid #dde9d9;border-radius:999px;background:#fbfdf9;padding:7px 9px;color:#688064;font-size:9px;line-height:1.2;white-space:nowrap}
 .recovery-guidance.is-compact{max-width:250px;justify-content:flex-end}
+.recovery-today-side{display:grid;justify-items:end;gap:9px}
 .personal-workout-plan.is-recovery-plan{gap:18px;background:linear-gradient(145deg,#fff,#fbfdf9)!important}
 .recovery-state{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;padding:18px;border:1px solid #e2ece0;border-radius:13px;background:#fbfdf9}
 .recovery-state h3{margin:5px 0 7px;color:#315333;font-size:17px}
@@ -229,7 +230,7 @@ dialog{overflow-y:auto;overscroll-behavior:contain}
 .personal-exercise-actions{align-self:center}
 .exercise-technique-placeholder{display:grid;min-height:180px;place-items:center;align-content:center;gap:10px;padding:24px;color:#789173;text-align:center}
 .exercise-technique-placeholder p{margin:0;font-size:11px;line-height:1.5}
-.workout-other-programs{padding:19px!important;background:#fcfdfb!important;border-color:#edf2e9!important}
+.workout-other-programs{padding:16px!important;background:#fcfdfb!important;border-color:#edf2e9!important}
 .other-programs-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:14px}
 .other-programs-head .title{margin-bottom:4px}
 .other-programs-head p{max-width:520px;margin:0;color:#899786;font-size:10px;line-height:1.55}
@@ -242,5 +243,5 @@ dialog{overflow-y:auto;overscroll-behavior:contain}
 .other-program-card p{display:-webkit-box;overflow:hidden;margin:0;color:#879684;font-size:9px;line-height:1.45;-webkit-box-orient:vertical;-webkit-line-clamp:1}
 .other-program-card small{display:flex;align-items:center;gap:4px;color:#80927c;font-size:9px}
 .other-program-card .soft-button{margin:0!important;padding:7px 8px!important;font-size:9px!important;white-space:nowrap}
-@media(max-width:900px){.recovery-today-card,.recovery-state{grid-template-columns:1fr}.recovery-guidance.is-compact{max-width:none;justify-content:flex-start}.other-program-grid{grid-template-columns:1fr}}
-@media(max-width:560px){.recovery-today-card{gap:13px;padding:17px!important}.recovery-today-card h2{font-size:20px}.recovery-guidance li{padding:7px 8px;font-size:9px;white-space:normal}.recovery-state{padding:14px;gap:14px}.recovery-state h3{font-size:16px}.personal-exercise{grid-template-columns:28px minmax(0,1fr);min-height:0}.personal-exercise-actions{grid-column:2;justify-content:flex-start}.other-programs-head{align-items:flex-start;gap:12px}.other-programs-head p{font-size:9px}.other-program-grid{grid-template-columns:1fr}.other-program-card{grid-template-columns:29px minmax(0,1fr);padding:10px}.other-program-card .soft-button{grid-column:2;justify-self:start}.other-programs-toggle{font-size:9px}.exercise-technique-placeholder{min-height:220px}}
+@media(max-width:900px){.recovery-today-card,.recovery-state{grid-template-columns:1fr}.recovery-today-side{justify-items:start}.recovery-guidance.is-compact{max-width:none;justify-content:flex-start}.other-program-grid{grid-template-columns:1fr}}
+@media(max-width:560px){.recovery-today-card{gap:12px;padding:15px!important}.recovery-today-card h2{font-size:20px}.recovery-guidance li{padding:7px 8px;font-size:9px;white-space:normal}.recovery-state{padding:14px;gap:14px}.recovery-state h3{font-size:16px}.personal-exercise{grid-template-columns:28px minmax(0,1fr);min-height:0}.personal-exercise-actions{grid-column:2;justify-content:flex-start}.other-programs-head{align-items:flex-start;gap:12px}.other-programs-head p{font-size:9px}.other-program-grid{grid-template-columns:1fr}.other-program-card{grid-template-columns:29px minmax(0,1fr);padding:10px}.other-program-card .soft-button{grid-column:2;justify-self:start}.other-programs-toggle{font-size:9px}.exercise-technique-placeholder{min-height:220px}}

@@ -6,7 +6,7 @@
 
 ## Что содержат кандидаты
 
-`telo-trainer-*-visual-test.glb` создаётся из соответствующей рабочей сцены в
+`telo-trainer-*-visual-v3-test.glb` создаётся из соответствующей рабочей сцены в
 `assets-work/`. На поверхности Human Base Mesh добавлены реальные, отдельные
 геометрические острова одежды: топ, низ, оболочки обуви и короткая шапочка
 волос. Они получают те же vertex weights, что и соответствующая часть тела,
@@ -15,8 +15,10 @@
 персонажей или скелетов.
 
 Материалы — простые PBR base colors без фотографических skin/face/clothing
-текстур и без сторонних ассетов. Оболочки обуви и волос пригодны только для
-визуального review. Не считать их финальной реалистичной одеждой.
+текстур и без сторонних ассетов. Тонкие оболочки одежды наследуют реальные
+weights от исходной анатомии, поэтому остаются отдельной геометрией и следуют
+приседанию. Оболочки обуви и волос пригодны только для визуального review. Не
+считать их финальной реалистичной одеждой.
 
 ## Воспроизведение
 
@@ -29,18 +31,20 @@ viewer при этом не меняется.
 ## Повторная сборка
 
 ```powershell
-& 'D:\soft\Blender 5.2\blender.exe' -b assets-work/telo-trainer-male-squat-animation-working.blend -P tools/prepare-visual-squat-candidate.py -- male
-& 'D:\soft\Blender 5.2\blender.exe' -b assets-work/telo-trainer-female-squat-animation-working.blend -P tools/prepare-visual-squat-candidate.py -- female
+& 'D:\soft\Blender 5.2\blender.exe' -b assets-work/telo-trainer-male-squat-animation-working.blend -P tools/prepare-visual-squat-candidate-v3.py -- male
+& 'D:\soft\Blender 5.2\blender.exe' -b assets-work/telo-trainer-female-squat-animation-working.blend -P tools/prepare-visual-squat-candidate-v3.py -- female
 ```
 
 Для GIF сначала создайте кадры, затем используйте существующий Windows helper:
 
 ```powershell
-& 'D:\soft\Blender 5.2\blender.exe' -b assets-work/telo-trainer-male-squat-visual-working.blend -P tools/render-visual-squat-preview.py -- male
-./tools/create-squat-preview-gif.ps1 -FrameDirectory artifacts/male-visual-squat-preview-frames -OutputPath artifacts/male-visual-squat-preview.gif
+& 'D:\soft\Blender 5.2\blender.exe' -b assets-work/telo-trainer-male-squat-visual-v3-working.blend -P tools/render-visual-squat-preview.py -- male v3
+./tools/create-squat-preview-gif.ps1 -FrameDirectory artifacts/male-visual-v3-squat-preview-frames -OutputPath artifacts/male-visual-v3-squat-preview.gif
 ```
 
-Повторите с `female`, заменив имя папки и GIF. Каталог `artifacts/` игнорируется
+Повторите с `female`, заменив имя папки и GIF. Скрипт также сохраняет контрольные
+кадры `standing-front`, `standing-side`, `standing-back`, `half-squat-side`,
+`bottom-side` и `bottom-front` в разрешении 1080×1080. Каталог `artifacts/` игнорируется
 Git и служит только для ручной оценки.
 
 ## Проверка

@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "purpose": "Visual-only review of separate sport-clothing geometry with the existing squat clips.",
+  "revision": "v3",
   "productionViewerChanged": false,
   "verified": false,
   "exercise": {
@@ -14,27 +15,28 @@
     "male": {
       "sourceModel": "public/media/exercises/models/telo-trainer-male-rig-test.glb",
       "sourceModelSha256": "b60405d2dacc457197d14a9e5834b6987abf75fdcb00dbddf72e1b250bd8e98f",
-      "visualModel": "public/media/exercises/models/telo-trainer-male-visual-test.glb",
-      "visualModelSha256": "05e17da53b7f6e0a311f07d489c0ccc6df82d61d893cd8439355f5268d59601c",
-      "workingBlend": "assets-work/telo-trainer-male-squat-visual-working.blend",
+      "visualModel": "public/media/exercises/models/telo-trainer-male-visual-v3-test.glb",
+      "visualModelSha256": "526241d497ddb865e74478f7d89e46bf22066f891aaecc39ca50480cd72ab14c",
+      "workingBlend": "assets-work/telo-trainer-male-squat-visual-v3-working.blend",
       "animation": "public/media/exercises/animations/male/squat-test.glb",
-      "geometry": ["sport top", "sport shorts", "shoe shells", "short hair cap"],
-      "materials": "Procedural PBR base colours only; no photo textures or external assets."
+      "geometry": ["fitted sport top", "sport shorts", "low-profile shoe shell", "short hair cap"],
+      "materials": "Neutral PBR base colours only; no photo textures or external assets."
     },
     "female": {
       "sourceModel": "public/media/exercises/models/telo-trainer-female-rig-test.glb",
       "sourceModelSha256": "bc693d332e5cc06c147c14465846672cc5e98ec25af649df71f09539f1e389b8",
-      "visualModel": "public/media/exercises/models/telo-trainer-female-visual-test.glb",
-      "visualModelSha256": "6d5fcd9cc9ef8d35cabe754aed2d09f4cfaa71d01a8c5ee774c2e2cac1bbdf8b",
-      "workingBlend": "assets-work/telo-trainer-female-squat-visual-working.blend",
+      "visualModel": "public/media/exercises/models/telo-trainer-female-visual-v3-test.glb",
+      "visualModelSha256": "506cc20f6ccb5dd0a821775c55a44b1cd172e94ef7960aae74dfc0ef6c50982e",
+      "workingBlend": "assets-work/telo-trainer-female-squat-visual-v3-working.blend",
       "animation": "public/media/exercises/animations/female/squat-test.glb",
-      "geometry": ["sport top", "leggings", "shoe shells", "short hair cap"],
-      "materials": "Procedural PBR base colours only; no photo textures or external assets."
+      "geometry": ["fitted sport top", "leggings", "low-profile shoe shell", "short hair cap"],
+      "materials": "Neutral PBR base colours only; no photo textures or external assets."
     }
   },
   "knownLimitations": [
     "The Human Base Mesh face remains untextured and does not include production-quality eyes.",
+    "The fitted clothing shells preserve source-body topology, so some cuffs, collar edges and the hairline remain visibly stepped.",
     "Shoes and hair are lightweight surface shells, suitable only for a review candidate.",
-    "No generated hair tail is included because it caused a visible deformation artefact during the squat."
+    "A production-quality face, hair cards and shoe mesh need manually authored or properly licensed game-ready assets."
   ]
 }

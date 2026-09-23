@@ -4,8 +4,8 @@ import Exercise3DViewer from './components/Exercise3DViewer'
 import './workspace.css'
 
 const candidates={
-  male:{label:'Мужчина',modelUrl:'/media/exercises/models/telo-trainer-male-visual-test.glb',animationUrl:'/media/exercises/animations/male/squat-test.glb'},
-  female:{label:'Женщина',modelUrl:'/media/exercises/models/telo-trainer-female-visual-test.glb',animationUrl:'/media/exercises/animations/female/squat-test.glb'}
+  male:{label:'Мужчина',modelUrl:'/media/exercises/models/telo-trainer-male-visual-v3-test.glb',animationUrl:'/media/exercises/animations/male/squat-test.glb'},
+  female:{label:'Женщина',modelUrl:'/media/exercises/models/telo-trainer-female-visual-v3-test.glb',animationUrl:'/media/exercises/animations/female/squat-test.glb'}
 } as const
 
 function VisualSquatPreview(){

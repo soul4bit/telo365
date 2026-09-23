@@ -9,8 +9,8 @@ const canonicalBones=[
   'LeftUpperLeg','LeftLowerLeg','LeftFoot','LeftToe','RightUpperLeg','RightLowerLeg','RightFoot','RightToe'
 ]
 const assets={
-  male:{base:'public/media/exercises/models/telo-trainer-male-rig-test.glb',visual:'public/media/exercises/models/telo-trainer-male-visual-test.glb',animation:'public/media/exercises/animations/male/squat-test.glb'},
-  female:{base:'public/media/exercises/models/telo-trainer-female-rig-test.glb',visual:'public/media/exercises/models/telo-trainer-female-visual-test.glb',animation:'public/media/exercises/animations/female/squat-test.glb'}
+  male:{base:'public/media/exercises/models/telo-trainer-male-rig-test.glb',visual:'public/media/exercises/models/telo-trainer-male-visual-v3-test.glb',animation:'public/media/exercises/animations/male/squat-test.glb'},
+  female:{base:'public/media/exercises/models/telo-trainer-female-rig-test.glb',visual:'public/media/exercises/models/telo-trainer-female-visual-v3-test.glb',animation:'public/media/exercises/animations/female/squat-test.glb'}
 }
 const load=async path=>{
   const source=await readFile(resolve(path))

@@ -13,8 +13,9 @@ import bpy
 from mathutils import Vector
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-AVATAR = next((value for value in sys.argv[sys.argv.index("--") + 1:]
-               if value in {"male", "female"}), None) if "--" in sys.argv else None
+ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+AVATAR = next((value for value in ARGS if value in {"male", "female"}), None)
+VARIANT = next((value for value in ARGS if value in {"v1", "v2", "v3"}), "v1")
 if AVATAR not in {"male", "female"}:
     raise RuntimeError("Pass an avatar after --: male or female")
 
@@ -26,7 +27,8 @@ if camera is None:
 def point_at(obj, target):
     obj.rotation_euler = (Vector(target) - obj.location).to_track_quat("-Z", "Y").to_euler()
 
-output = os.path.join(ROOT, "artifacts", f"{AVATAR}-visual-squat-preview-frames")
+variant_suffix = "visual" if VARIANT == "v1" else f"visual-{VARIANT}"
+output = os.path.join(ROOT, "artifacts", f"{AVATAR}-{variant_suffix}-squat-preview-frames")
 os.makedirs(output, exist_ok=True)
 scene.render.engine = "BLENDER_EEVEE"
 scene.render.resolution_x = 360

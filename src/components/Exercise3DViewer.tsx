@@ -78,17 +78,16 @@ function ThreeScene({modelUrl,animationUrl,animationClip,cameraPreset,playing,sp
 }
 
 export default function Exercise3DViewer({modelUrl,animationUrl,animationClip,cameraPreset,playbackSpeed,playbackMode='loop',posterUrl,available=true}:Exercise3DViewerProps){
-  const reducedMotion=useReducedMotion(),[playing,setPlaying]=useState(true),[speed,setSpeed]=useState(playbackSpeed),[ready,setReady]=useState(false),[failed,setFailed]=useState(false),[retryKey,setRetryKey]=useState(0),[resetKey,setResetKey]=useState(0)
+  const reducedMotion=useReducedMotion(),[playing,setPlaying]=useState(true),[speed,setSpeed]=useState(playbackSpeed),[ready,setReady]=useState(false),[failed,setFailed]=useState(false),[resetKey,setResetKey]=useState(0)
   const markReady=useCallback(()=>setReady(true),[])
-  const reportError=useCallback((error:Error)=>{console.warn(`[Exercise3DViewer] Could not load ${animationClip} (${modelUrl}, ${animationUrl}): ${error.message}`);setFailed(true)},[animationClip,animationUrl,modelUrl])
-  const retry=useCallback(()=>{useLoader.clear(GLTFLoader,modelUrl);useLoader.clear(GLTFLoader,animationUrl);setFailed(false);setReady(false);setRetryKey(value=>value+1)},[animationUrl,modelUrl])
+  const reportError=useCallback((error:Error)=>{console.info(`[Exercise3DViewer] 3D asset is not available for ${animationClip} (${modelUrl}, ${animationUrl}): ${error.message}`);setFailed(true)},[animationClip,animationUrl,modelUrl])
   useEffect(()=>setSpeed(playbackSpeed),[playbackSpeed])
   if(reducedMotion)return <ViewerFallback posterUrl={posterUrl} label="Статичная техника" description="Анимация отключена в настройках уменьшения движения."/>
   if(!available)return <ViewerFallback posterUrl={posterUrl} label="Демонстрация техники готовится" description="Скоро здесь появится интерактивный показ упражнения."/>
-  if(failed)return <ViewerFallback posterUrl={posterUrl} label="Не удалось загрузить демонстрацию" description="Файл модели или анимации пока недоступен. Попробуй ещё раз позже." retry={retry}/>
+  if(failed)return <ViewerFallback posterUrl={posterUrl} label="Демонстрация техники скоро будет доступна" description="Пока можно ориентироваться на ключевые моменты упражнения справа."/>
   return <section className="exercise-3d-viewer" aria-label="3D-демонстрация техники" data-playback-mode={playbackMode}>
     {!ready&&<div className="exercise-3d-skeleton" aria-hidden="true"/>}
-    <ViewerErrorBoundary key={retryKey} onError={reportError}><ThreeScene modelUrl={modelUrl} animationUrl={animationUrl} animationClip={animationClip} cameraPreset={cameraPreset} playing={playing} speed={speed} resetKey={resetKey} onReady={markReady}/></ViewerErrorBoundary>
+    <ViewerErrorBoundary onError={reportError}><ThreeScene modelUrl={modelUrl} animationUrl={animationUrl} animationClip={animationClip} cameraPreset={cameraPreset} playing={playing} speed={speed} resetKey={resetKey} onReady={markReady}/></ViewerErrorBoundary>
     <div className="exercise-3d-controls"><button className="icon-button" type="button" aria-label={playing?'Пауза анимации':'Запустить анимацию'} onClick={()=>setPlaying(value=>!value)}>{playing?<Pause size={15}/>:<Play size={15}/>}</button><button className="icon-button" type="button" aria-label="Вернуть начало анимации и ракурс" onClick={()=>setResetKey(value=>value+1)}><RotateCcw size={14}/></button><div role="group" aria-label="Скорость анимации"><button className={speed===.5?'is-active':''} type="button" onClick={()=>setSpeed(.5)}>0.5×</button><button className={speed===1?'is-active':''} type="button" onClick={()=>setSpeed(1)}>1×</button></div><span><Rotate3D size={14}/>Поверни модель</span></div>
   </section>
 }

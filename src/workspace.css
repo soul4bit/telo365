@@ -386,3 +386,22 @@ dialog{overflow-y:auto;overscroll-behavior:contain}
 .workout-rest-progress b{display:block;height:100%;border-radius:inherit;background:#5a9651;transition:width .12s linear}
 @media(max-width:520px){.workout-rest{grid-template-columns:1fr auto;gap:9px;padding:12px}.workout-rest-progress{grid-column:1/-1;width:100%}.workout-rest strong{font-size:19px}}
 @media(prefers-reduced-motion:reduce){.workout-rest-progress b{transition:none}}
+
+/* Technique is a focused exercise view: large on desktop, stacked on mobile. */
+.workspace dialog.technique-dialog{width:min(1000px,calc(100% - 40px));max-height:calc(100dvh - 40px);padding:28px}
+.technique-dialog .dialog-head{margin-bottom:18px}
+.technique-dialog-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(240px,.78fr);gap:22px;align-items:stretch}
+.technique-dialog .exercise-technique-video{display:flex;min-height:440px;border:1px solid #e0ebdc;border-radius:14px;background:radial-gradient(circle at 50% 22%,#fbfdf8 0%,#eef5eb 100%)}
+.technique-dialog .exercise-3d-viewer,.technique-dialog .exercise-3d-canvas,.technique-dialog .exercise-3d-skeleton,.technique-dialog .exercise-3d-fallback{width:100%;min-height:440px}
+.technique-dialog .exercise-3d-canvas{height:440px}
+.technique-dialog .exercise-3d-fallback{padding:32px;background:transparent}
+.technique-dialog .exercise-technique-placeholder{width:100%;min-height:440px;gap:9px}
+.technique-dialog .exercise-technique-placeholder strong{color:#496648;font-size:13px}
+.technique-guidance{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:13px;padding:8px 2px}
+.technique-guidance h3{color:#315333;font-size:20px;letter-spacing:-.55px}
+.technique-guidance ul{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.technique-guidance li{position:relative;padding-left:19px;color:#60775d;font-size:11px;line-height:1.55}
+.technique-guidance li::before{content:"";position:absolute;top:.48em;left:0;width:9px;height:9px;border:2px solid #74a96d;border-radius:50%}
+.technique-guidance>p{margin:2px 0 0;padding-top:13px;border-top:1px solid #e4eee0;color:#82927d;font-size:10px;line-height:1.6}
+@media(max-width:760px){.workspace dialog.technique-dialog{width:min(620px,calc(100% - 28px));padding:22px 18px}.technique-dialog-layout{grid-template-columns:1fr;gap:18px}.technique-dialog .exercise-technique-video,.technique-dialog .exercise-3d-viewer,.technique-dialog .exercise-3d-canvas,.technique-dialog .exercise-3d-skeleton,.technique-dialog .exercise-3d-fallback,.technique-dialog .exercise-technique-placeholder{min-height:300px}.technique-dialog .exercise-3d-canvas{height:300px}.technique-guidance{gap:10px;padding:0}.technique-guidance h3{font-size:18px}}
+@media(max-width:420px){.workspace dialog.technique-dialog{width:calc(100% - 20px);padding:18px 14px}.technique-dialog .exercise-technique-video,.technique-dialog .exercise-3d-viewer,.technique-dialog .exercise-3d-canvas,.technique-dialog .exercise-3d-skeleton,.technique-dialog .exercise-3d-fallback,.technique-dialog .exercise-technique-placeholder{min-height:260px}.technique-dialog .exercise-3d-canvas{height:260px}.technique-guidance li{font-size:10px}}

@@ -97,12 +97,12 @@ export default function WorkoutHero({hasActiveWorkout=false}:{hasActiveWorkout?:
     }).catch(()=>{})
   }
 
-  return <section ref={root} className="workout-hero" aria-labelledby="workout-hero-title">
+  return <section ref={root} className={`workout-hero${primaryReady?' has-video':''}`} aria-labelledby="workout-hero-title">
     {inView&&!staticMode&&<div className={`workout-hero-media${hasCrossfaded?' is-crossfading':''}`} aria-hidden="true">
-      <video ref={primary} className={`workout-hero-video${primaryReady?' is-ready':''}${active==='primary'?' is-active':''}`} autoPlay muted loop playsInline preload="metadata" poster="/images/workout.jpg" tabIndex={-1} onCanPlay={event=>startPrimary(event.currentTarget)} onTimeUpdate={event=>watchLoop('primary',event)} onError={event=>{event.currentTarget.style.display='none'}}>
+      <video ref={primary} className={`workout-hero-video${primaryReady?' is-ready':''}${active==='primary'?' is-active':''}`} autoPlay muted loop playsInline preload="metadata" tabIndex={-1} onCanPlay={event=>startPrimary(event.currentTarget)} onTimeUpdate={event=>watchLoop('primary',event)} onError={event=>{event.currentTarget.style.display='none'}}>
         <source src="/media/workout-hero-v2.mp4" type="video/mp4" />
       </video>
-      {bufferMounted&&<video ref={buffer} className={`workout-hero-video${bufferReady?' is-ready':''}${active==='buffer'?' is-active':''}`} muted loop playsInline preload="metadata" poster="/images/workout.jpg" tabIndex={-1} onCanPlay={event=>setBufferReady(true)} onTimeUpdate={event=>watchLoop('buffer',event)} onError={event=>{event.currentTarget.style.display='none';setBufferReady(false)}}>
+      {bufferMounted&&<video ref={buffer} className={`workout-hero-video${bufferReady?' is-ready':''}${active==='buffer'?' is-active':''}`} muted loop playsInline preload="auto" tabIndex={-1} onCanPlay={event=>setBufferReady(true)} onTimeUpdate={event=>watchLoop('buffer',event)} onError={event=>{event.currentTarget.style.display='none';setBufferReady(false)}}>
         <source src="/media/workout-hero-v2.mp4" type="video/mp4" />
       </video>}
     </div>}

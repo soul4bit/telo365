@@ -283,6 +283,7 @@ dialog{overflow-y:auto;overscroll-behavior:contain}
   background-size:100% 100%,auto 100%;
 }
 .workout-hero-media{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.workout-hero.has-video{background-image:linear-gradient(90deg,rgba(247,249,243,1) 0%,rgba(247,249,243,.97) 32%,rgba(244,248,240,.73) 52%,rgba(239,245,235,.24) 67%,rgba(239,245,235,0) 80%)}
 .workout-hero-media::before{content:"";position:absolute;inset:0 auto 0 0;z-index:2;width:56%;background:linear-gradient(90deg,rgba(247,249,243,1) 0%,rgba(247,249,243,.95) 36%,rgba(247,249,243,.7) 63%,rgba(247,249,243,0) 100%)}
 .workout-hero-video{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:65% 68%;opacity:0;transition:opacity .42s ease-out}
 .workout-hero-video.is-ready.is-active{opacity:1}

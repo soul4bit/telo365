@@ -25,6 +25,13 @@ const cameraPositions:Record<ExerciseCameraPreset,[number,number,number]>={
   front:[0,1.35,3.35],threeQuarter:[2.45,1.45,2.7],side:[3.35,1.3,0],low:[2.7,.9,3]
 }
 
+// The legacy trainer already matches the viewer camera. Smaller Human Base Mesh
+// candidates are enlarged only enough to fit a standing body in that same frame.
+function viewerScale(scene:THREE.Object3D){
+  const height=new THREE.Box3().setFromObject(scene).getSize(new THREE.Vector3()).y
+  return height>0&&height<2.1?THREE.MathUtils.clamp(2.1/height,1,1.3):1
+}
+
 function assertAnimationCompatibility(scene:THREE.Object3D,clip:THREE.AnimationClip,requireSkinnedMesh:boolean){
   const names=new Set<string>()
   let hasSkinnedMesh=false
@@ -66,6 +73,7 @@ function Humanoid({modelUrl,animationUrl,animationClip,playing,speed,resetKey,on
   const base=useLoader(GLTFLoader,modelUrl)
   const animationGltf=useLoader(GLTFLoader,animationUrl)
   const scene=useMemo(()=>cloneSkeleton(base.scene),[base.scene])
+  const scale=useMemo(()=>viewerScale(scene),[scene])
   const mixer=useMemo(()=>new THREE.AnimationMixer(scene),[scene])
   const clip=useMemo(()=>animationGltf.animations.find(item=>item.name===animationClip)||animationGltf.animations[0],[animationClip,animationGltf.animations])
   if(!clip)throw new Error(`Animation clip "${animationClip}" is missing in ${animationUrl}`)
@@ -80,14 +88,15 @@ function Humanoid({modelUrl,animationUrl,animationClip,playing,speed,resetKey,on
   useEffect(()=>{action.timeScale=speed;action.paused=!playing},[action,playing,speed])
   useEffect(()=>{action.reset().play();action.paused=!playing},[action,playing,resetKey])
   useFrame((_state,delta)=>{if(playing)mixer.update(delta)})
-  return <group position={[0,-1.05,0]}><primitive object={scene}/></group>
+  return <group position={[0,-1.05,0]} scale={scale}><primitive object={scene}/></group>
 }
 
 function StaticTrainer({modelUrl,onReady}:{modelUrl:string;onReady:()=>void}){
   const base=useLoader(GLTFLoader,modelUrl)
   const scene=useMemo(()=>cloneSkeleton(base.scene),[base.scene])
+  const scale=useMemo(()=>viewerScale(scene),[scene])
   useEffect(()=>{onReady()},[onReady])
-  return <group position={[0,-1.05,0]}><primitive object={scene}/></group>
+  return <group position={[0,-1.05,0]} scale={scale}><primitive object={scene}/></group>
 }
 
 function ThreeScene({modelUrl,animationUrl,animationClip,cameraPreset,playing,speed,resetKey,onReady,requireSkinnedMesh=false,mode='animation'}:{modelUrl:string;animationUrl?:string;animationClip?:string;cameraPreset:ExerciseCameraPreset;playing:boolean;speed:number;resetKey:number;onReady:()=>void;requireSkinnedMesh?:boolean;mode?:'animation'|'preview'}){

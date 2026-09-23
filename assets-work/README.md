@@ -38,3 +38,29 @@ squat clip can be called technically verified.
 
 The candidate is intentionally not wired into the workout execution UI and no
 exercise or trainer avatar is marked `verified`.
+
+## First exercise test candidate: male squat
+
+`telo-trainer-male-squat-animation-working.blend` is a separate working file
+for the first exercise only. It does not modify the source bundle or replace a
+production asset.
+
+- `public/media/exercises/models/telo-trainer-male-rig-test.glb` is the
+  skinned male test model.
+- `public/media/exercises/animations/male/squat-test.glb` contains the separate
+  four-second `squat` clip.
+- `tools/prepare-male-squat-animation.py` regenerates both files and the
+  front/side key-pose renders under `artifacts/male-squat-keyframes/`.
+- `scripts/verify-male-squat-candidate.mjs` checks the model, skin attributes,
+  bone names, AnimationMixer bindings, duration and loop boundary.
+
+The exported candidate contains one SkinnedMesh with 21,160 triangles, a
+19-bone deformation skeleton and 57 animation tracks. The armature object is
+stationary, there are no exported constraints or control bones, heel travel is
+below 0.8 mm and toe travel below 5.2 mm across the sampled cycle. The small
+toe value is lateral movement from the source rig's rest-pose asymmetry.
+
+This is a technical candidate, not a verified coaching demonstration. It has
+no clothing or skin textures, the movement has not received a coach's motion
+review and `src/exercise3d.ts` deliberately continues to keep every avatar and
+exercise unverified.

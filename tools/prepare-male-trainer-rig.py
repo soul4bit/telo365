@@ -233,7 +233,9 @@ def pose_elbows():
     bpy.context.view_layer.objects.active = rig
     bpy.ops.object.mode_set(mode='POSE')
     deg = math.radians
-    rig.pose.bones["LeftLowerArm"].rotation_euler.x = deg(70)
+    # Both mirrored forearm bones flex with the same local X sign. Using
+    # opposite signs caused the asymmetric test pose found in the first audit.
+    rig.pose.bones["LeftLowerArm"].rotation_euler.x = deg(-70)
     rig.pose.bones["RightLowerArm"].rotation_euler.x = deg(-70)
     bpy.ops.object.mode_set(mode='OBJECT')
 

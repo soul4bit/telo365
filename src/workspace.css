@@ -275,10 +275,14 @@ dialog{overflow-y:auto;overscroll-behavior:contain}
   border:1px solid #e0ebdc;
   border-radius:18px;
   padding:38px;
-  background:linear-gradient(120deg,rgba(239,246,234,.94),rgba(232,241,226,.5)),url('/images/workout.jpg') 76% center/cover;
+  background-color:#edf4e9;
+  background-image:linear-gradient(90deg,rgba(247,249,243,.98) 0%,rgba(244,248,240,.93) 35%,rgba(239,245,235,.59) 57%,rgba(239,245,235,.08) 82%),url('/images/workout.jpg');
+  background-position:0 0,right center;
+  background-repeat:no-repeat;
+  background-size:100% 100%,auto 100%;
 }
 .workout-hero-media{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
-.workout-hero-video{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:78% center;opacity:0;transition:opacity .42s ease-out}
+.workout-hero-video{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain;object-position:right center;opacity:0;transition:opacity .42s ease-out}
 .workout-hero-video.is-ready.is-active{opacity:1}
 .workout-hero-media.is-crossfading .workout-hero-video{transition-duration:.95s}
 .workout-hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,rgba(247,249,243,.98) 0%,rgba(244,248,240,.93) 35%,rgba(239,245,235,.59) 57%,rgba(239,245,235,.08) 82%)}
@@ -288,13 +292,13 @@ dialog{overflow-y:auto;overscroll-behavior:contain}
 .workout-hero-cta{margin-top:22px;text-decoration:none}
 @keyframes workout-hero-content-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:768px){
-  .workout-hero{min-height:320px;padding:30px 26px;align-items:flex-end;background-position:78% center}
-  .workout-hero-video{object-position:82% center}
+  .workout-hero{min-height:340px;padding:30px 26px;align-items:flex-end;background-position:0 0,right center;background-size:100% 100%,auto 100%}
+  .workout-hero-video{object-position:right center}
   .workout-hero::after{background:linear-gradient(90deg,rgba(247,249,243,.98) 0%,rgba(244,248,240,.94) 49%,rgba(239,245,235,.58) 72%,rgba(239,245,235,.14) 100%)}
   .workout-hero-content{max-width:360px}
 }
 @media(max-width:640px){
-  .workout-hero{min-height:320px;border-radius:15px;padding:26px 22px;background:linear-gradient(145deg,rgba(239,246,234,.96),rgba(224,238,218,.72)),url('/images/workout.jpg') 72% center/cover}
+  .workout-hero{min-height:320px;border-radius:15px;padding:26px 22px;background-color:#edf4e9;background-image:linear-gradient(145deg,rgba(239,246,234,.97),rgba(224,238,218,.78)),url('/images/workout.jpg');background-position:0 0,right center;background-repeat:no-repeat;background-size:100% 100%,auto 100%}
   .workout-hero-content h2{font-size:34px}
   .workout-hero-content p{max-width:310px;font-size:12px}
   .workout-hero-cta{min-height:44px;padding:12px 16px;font-size:12px}

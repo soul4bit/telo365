@@ -367,7 +367,7 @@ dialog{overflow-y:auto;overscroll-behavior:contain}
 .workout-live-progress{display:grid;justify-items:end;gap:4px;text-align:right}
 .workout-live-progress small{color:#60795d;font-size:10px}
 .workout-live-progress span{color:#758970;font-size:9px;line-height:1.35}
-.workout-rpe button{display:inline-grid;place-items:center;width:14px;height:14px;padding:0;border:1px solid #bdd5b8;border-radius:50%;background:#f8fcf6;color:#598a54;font:700 9px/1 inherit;cursor:pointer}
+.workout-rpe button{display:inline-grid;place-items:center;width:16px;height:16px;padding:0;border:0;background:transparent;color:#598a54;cursor:pointer}
 .workout-rpe-tooltip{max-width:210px;padding:5px 7px;border:1px solid #d6e6d1;border-radius:7px;background:#f5faf2;color:#5d775a;font-size:9px;line-height:1.4}
 .workout-technique-button{border-color:#bcd9b6!important;background:#edf7e9!important;color:#427b3d!important;font-weight:750}
 .workout-set-head,.workout-live-set{grid-template-columns:.85fr .8fr 1.25fr 38px}

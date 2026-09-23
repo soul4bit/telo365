@@ -96,3 +96,46 @@
 @media(prefers-reduced-motion:reduce){
   .workspace-hero-video{display:none}
 }
+
+
+/* Nutrition hero keeps media separate from the daily journal. */
+.nutrition-hero{
+  position:relative;
+  isolation:isolate;
+  grid-column:1/-1;
+  min-height:300px;
+  display:flex;
+  align-items:center;
+  overflow:hidden;
+  border:1px solid #e2ebdd;
+  border-radius:18px;
+  padding:38px;
+  background:linear-gradient(120deg,rgba(237,244,232,.92),rgba(225,237,219,.54)),url('/media/nutrition-hero-poster.webp') center/cover;
+}
+.nutrition-hero-media{position:absolute;inset:0;z-index:0;pointer-events:none}
+.nutrition-hero-video{display:block;width:100%;height:100%;object-fit:cover;object-position:78% center;opacity:0;transition:opacity .32s ease-out}
+.nutrition-hero-video.is-ready{opacity:1}
+.nutrition-hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,rgba(244,247,238,.98) 0%,rgba(242,246,236,.93) 34%,rgba(239,244,232,.58) 56%,rgba(239,244,232,.08) 78%)}
+.nutrition-hero-content{position:relative;z-index:2;max-width:445px;animation:nutrition-hero-content-in .28s ease-out both}
+.nutrition-hero-content h2{margin:15px 0 12px;color:#263f2d;font-size:clamp(31px,3.3vw,46px);line-height:1.08;letter-spacing:-1.5px}
+.nutrition-hero-content p{max-width:390px;color:#566d58;font-size:13px;line-height:1.75}
+.nutrition-hero-cta{margin-top:22px;text-decoration:none}
+@keyframes nutrition-hero-content-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:768px){
+  .nutrition-hero{min-height:330px;padding:30px 26px;align-items:flex-end}
+  .nutrition-hero-video{object-position:82% center}
+  .nutrition-hero::after{background:linear-gradient(90deg,rgba(244,247,238,.98) 0%,rgba(242,246,236,.94) 50%,rgba(239,244,232,.58) 72%,rgba(239,244,232,.15) 100%)}
+  .nutrition-hero-content{max-width:360px}
+}
+@media(max-width:640px){
+  .nutrition-hero{min-height:330px;border-radius:15px;padding:26px 22px;background:linear-gradient(145deg,rgba(237,244,232,.96),rgba(220,235,215,.7)),url('/media/nutrition-hero-poster.webp') center/cover}
+  .nutrition-hero-content h2{font-size:34px}
+  .nutrition-hero-content p{font-size:12px;max-width:310px}
+  .nutrition-hero-cta{min-height:44px;padding:12px 16px;font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){.nutrition-hero-content{animation:none}.nutrition-hero-video{transition:none}}
+
+@media(max-width:760px){
+  .nutrition-layout{grid-template-columns:minmax(0,1fr)}
+  .nutrition-layout>*{min-width:0}
+}

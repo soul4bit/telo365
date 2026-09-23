@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Visual-only review of separate sport-clothing geometry with the existing squat clips.",
+  "productionViewerChanged": false,
+  "verified": false,
+  "exercise": {
+    "id": "squat",
+    "animationChanged": false,
+    "technicalReview": "pending",
+    "visualReview": "pending",
+    "specialistTechniqueReview": "pending"
+  },
+  "avatars": {
+    "male": {
+      "sourceModel": "public/media/exercises/models/telo-trainer-male-rig-test.glb",
+      "sourceModelSha256": "b60405d2dacc457197d14a9e5834b6987abf75fdcb00dbddf72e1b250bd8e98f",
+      "visualModel": "public/media/exercises/models/telo-trainer-male-visual-test.glb",
+      "visualModelSha256": "05e17da53b7f6e0a311f07d489c0ccc6df82d61d893cd8439355f5268d59601c",
+      "workingBlend": "assets-work/telo-trainer-male-squat-visual-working.blend",
+      "animation": "public/media/exercises/animations/male/squat-test.glb",
+      "geometry": ["sport top", "sport shorts", "shoe shells", "short hair cap"],
+      "materials": "Procedural PBR base colours only; no photo textures or external assets."
+    },
+    "female": {
+      "sourceModel": "public/media/exercises/models/telo-trainer-female-rig-test.glb",
+      "sourceModelSha256": "bc693d332e5cc06c147c14465846672cc5e98ec25af649df71f09539f1e389b8",
+      "visualModel": "public/media/exercises/models/telo-trainer-female-visual-test.glb",
+      "visualModelSha256": "6d5fcd9cc9ef8d35cabe754aed2d09f4cfaa71d01a8c5ee774c2e2cac1bbdf8b",
+      "workingBlend": "assets-work/telo-trainer-female-squat-visual-working.blend",
+      "animation": "public/media/exercises/animations/female/squat-test.glb",
+      "geometry": ["sport top", "leggings", "shoe shells", "short hair cap"],
+      "materials": "Procedural PBR base colours only; no photo textures or external assets."
+    }
+  },
+  "knownLimitations": [
+    "The Human Base Mesh face remains untextured and does not include production-quality eyes.",
+    "Shoes and hair are lightweight surface shells, suitable only for a review candidate.",
+    "No generated hair tail is included because it caused a visible deformation artefact during the squat."
+  ]
+}

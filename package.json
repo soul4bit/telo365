@@ -17,6 +17,7 @@
     "verify:trainer-assets": "node scripts/verify-trainer-assets.mjs",
     "verify:male-squat-candidate": "node scripts/verify-male-squat-candidate.mjs",
     "verify:female-squat-candidate": "node scripts/verify-female-squat-candidate.mjs",
+    "verify:visual-squat-candidates": "node scripts/verify-visual-squat-candidates.mjs",
     "trainer:new": "node scripts/trainer-new.mjs",
     "trainer:verify": "node scripts/trainer-verify.mjs",
     "trainer:publish": "node scripts/trainer-publish.mjs",

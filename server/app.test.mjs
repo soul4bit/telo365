@@ -116,10 +116,15 @@ test('account and journal integration', async t=>{
     assert.equal((await req('/api/workouts','PUT',create)).status,200);
     assert.equal((await req('/api/workouts','PUT',create)).status,200);
     let workout=(await req('/api/state')).value.workouts[0];assert.equal(workout.id,id);assert.match(workout.data.startedAt,/^\d{4}-\d{2}-\d{2}T/);
+    const replacement=structuredClone(workout.data.exercises),squat=replacement.find(item=>item.exerciseId==='squat');assert.ok(squat);squat.exerciseId='box-squat';
+    assert.equal((await req('/api/workouts','PUT',{id,date:day,exercises:replacement,finished:false})).status,200);
+    workout=(await req('/api/state')).value.workouts[0];assert.equal(workout.data.exercises.find(item=>item.name==='Приседания до скамьи').exerciseId,'box-squat');
+    const invalidReplacement=structuredClone(workout.data.exercises);invalidReplacement.find(item=>item.exerciseId==='box-squat').exerciseId='push-up';
+    assert.equal((await req('/api/workouts','PUT',{id,date:day,exercises:invalidReplacement,finished:false})).status,400);
     assert.equal((await req('/api/workouts','PUT',{id,date:day,exercises:workout.data.exercises,finished:true})).status,400);
     for(const e of workout.data.exercises)for(const s of e.sets){s.done=true;s.weight=5;}
-    assert.equal((await req('/api/workouts','PUT',{id,date:day,exercises:workout.data.exercises,finished:true})).status,200);
-    assert.equal((await req('/api/state')).value.workouts[0].finished,true);
+    assert.equal((await req('/api/workouts','PUT',{id,date:day,exercises:workout.data.exercises,finished:true,feedback:{rpe:6,allSetsCompleted:true,painOrDiscomfort:false}})).status,200);
+    workout=(await req('/api/state')).value.workouts[0];assert.equal(workout.finished,true);assert.equal(workout.data.feedback.rpe,6);
     assert.equal((await req('/api/workouts/'+id,'DELETE',{},'b')).status,404);
   });
   await t.test('weekly meal plan replaces earlier planned meals and preserves eaten meals',async()=>{
@@ -160,9 +165,11 @@ test('account and journal integration', async t=>{
     const personalDay=healthResetState.value.trainingPlan.currentWeek.days.find(day=>day.date<=today('Europe/Moscow')&&day.exercises.length);assert.ok(personalDay);
     const personalWorkoutId=randomUUID();const personalStart=await req('/api/workouts','PUT',{id:personalWorkoutId,planId:healthResetState.value.trainingPlan.id,trainingDayId:personalDay.id,date:personalDay.date,finished:false},'start');assert.equal(personalStart.status,200);
     let personalState=(await req('/api/state?date='+personalDay.date,'GET',undefined,'start')).value;let personalWorkout=personalState.workouts.find(workout=>workout.id===personalWorkoutId);assert.ok(personalWorkout);assert.equal(personalWorkout.data.planId,healthResetState.value.trainingPlan.id);
+    const plannedReps=personalDay.exercises[0].reps;personalWorkout.data.exercises[0].sets[0].reps=plannedReps+2;
     for(const exercise of personalWorkout.data.exercises)for(const set of exercise.sets)set.done=true;
     const personalFinish=await req('/api/workouts','PUT',{id:personalWorkoutId,date:personalDay.date,exercises:personalWorkout.data.exercises,finished:true,feedback:{rpe:4,allSetsCompleted:true,painOrDiscomfort:false}},'start');assert.equal(personalFinish.status,200);
     personalState=(await req('/api/state?date='+personalDay.date,'GET',undefined,'start')).value;personalWorkout=personalState.workouts.find(workout=>workout.id===personalWorkoutId);assert.equal(personalWorkout.finished,true);assert.equal(personalWorkout.data.progressRecommendation.action,'increase_reps');
+    assert.equal(personalWorkout.data.exercises[0].sets[0].reps,plannedReps+2);assert.equal(personalState.trainingPlan.currentWeek.days.find(day=>day.id===personalDay.id).exercises[0].reps,plannedReps);
   });
   await t.test('admin role cannot be self-assigned and catalog is protected',async()=>{
     assert.equal((await req('/api/admin/status')).status,403);

@@ -140,22 +140,38 @@ export async function journal(ctx) {
       const program=getItem(db,string(b.programId,'\u041f\u0440\u043e\u0433\u0440\u0430\u043c\u043c\u0430'),u.id,'program');
       const personalPlan=readTrainingPlan(db,u,d);
       if(!canUseGenericProgram(personalPlan,program)) fail(400,'\u042d\u0442\u0430 \u043f\u0440\u043e\u0433\u0440\u0430\u043c\u043c\u0430 \u043f\u043e\u043a\u0430 \u043d\u0435 \u043f\u043e\u0434\u0445\u043e\u0434\u0438\u0442 \u043a \u0443\u0447\u0442\u0451\u043d\u043d\u044b\u043c \u043e\u0433\u0440\u0430\u043d\u0438\u0447\u0435\u043d\u0438\u044f\u043c.');
-      data={name:program.name,programId:program.id,intensity:'moderate',minutes:program.minutes||null,startedAt:new Date().toISOString(),exercises:program.exercises.map(e=>{const exercise=getItem(db,e.exerciseId,u.id,'exercise');return {exerciseId:exercise.id,name:exercise.name,unit:exercise.unit,equipment:exercise.equipment||[],restSeconds:75,targetRpe:6,notes:'',sets:Array.from({length:Math.round(e.sets)},()=>({reps:e.reps,weight:e.weight,done:false}))};}),feedback:null,progressRecommendation:null};
+      data={name:program.name,programId:program.id,intensity:'moderate',minutes:program.minutes||null,startedAt:new Date().toISOString(),exercises:program.exercises.map(e=>{const exercise=getItem(db,e.exerciseId,u.id,'exercise');return {exerciseId:exercise.id,name:exercise.name,unit:exercise.unit,equipment:exercise.equipment||[],variants:exercise.variants||[],restSeconds:75,targetRpe:6,notes:'',sets:Array.from({length:Math.round(e.sets)},()=>({reps:e.reps,weight:e.weight,done:false}))};}),feedback:null,progressRecommendation:null};
     } else {
       data=JSON.parse(old.data);
       if(!Array.isArray(b.exercises)||b.exercises.length!==data.exercises.length) fail(400,'\u041f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 \u0443\u043f\u0440\u0430\u0436\u043d\u0435\u043d\u0438\u044f');
       data.exercises=data.exercises.map((e,i)=>{
-        const sets=b.exercises[i]?.sets;
+        const incoming=b.exercises[i]||{},sets=incoming.sets;
         if(!Array.isArray(sets)||sets.length<1||sets.length>20) fail(400,'\u041f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 \u043f\u043e\u0434\u0445\u043e\u0434\u044b');
-        return {...e,sets:sets.map(s=>{if(!s||typeof s!=='object')fail(400,'\u041f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 \u043f\u043e\u0434\u0445\u043e\u0434\u044b');return {reps:numeric(s.reps,'\u041f\u043e\u0432\u0442\u043e\u0440\u0435\u043d\u0438\u044f',1,3600),weight:numeric(s.weight,'\u041d\u0430\u0433\u0440\u0443\u0437\u043a\u0430',0,500),done:!!boolean(s.done)};})};
+        let next={...e};
+        const replacementId=typeof incoming.exerciseId==='string'?incoming.exerciseId:e.exerciseId;
+        if(replacementId!==e.exerciseId){
+          const current=getItem(db,e.exerciseId,u.id,'exercise');
+          let allowed=Array.isArray(e.variants)?e.variants:[];
+          if(!allowed.length&&data.planId&&data.trainingDayId){
+            const activePlan=readTrainingPlan(db,u,d),plannedDay=activePlan?.currentWeek?.days?.find(day=>day.id===data.trainingDayId);
+            allowed=plannedDay?.exercises?.find(item=>item.exerciseId===e.exerciseId)?.variants||[];
+          }
+          if(!allowed.length) allowed=current.variants||[];
+          if(!allowed.includes(replacementId)) fail(400,'Для этого упражнения нельзя выбрать такую замену');
+          const replacement=getItem(db,replacementId,u.id,'exercise'),personalPlan=readTrainingPlan(db,u,d);
+          if(personalPlan&&!canUseGenericProgram(personalPlan,{intensity:data.intensity||'moderate',exercises:[{exerciseId:replacement.id}]})) fail(400,'Эта замена пока не подходит к учтённым ограничениям.');
+          next={...next,exerciseId:replacement.id,name:replacement.name,unit:replacement.unit,equipment:replacement.equipment||[],variants:replacement.variants||[]};
+        }
+        return {...next,sets:sets.map(s=>{if(!s||typeof s!=='object')fail(400,'\u041f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 \u043f\u043e\u0434\u0445\u043e\u0434\u044b');return {reps:numeric(s.reps,'\u041f\u043e\u0432\u0442\u043e\u0440\u0435\u043d\u0438\u044f',1,3600),weight:numeric(s.weight,'\u041d\u0430\u0433\u0440\u0443\u0437\u043a\u0430',0,500),done:!!boolean(s.done)};})};
       });
     }
     const finished=boolean(b.finished??false);
     if(finished&&(d>today(u.timezone)||!data.exercises.every(e=>e.sets.every(s=>s.done)))) fail(400,'\u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u043e\u0442\u043c\u0435\u0442\u044c\u0442\u0435 \u0432\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u043d\u044b\u0435 \u043f\u043e\u0434\u0445\u043e\u0434\u044b');
-    if(finished&&data.planId) {
-      const feedback=b.feedback&&typeof b.feedback==='object'?{rpe:numeric(b.feedback.rpe,'RPE',1,10),allSetsCompleted:!!boolean(b.feedback.allSetsCompleted),painOrDiscomfort:!!boolean(b.feedback.painOrDiscomfort)}:null;
-      if(!feedback) fail(400,'\u041e\u0446\u0435\u043d\u0438 \u0441\u043b\u043e\u0436\u043d\u043e\u0441\u0442\u044c \u0438 \u0441\u0430\u043c\u043e\u0447\u0443\u0432\u0441\u0442\u0432\u0438\u0435 \u043f\u043e\u0441\u043b\u0435 \u0442\u0440\u0435\u043d\u0438\u0440\u043e\u0432\u043a\u0438');
-      data.feedback=feedback;data.progressRecommendation=progressRecommendation(feedback);
+    const feedback=b.feedback&&typeof b.feedback==='object'?{rpe:numeric(b.feedback.rpe,'RPE',1,10),allSetsCompleted:!!boolean(b.feedback.allSetsCompleted),painOrDiscomfort:!!boolean(b.feedback.painOrDiscomfort)}:null;
+    if(finished&&data.planId&&!feedback) fail(400,'\u041e\u0446\u0435\u043d\u0438 \u0441\u043b\u043e\u0436\u043d\u043e\u0441\u0442\u044c \u0438 \u0441\u0430\u043c\u043e\u0447\u0443\u0432\u0441\u0442\u0432\u0438\u0435 \u043f\u043e\u0441\u043b\u0435 \u0442\u0440\u0435\u043d\u0438\u0440\u043e\u0432\u043a\u0438');
+    if(finished&&feedback) {
+      data.feedback=feedback;
+      if(data.planId)data.progressRecommendation=progressRecommendation(feedback);
     }
     db.prepare('INSERT INTO workouts VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET date=excluded.date,finished=excluded.finished,data=excluded.data').run(id,u.id,d,finished,JSON.stringify(data));return {id};
   }

@@ -1,4 +1,5 @@
 export type ExerciseCameraPreset = 'front'|'threeQuarter'|'side'|'low'
+export type ExercisePlaybackMode = 'loop'
 
 export type Exercise3DAsset = {
   modelUrl:string
@@ -6,37 +7,45 @@ export type Exercise3DAsset = {
   animationClip:string
   cameraPreset:ExerciseCameraPreset
   playbackSpeed:number
+  playbackMode:ExercisePlaybackMode
   posterUrl:string
   ready:boolean
 }
 
-const baseModel='/media/exercises/models/humanoid-base.glb'
+const trainerModel='/media/exercises/models/telo-trainer.glb'
 const placeholderPoster='/media/exercises/poster-placeholder.svg'
-const animation=(clip:string,cameraPreset:ExerciseCameraPreset='threeQuarter'):Exercise3DAsset=>({
-  modelUrl:baseModel,
+const animation=(clip:string,cameraPreset:ExerciseCameraPreset='threeQuarter',ready=false):Exercise3DAsset=>({
+  modelUrl:trainerModel,
   animationUrl:`/media/exercises/animations/${clip}.glb`,
   animationClip:clip,
   cameraPreset,
   playbackSpeed:1,
+  playbackMode:'loop',
   posterUrl:placeholderPoster,
-  // Flip this after the local GLB files are supplied. Until then no 3D request
-  // is made and the local poster is shown immediately.
-  ready:false
+  ready
 })
 
+// These five entries request local GLB files only when the user opens the
+// lazy-loaded technique dialog. Missing assets fall back to this local poster.
+const readyAnimation=(clip:string,cameraPreset:ExerciseCameraPreset)=>animation(clip,cameraPreset,true)
+
 export const exercise3DAssets:Record<string,Exercise3DAsset>={
-  squat:animation('squat','front'),
-  'dumbbell-goblet-squat':animation('goblet_squat','front'),
-  'push-up':animation('pushup','side'),
-  plank:animation('plank','side'),
+  squat:readyAnimation('squat','threeQuarter'),
+  'push-up':readyAnimation('pushup','side'),
+  pushup:readyAnimation('pushup','side'),
+  plank:readyAnimation('plank','side'),
+  row:readyAnimation('dumbbell_row','threeQuarter'),
+  'dumbbell-row':readyAnimation('dumbbell_row','threeQuarter'),
+  'dumbbell_row':readyAnimation('dumbbell_row','threeQuarter'),
+  'supported-row':readyAnimation('dumbbell_row','threeQuarter'),
+  'dumbbell-overhead-press':readyAnimation('shoulder_press','threeQuarter'),
+  shoulder_press:readyAnimation('shoulder_press','threeQuarter'),
+
+  'dumbbell-goblet-squat':animation('goblet_squat','threeQuarter'),
   press:animation('dumbbell_press','threeQuarter'),
   'dumbbell-floor-press':animation('dumbbell_press','threeQuarter'),
   'dumbbell-bench-press':animation('dumbbell_press','threeQuarter'),
-  row:animation('dumbbell_row','threeQuarter'),
-  'dumbbell-row':animation('dumbbell_row','threeQuarter'),
-  'supported-row':animation('dumbbell_row','threeQuarter'),
   'biceps-curl':animation('biceps_curl','front'),
-  'dumbbell-overhead-press':animation('shoulder_press','front'),
   'dumbbell-rdl':animation('romanian_deadlift','threeQuarter')
 }
 

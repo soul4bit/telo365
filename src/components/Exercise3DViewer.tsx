@@ -4,8 +4,8 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { OrbitControls as OrbitControlsImpl } from 'three/examples/jsm/controls/OrbitControls.js'
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js'
-import { Pause, Play, Rotate3D } from 'lucide-react'
-import type { ExerciseCameraPreset } from '../exercise3d'
+import { Pause, Play, Rotate3D, RotateCcw } from 'lucide-react'
+import type { ExerciseCameraPreset, ExercisePlaybackMode } from '../exercise3d'
 
 export type Exercise3DViewerProps={
   modelUrl:string
@@ -13,6 +13,7 @@ export type Exercise3DViewerProps={
   animationClip:string
   cameraPreset:ExerciseCameraPreset
   playbackSpeed:number
+  playbackMode?:ExercisePlaybackMode
   posterUrl?:string|null
   available?:boolean
 }
@@ -27,61 +28,67 @@ function useReducedMotion(){
   return reduced
 }
 
-class ViewerErrorBoundary extends Component<{children:ReactNode;onError:()=>void},{failed:boolean}>{
+class ViewerErrorBoundary extends Component<{children:ReactNode;onError:(error:Error)=>void},{failed:boolean}>{
   state={failed:false}
   static getDerivedStateFromError(){return {failed:true}}
-  componentDidCatch(_error:Error,_info:ErrorInfo){this.props.onError()}
+  componentDidCatch(error:Error,_info:ErrorInfo){this.props.onError(error)}
   render(){return this.state.failed?null:this.props.children}
 }
 
 function ViewerFallback({posterUrl,label,description,retry}:{posterUrl?:string|null;label:string;description?:string;retry?:()=>void}){
-  return <div className="exercise-3d-fallback">{posterUrl?<img src={posterUrl} alt=""/>:<Rotate3D size={28}/>}<div><strong>{label}</strong><p>{description||'Добавим демонстрацию техники, когда подготовим модель упражнения.'}</p>{retry&&<button className="text-button" onClick={retry}>Повторить</button>}</div></div>
+  return <div className="exercise-3d-fallback">{posterUrl?<img src={posterUrl} alt=""/>:<Rotate3D size={28}/>}<div><strong>{label}</strong><p>{description||'Добавим демонстрацию техники, когда подготовим модель упражнения.'}</p>{retry&&<button className="text-button" type="button" onClick={retry}>Повторить</button>}</div></div>
 }
 
-function CameraControls(){
+function CameraControls({resetKey}:{resetKey:number}){
   const {camera,gl,invalidate}=useThree()
   const controls=useMemo(()=>new OrbitControlsImpl(camera,gl.domElement),[camera,gl.domElement])
-  useEffect(()=>{controls.enablePan=false;controls.enableDamping=false;controls.minDistance=2.15;controls.maxDistance=4.75;controls.minPolarAngle=Math.PI*.22;controls.maxPolarAngle=Math.PI*.78;controls.target.set(0,.15,0);controls.update();const update=()=>invalidate();controls.addEventListener('change',update);return()=>{controls.removeEventListener('change',update);controls.dispose()}},[controls,invalidate])
+  useEffect(()=>{controls.enablePan=false;controls.enableDamping=true;controls.dampingFactor=.08;controls.minDistance=2.15;controls.maxDistance=4.75;controls.minPolarAngle=Math.PI*.22;controls.maxPolarAngle=Math.PI*.78;controls.target.set(0,.15,0);controls.update();controls.saveState();const update=()=>invalidate();controls.addEventListener('change',update);return()=>{controls.removeEventListener('change',update);controls.dispose()}},[controls,invalidate])
+  useEffect(()=>{controls.reset();controls.update();invalidate()},[controls,invalidate,resetKey])
   return null
 }
 
-function Humanoid({modelUrl,animationUrl,animationClip,playing,speed,onReady}:{modelUrl:string;animationUrl:string;animationClip:string;playing:boolean;speed:number;onReady:()=>void}){
+function Humanoid({modelUrl,animationUrl,animationClip,playing,speed,resetKey,onReady}:{modelUrl:string;animationUrl:string;animationClip:string;playing:boolean;speed:number;resetKey:number;onReady:()=>void}){
+  // useLoader caches by URL: the base trainer and an already opened clip are reused.
   const base=useLoader(GLTFLoader,modelUrl)
-  const animation=useLoader(GLTFLoader,animationUrl)
+  const animationGltf=useLoader(GLTFLoader,animationUrl)
   const scene=useMemo(()=>cloneSkeleton(base.scene),[base.scene])
   const mixer=useMemo(()=>new THREE.AnimationMixer(scene),[scene])
-  const clip=useMemo(()=>animation.animations.find(item=>item.name===animationClip)||animation.animations[0],[animation.animations,animationClip])
-  const action=useMemo(()=>clip?mixer.clipAction(clip):null,[clip,mixer])
+  const clip=useMemo(()=>animationGltf.animations.find(item=>item.name===animationClip)||animationGltf.animations[0],[animationClip,animationGltf.animations])
+  if(!clip)throw new Error(`Animation clip "${animationClip}" is missing in ${animationUrl}`)
+  const action=useMemo(()=>mixer.clipAction(clip),[clip,mixer])
+
   useEffect(()=>{onReady()},[onReady])
   useEffect(()=>{
-    if(!action)return
     action.reset().setLoop(THREE.LoopRepeat,Infinity).play()
-    return()=>{action.stop();mixer.uncacheAction(clip!)}
+    return()=>{action.stop();mixer.uncacheAction(clip)}
   },[action,clip,mixer])
-  useEffect(()=>{if(action){action.timeScale=speed;action.paused=!playing}},[action,playing,speed])
+  useEffect(()=>{action.timeScale=speed;action.paused=!playing},[action,playing,speed])
+  useEffect(()=>{action.reset().play();action.paused=!playing},[action,playing,resetKey])
   useFrame((_state,delta)=>{if(playing)mixer.update(delta)})
   return <group position={[0,-1.05,0]}><primitive object={scene}/></group>
 }
 
-function ThreeScene({modelUrl,animationUrl,animationClip,cameraPreset,playing,speed,onReady}:{modelUrl:string;animationUrl:string;animationClip:string;cameraPreset:ExerciseCameraPreset;playing:boolean;speed:number;onReady:()=>void}){
+function ThreeScene({modelUrl,animationUrl,animationClip,cameraPreset,playing,speed,resetKey,onReady}:{modelUrl:string;animationUrl:string;animationClip:string;cameraPreset:ExerciseCameraPreset;playing:boolean;speed:number;resetKey:number;onReady:()=>void}){
   return <Canvas className="exercise-3d-canvas" dpr={[1,1.5]} frameloop={playing?'always':'demand'} camera={{position:cameraPositions[cameraPreset],fov:34}} gl={{alpha:true,antialias:true,powerPreference:'low-power'}}>
     <ambientLight intensity={1.25}/><directionalLight position={[3,5,4]} intensity={1.65}/><directionalLight position={[-3,2,1]} intensity={.45}/>
-    <Suspense fallback={null}><Humanoid modelUrl={modelUrl} animationUrl={animationUrl} animationClip={animationClip} playing={playing} speed={speed} onReady={onReady}/></Suspense>
+    <Suspense fallback={null}><Humanoid modelUrl={modelUrl} animationUrl={animationUrl} animationClip={animationClip} playing={playing} speed={speed} resetKey={resetKey} onReady={onReady}/></Suspense>
     <mesh rotation={[-Math.PI/2,0,0]} position={[0,-1.06,0]} receiveShadow><circleGeometry args={[2.1,48]}/><meshBasicMaterial color="#eff5eb" transparent opacity={.82}/></mesh>
-    <CameraControls/>
+    <CameraControls resetKey={resetKey}/>
   </Canvas>
 }
 
-export default function Exercise3DViewer({modelUrl,animationUrl,animationClip,cameraPreset,playbackSpeed,posterUrl,available=true}:Exercise3DViewerProps){
-  const reducedMotion=useReducedMotion(),[playing,setPlaying]=useState(true),[speed,setSpeed]=useState(playbackSpeed),[ready,setReady]=useState(false),[failed,setFailed]=useState(false),[retryKey,setRetryKey]=useState(0)
+export default function Exercise3DViewer({modelUrl,animationUrl,animationClip,cameraPreset,playbackSpeed,playbackMode='loop',posterUrl,available=true}:Exercise3DViewerProps){
+  const reducedMotion=useReducedMotion(),[playing,setPlaying]=useState(true),[speed,setSpeed]=useState(playbackSpeed),[ready,setReady]=useState(false),[failed,setFailed]=useState(false),[retryKey,setRetryKey]=useState(0),[resetKey,setResetKey]=useState(0)
   const markReady=useCallback(()=>setReady(true),[])
+  const reportError=useCallback((error:Error)=>{console.warn(`[Exercise3DViewer] Could not load ${animationClip} (${modelUrl}, ${animationUrl}): ${error.message}`);setFailed(true)},[animationClip,animationUrl,modelUrl])
+  const retry=useCallback(()=>{useLoader.clear(GLTFLoader,modelUrl);useLoader.clear(GLTFLoader,animationUrl);setFailed(false);setReady(false);setRetryKey(value=>value+1)},[animationUrl,modelUrl])
   useEffect(()=>setSpeed(playbackSpeed),[playbackSpeed])
-  if(reducedMotion)return <ViewerFallback posterUrl={posterUrl} label="Статичная техника"/>
+  if(reducedMotion)return <ViewerFallback posterUrl={posterUrl} label="Статичная техника" description="Анимация отключена в настройках уменьшения движения."/>
   if(!available)return <ViewerFallback posterUrl={posterUrl} label="Демонстрация техники готовится" description="Скоро здесь появится интерактивный показ упражнения."/>
-  if(failed)return <ViewerFallback posterUrl={posterUrl} label="Не удалось загрузить демонстрацию" description="Проверь подключение и попробуй загрузить демонстрацию снова." retry={()=>{setFailed(false);setReady(false);setRetryKey(value=>value+1)}}/>
-  return <section className="exercise-3d-viewer" aria-label="3D-демонстрация техники">
+  if(failed)return <ViewerFallback posterUrl={posterUrl} label="Не удалось загрузить демонстрацию" description="Файл модели или анимации пока недоступен. Попробуй ещё раз позже." retry={retry}/>
+  return <section className="exercise-3d-viewer" aria-label="3D-демонстрация техники" data-playback-mode={playbackMode}>
     {!ready&&<div className="exercise-3d-skeleton" aria-hidden="true"/>}
-    <ViewerErrorBoundary key={retryKey} onError={()=>setFailed(true)}><ThreeScene modelUrl={modelUrl} animationUrl={animationUrl} animationClip={animationClip} cameraPreset={cameraPreset} playing={playing} speed={speed} onReady={markReady}/></ViewerErrorBoundary>
-    <div className="exercise-3d-controls"><button className="icon-button" type="button" aria-label={playing?'Пауза анимации':'Запустить анимацию'} onClick={()=>setPlaying(value=>!value)}>{playing?<Pause size={15}/>:<Play size={15}/>}</button><div role="group" aria-label="Скорость анимации"><button className={speed===.5?'is-active':''} type="button" onClick={()=>setSpeed(.5)}>0.5×</button><button className={speed===1?'is-active':''} type="button" onClick={()=>setSpeed(1)}>1×</button></div><span><Rotate3D size={14}/>Поверни модель</span></div>
+    <ViewerErrorBoundary key={retryKey} onError={reportError}><ThreeScene modelUrl={modelUrl} animationUrl={animationUrl} animationClip={animationClip} cameraPreset={cameraPreset} playing={playing} speed={speed} resetKey={resetKey} onReady={markReady}/></ViewerErrorBoundary>
+    <div className="exercise-3d-controls"><button className="icon-button" type="button" aria-label={playing?'Пауза анимации':'Запустить анимацию'} onClick={()=>setPlaying(value=>!value)}>{playing?<Pause size={15}/>:<Play size={15}/>}</button><button className="icon-button" type="button" aria-label="Вернуть начало анимации и ракурс" onClick={()=>setResetKey(value=>value+1)}><RotateCcw size={14}/></button><div role="group" aria-label="Скорость анимации"><button className={speed===.5?'is-active':''} type="button" onClick={()=>setSpeed(.5)}>0.5×</button><button className={speed===1?'is-active':''} type="button" onClick={()=>setSpeed(1)}>1×</button></div><span><Rotate3D size={14}/>Поверни модель</span></div>
   </section>
 }

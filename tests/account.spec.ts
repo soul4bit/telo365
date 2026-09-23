@@ -260,7 +260,7 @@ test('guest landing, registration and personal journal work across devices',asyn
   await page.getByRole('button',{name:'Тестовые хлопья: купить',exact:true}).click()
   await expect(page.getByRole('button',{name:'Тестовые хлопья: куплено',exact:true})).toHaveAttribute('aria-pressed','true')
   await navigate('Тренировки')
-  await page.locator('.other-program-card .soft-button').first().click({force:true})
+  await page.locator('.other-program-card .other-program-open').first().click({force:true})
   await expect(page.locator('.workout-log')).toHaveCount(1)
   await page.locator('.workout-log .soft-button').click()
   const workoutDialog=page.getByRole('dialog')

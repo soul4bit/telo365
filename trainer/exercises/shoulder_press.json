@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "exerciseId": "shoulder_press",
+  "name": "Жим гантелей стоя",
+  "registry": {
+    "exercise3dState": "registered",
+    "previewOnly": true,
+    "note": "Шаблон создан без animation GLB. Он доступен только для изолированной проверки после ручной подготовки движения."
+  },
+  "cameraPreset": "threeQuarter",
+  "equipment": {
+    "required": true,
+    "items": ["dumbbells"],
+    "attachments": [
+      {
+        "id": "dumbbell-left",
+        "kind": "dumbbell",
+        "attachBone": "LeftHand",
+        "animationPolicy": "must-follow-hand-or-have-authored-local-tracks",
+        "assetStatus": "not_started"
+      },
+      {
+        "id": "dumbbell-right",
+        "kind": "dumbbell",
+        "attachBone": "RightHand",
+        "animationPolicy": "must-follow-hand-or-have-authored-local-tracks",
+        "assetStatus": "not_started"
+      }
+    ]
+  },
+  "animation": {
+    "clip": "shoulder_press",
+    "loop": false,
+    "requiresHipsTranslation": false,
+    "durationSeconds": null,
+    "durationToleranceSeconds": 0.1,
+    "authoredMotionRequired": true
+  },
+  "avatars": {
+    "male": {
+      "animationGlb": "public/media/exercises/animations/male/shoulder_press.glb",
+      "technicalStatus": "not_started"
+    },
+    "female": {
+      "animationGlb": "public/media/exercises/animations/female/shoulder_press.glb",
+      "technicalStatus": "not_started"
+    }
+  },
+  "reviews": {
+    "technical": "not_started",
+    "visual": "pending",
+    "specialistTechnique": "pending",
+    "readyForPublication": false
+  },
+  "publication": {
+    "state": "draft",
+    "approvedByUser": false
+  }
+}

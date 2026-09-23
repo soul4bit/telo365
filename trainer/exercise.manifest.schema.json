@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TELO365 exercise animation manifest",
+  "type": "object",
+  "required": ["schemaVersion", "exerciseId", "name", "cameraPreset", "animation", "avatars", "reviews", "publication"],
+  "properties": {
+    "exerciseId": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
+    "cameraPreset": { "enum": ["front", "threeQuarter", "side", "low"] },
+    "registry": { "type": "object", "required": ["exercise3dState", "previewOnly"] },
+    "equipment": { "type": "object", "required": ["required", "items", "attachments"] },
+    "animation": {
+      "type": "object",
+      "required": ["clip", "loop", "durationSeconds"],
+      "properties": {
+        "clip": { "type": "string" },
+        "loop": { "type": "boolean" },
+        "requiresHipsTranslation": { "type": "boolean" },
+        "durationSeconds": { "type": ["number", "null"] }
+      }
+    },
+    "avatars": {
+      "type": "object",
+      "required": ["male", "female"],
+      "additionalProperties": { "type": "object", "required": ["animationGlb", "technicalStatus"] }
+    },
+    "reviews": { "type": "object", "required": ["technical", "visual", "specialistTechnique", "readyForPublication"] },
+    "publication": { "type": "object", "required": ["state", "approvedByUser"] }
+  }
+}

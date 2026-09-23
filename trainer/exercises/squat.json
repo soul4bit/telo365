@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "exerciseId": "squat",
+  "name": "Приседания",
+  "registry": {
+    "exercise3dState": "registered",
+    "previewOnly": true,
+    "note": "Тестовые male/female кандидаты не включены в production viewer."
+  },
+  "cameraPreset": "threeQuarter",
+  "equipment": {
+    "required": false,
+    "items": [],
+    "attachments": []
+  },
+  "animation": {
+    "clip": "squat",
+    "loop": true,
+    "requiresHipsTranslation": true,
+    "durationSeconds": 4,
+    "durationToleranceSeconds": 0.1
+  },
+  "avatars": {
+    "male": {
+      "animationGlb": "public/media/exercises/animations/male/squat-test.glb",
+      "technicalStatus": "passed"
+    },
+    "female": {
+      "animationGlb": "public/media/exercises/animations/female/squat-test.glb",
+      "technicalStatus": "passed"
+    }
+  },
+  "reviews": {
+    "technical": "passed",
+    "visual": "pending",
+    "specialistTechnique": "pending",
+    "readyForPublication": false
+  },
+  "publication": {
+    "state": "draft",
+    "approvedByUser": false
+  }
+}

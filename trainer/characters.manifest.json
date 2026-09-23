@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "pipelineId": "telo365-exercise-animation-v1",
+  "rigTopologyId": "telo-humanoid-v1-candidate",
+  "source": "Blender Human Base Meshes — local source bundle; never rewritten by this pipeline",
+  "canonicalBones": [
+    "Hips", "Spine", "Chest", "Neck", "Head",
+    "LeftUpperArm", "LeftLowerArm", "LeftHand",
+    "RightUpperArm", "RightLowerArm", "RightHand",
+    "LeftUpperLeg", "LeftLowerLeg", "LeftFoot", "LeftToe",
+    "RightUpperLeg", "RightLowerLeg", "RightFoot", "RightToe"
+  ],
+  "canonicalHierarchy": {
+    "Hips": null,
+    "Spine": "Hips",
+    "Chest": "Spine",
+    "Neck": "Chest",
+    "Head": "Neck",
+    "LeftUpperArm": "Chest",
+    "LeftLowerArm": "LeftUpperArm",
+    "LeftHand": "LeftLowerArm",
+    "RightUpperArm": "Chest",
+    "RightLowerArm": "RightUpperArm",
+    "RightHand": "RightLowerArm",
+    "LeftUpperLeg": "Hips",
+    "LeftLowerLeg": "LeftUpperLeg",
+    "LeftFoot": "LeftLowerLeg",
+    "LeftToe": "LeftFoot",
+    "RightUpperLeg": "Hips",
+    "RightLowerLeg": "RightUpperLeg",
+    "RightFoot": "RightLowerLeg",
+    "RightToe": "RightFoot"
+  },
+  "characters": {
+    "male": {
+      "label": "Мужчина",
+      "workingBlend": "assets-work/telo-trainer-male-rig-working.blend",
+      "previewBlend": "assets-work/telo-trainer-male-squat-animation-working.blend",
+      "previewGlb": "assets-work/telo-trainer-male-rig-preview.glb",
+      "modelGlb": "public/media/exercises/models/telo-trainer-male-rig-test.glb",
+      "modelSha256": "b60405d2dacc457197d14a9e5834b6987abf75fdcb00dbddf72e1b250bd8e98f",
+      "boneCount": 19,
+      "rigVersion": "telo-humanoid-v1-male-candidate"
+    },
+    "female": {
+      "label": "Женщина",
+      "workingBlend": "assets-work/telo-trainer-female-rig-working.blend",
+      "previewBlend": "assets-work/telo-trainer-female-squat-animation-working.blend",
+      "previewGlb": "assets-work/telo-trainer-female-rig-preview.glb",
+      "modelGlb": "public/media/exercises/models/telo-trainer-female-rig-test.glb",
+      "modelSha256": "bc693d332e5cc06c147c14465846672cc5e98ec25af649df71f09539f1e389b8",
+      "boneCount": 19,
+      "rigVersion": "telo-humanoid-v1-female-candidate"
+    }
+  },
+  "compatibility": {
+    "strategy": "same canonical topology with per-avatar bind poses and separately authored or retargeted clips",
+    "requireExactModelHash": true,
+    "requireSeparateAvatarAnimation": true,
+    "automaticPublication": false
+  }
+}

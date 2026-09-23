@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "exerciseId": "pushup",
+  "name": "Отжимания",
+  "registry": {
+    "exercise3dState": "registered",
+    "previewOnly": true,
+    "note": "Шаблон создан без animation GLB. Он доступен только для изолированной проверки после ручной подготовки движения."
+  },
+  "cameraPreset": "side",
+  "equipment": {
+    "required": false,
+    "items": [],
+    "attachments": []
+  },
+  "animation": {
+    "clip": "pushup",
+    "loop": false,
+    "requiresHipsTranslation": false,
+    "durationSeconds": null,
+    "durationToleranceSeconds": 0.1,
+    "authoredMotionRequired": true
+  },
+  "avatars": {
+    "male": {
+      "animationGlb": "public/media/exercises/animations/male/pushup.glb",
+      "technicalStatus": "not_started"
+    },
+    "female": {
+      "animationGlb": "public/media/exercises/animations/female/pushup.glb",
+      "technicalStatus": "not_started"
+    }
+  },
+  "reviews": {
+    "technical": "not_started",
+    "visual": "pending",
+    "specialistTechnique": "pending",
+    "readyForPublication": false
+  },
+  "publication": {
+    "state": "draft",
+    "approvedByUser": false
+  }
+}

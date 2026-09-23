@@ -55,7 +55,7 @@ export function createApplication(options={}) {
       if(!realpathSync(filename).startsWith(realpathSync(staticDir)+sep))fail(404,'Не найдено');
       const stat=statSync(filename);res.setHeader('Content-Type',types[extname(filename)]||'application/octet-stream');res.setHeader('Content-Length',stat.size);
       if(path.startsWith('/assets/'))res.setHeader('Cache-Control','public,max-age=31536000,immutable');
-      if(path.startsWith('/video/'))res.setHeader('Cache-Control','public,max-age=86400');
+      if(path.startsWith('/video/')||path.startsWith('/media/'))res.setHeader('Cache-Control','public,max-age=86400');
       if(method==='HEAD')return res.end();
       createReadStream(filename).on('error',()=>res.destroy()).pipe(res);
     } catch(error) {

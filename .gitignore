@@ -6,6 +6,11 @@ dist/
 test-results/
 playwright-report/
 artifacts/
+assets-source/
+assets-work/
+tools/__pycache__/
+trainer/**/__pycache__/
+tools/**/__pycache__/
 *.tar.gz
 data/
 *.sqlite*

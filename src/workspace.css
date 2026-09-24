@@ -398,10 +398,18 @@ dialog{overflow-y:auto;overscroll-behavior:contain}
 .trainer-avatar-switch button{padding:5px 8px;border-radius:5px;color:#70866c;font-size:10px}
 .trainer-avatar-switch button.is-active{background:#dcefd6;color:#3f763e;font-weight:750}
 .trainer-preview-toolbar{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin:0 0 12px}.trainer-preview-toolbar label{display:grid;gap:5px;color:#748971;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}.trainer-preview-toolbar select{min-width:200px;padding:8px 10px;border:1px solid #dce9d6;border-radius:8px;background:#fbfdf8;color:#294c31;font:inherit;letter-spacing:normal;text-transform:none}.trainer-preview-toolbar .trainer-avatar-switch{margin:0}.muted-copy{margin:0 0 16px;color:#70866c;font-size:11px;line-height:1.5}
+.trainer-preview-select{display:grid;gap:5px;width:min(100%,440px);color:#748971;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}.trainer-preview-select select{width:100%;padding:9px 10px;border:1px solid #dce9d6;border-radius:8px;background:#fbfdf8;color:#294c31;font:inherit;letter-spacing:normal;text-transform:none}
+.mixamo-squat-review .exercise-3d-viewer{min-height:440px}.mixamo-squat-review .exercise-3d-viewer canvas{width:100%!important;height:440px!important}.mixamo-squat-review .exercise-3d-skeleton,.mixamo-squat-review .exercise-3d-fallback{min-height:440px}
 .technique-dialog-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(240px,.78fr);gap:22px;align-items:stretch}
 .technique-dialog .exercise-technique-video{display:flex;min-height:440px;border:1px solid #e0ebdc;border-radius:14px;background:radial-gradient(circle at 50% 22%,#fbfdf8 0%,#eef5eb 100%)}
 .technique-dialog .exercise-3d-viewer,.technique-dialog .exercise-3d-canvas,.technique-dialog .exercise-3d-skeleton,.technique-dialog .exercise-3d-fallback{width:100%;min-height:440px}
 .technique-dialog .exercise-3d-canvas{height:440px}
+.exercise-video-viewer{position:relative;display:flex;flex-direction:column;width:100%;min-height:490px;overflow:hidden;border-radius:12px;background:#f2f6ef}
+.exercise-video-viewer video,.exercise-video-static img{width:100%;height:440px;object-fit:contain;background:#f2f6ef}
+.exercise-video-controls{display:flex;flex:0 0 auto;align-items:center;gap:8px;margin:8px 10px 10px;padding:7px 8px;border:1px solid #dce9d6;border-radius:10px;background:#fffffff0;color:#668060;font-size:9px}
+.exercise-video-controls .icon-button{display:grid;place-items:center;width:25px;height:25px;border-radius:7px;background:#eef6e9;color:#4e8648}
+.exercise-video-controls [role=group]{display:flex;gap:2px;padding:2px;border-radius:6px;background:#f2f6ef}.exercise-video-controls [role=group] button{padding:4px 6px;border-radius:4px;color:#738970;font-size:9px}.exercise-video-controls [role=group] button.is-active{background:#dcefd6;color:#3f763e}
+.exercise-video-static{display:grid;width:100%;min-height:440px;place-items:center;align-content:center;gap:10px;overflow:hidden;border-radius:12px;background:#f2f6ef;color:#6c8468;text-align:center}.exercise-video-static p{margin:0;padding:0 20px;font-size:10px;line-height:1.5}
 .technique-dialog .exercise-3d-fallback{padding:32px;background:transparent}
 .technique-dialog .exercise-technique-placeholder{width:100%;min-height:440px;gap:9px}
 .technique-dialog .exercise-technique-placeholder strong{color:#496648;font-size:13px}
@@ -412,6 +420,31 @@ dialog{overflow-y:auto;overscroll-behavior:contain}
 .technique-guidance li::before{content:"";position:absolute;top:.48em;left:0;width:9px;height:9px;border:2px solid #74a96d;border-radius:50%}
 .technique-guidance>p{margin:2px 0 0;padding-top:13px;border-top:1px solid #e4eee0;color:#82927d;font-size:10px;line-height:1.6}
 .technique-guidance .technique-preview-note{padding-top:0;border-top:0;color:#60775d;font-size:11px}
-@media(max-width:760px){.workspace dialog.technique-dialog{width:min(620px,calc(100% - 28px));padding:22px 18px}.trainer-avatar-switch{justify-content:flex-start;margin-top:-3px}.technique-dialog-layout{grid-template-columns:1fr;gap:18px}.technique-dialog .exercise-technique-video,.technique-dialog .exercise-3d-viewer,.technique-dialog .exercise-3d-canvas,.technique-dialog .exercise-3d-skeleton,.technique-dialog .exercise-3d-fallback,.technique-dialog .exercise-technique-placeholder{min-height:300px}.technique-dialog .exercise-3d-canvas{height:300px}.technique-guidance{gap:10px;padding:0}.technique-guidance h3{font-size:18px}}
-@media(max-width:420px){.workspace dialog.technique-dialog{width:calc(100% - 20px);padding:18px 14px}.technique-dialog .exercise-technique-video,.technique-dialog .exercise-3d-viewer,.technique-dialog .exercise-3d-canvas,.technique-dialog .exercise-3d-skeleton,.technique-dialog .exercise-3d-fallback,.technique-dialog .exercise-technique-placeholder{min-height:260px}.technique-dialog .exercise-3d-canvas{height:260px}.technique-guidance li{font-size:10px}}
+@media(max-width:760px){.workspace dialog.technique-dialog{width:min(620px,calc(100% - 28px));padding:22px 18px}.trainer-avatar-switch{justify-content:flex-start;margin-top:-3px}.technique-dialog-layout{grid-template-columns:1fr;gap:18px}.technique-dialog .exercise-technique-video,.technique-dialog .exercise-3d-viewer,.technique-dialog .exercise-3d-canvas,.technique-dialog .exercise-3d-skeleton,.technique-dialog .exercise-3d-fallback,.technique-dialog .exercise-technique-placeholder,.exercise-video-static{min-height:300px}.exercise-video-viewer{min-height:349px}.technique-dialog .exercise-3d-canvas,.exercise-video-viewer video,.exercise-video-static img{height:300px}.technique-guidance{gap:10px;padding:0}.technique-guidance h3{font-size:18px}}
+@media(max-width:420px){.workspace dialog.technique-dialog{width:calc(100% - 20px);padding:18px 14px}.technique-dialog .exercise-technique-video,.technique-dialog .exercise-3d-viewer,.technique-dialog .exercise-3d-canvas,.technique-dialog .exercise-3d-skeleton,.technique-dialog .exercise-3d-fallback,.technique-dialog .exercise-technique-placeholder,.exercise-video-static{min-height:260px}.exercise-video-viewer{min-height:309px}.technique-dialog .exercise-3d-canvas,.exercise-video-viewer video,.exercise-video-static img{height:260px}.technique-guidance li{font-size:10px}}
 @media(max-width:760px){.trainer-preview-toolbar{flex-direction:column;gap:10px}.trainer-preview-toolbar select{width:min(100%,300px)}.trainer-preview-toolbar .trainer-avatar-switch{margin:0}}
+@media(max-width:760px){.mixamo-squat-review .exercise-3d-viewer,.mixamo-squat-review .exercise-3d-skeleton,.mixamo-squat-review .exercise-3d-fallback{min-height:300px}.mixamo-squat-review .exercise-3d-viewer canvas{height:300px!important}}
+/* Mixamo combined GLB review is deliberately scoped to the developer-only technique modal. */
+.technique-dialog .mixamo-avatar-switch{justify-content:space-between;margin-top:-4px}
+.technique-dialog .mixamo-avatar-switch>span{color:#4c7848;font-weight:750}
+.technique-dialog .mixamo-technique-status{padding:9px 10px;border:1px solid #dce9d7;border-radius:9px;background:#f5faf2;color:#60775d}
+.technique-dialog .mixamo-technical-id{margin:-5px 0 1px;padding:0;border:0;color:#82927d;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:9px;line-height:1.5}
+.technique-dialog-layout.is-mixamo-review .exercise-technique-video{background:radial-gradient(circle at 50% 22%,#fbfdf9 0%,#eef4eb 66%,#e8f0e5 100%)}
+@media(max-width:760px){.technique-dialog .mixamo-avatar-switch{align-items:flex-start;gap:7px}.technique-dialog .mixamo-avatar-switch [role=group]{flex-wrap:wrap}}
+/* The controls take their own row in the developer-only Mixamo review, so shoes
+   remain visible at the bottom of both the standing and squat poses. */
+.technique-dialog-layout.is-mixamo-review .exercise-3d-viewer{display:flex;flex-direction:column;min-height:580px}
+.technique-dialog-layout.is-mixamo-review .exercise-3d-canvas{height:520px!important;min-height:520px;flex:0 0 520px}
+.technique-dialog-layout.is-mixamo-review .exercise-3d-controls{position:static;flex:0 0 auto;margin:8px 10px 10px}
+@media(max-width:760px){.technique-dialog-layout.is-mixamo-review .exercise-3d-viewer{min-height:389px}.technique-dialog-layout.is-mixamo-review .exercise-3d-canvas{height:330px!important;min-height:330px;flex-basis:330px}}
+
+/* Local-only deterministic frame renderer for independent Air Squat review.
+   It is loaded from tools/squat-technique-review.html and never by the app. */
+.squat-technique-review-root{display:grid;min-height:100vh;place-items:center;margin:0;padding:24px;background:#f3f7f0;color:#315333;font-family:Inter,ui-sans-serif,system-ui,sans-serif}
+.squat-technique-review-stage{position:relative;width:900px;height:900px;max-width:calc(100vw - 48px);max-height:calc(100vw - 48px);overflow:hidden;border:1px solid #d8e6d3;border-radius:18px;background:#f7faf5;box-shadow:0 18px 40px #5e76551c}
+.squat-technique-review-canvas{display:block;width:100%!important;height:100%!important}
+.squat-technique-review-caption{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.squat-technique-review-legend{position:absolute;right:18px;bottom:18px;display:flex;flex-wrap:wrap;gap:7px 10px;align-items:center;max-width:410px;padding:9px 11px;border:1px solid #d6e5d1;border-radius:10px;background:#fafff8e8;color:#526d50;font-size:11px;line-height:1.35;backdrop-filter:blur(6px)}
+.squat-technique-review-legend strong{width:100%;font-size:10px;letter-spacing:.08em;text-transform:uppercase}.squat-technique-review-legend span{display:inline-flex;align-items:center;gap:5px}.squat-technique-review-legend i{display:block;width:9px;height:9px;border-radius:50%}.squat-technique-review-legend .pelvis{background:#ce5b54}.squat-technique-review-legend .left-knee{background:#3e79bd}.squat-technique-review-legend .right-knee{background:#d49a30}.squat-technique-review-legend .foot{border-radius:2px;background:#3f8c5d}
+.squat-technique-review-unavailable{display:grid;min-height:100vh;place-items:center;padding:24px;background:#f3f7f0;color:#5e755a;font:14px/1.5 Inter,ui-sans-serif,system-ui,sans-serif;text-align:center}
+@media(max-width:520px){.squat-technique-review-root{padding:10px}.squat-technique-review-stage{max-width:calc(100vw - 20px);max-height:calc(100vw - 20px);border-radius:12px}.squat-technique-review-legend{right:10px;bottom:10px;gap:5px 8px;max-width:calc(100% - 20px);padding:7px 8px;font-size:9px}}

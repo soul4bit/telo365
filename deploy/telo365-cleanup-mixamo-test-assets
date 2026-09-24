@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly RELEASE_ROOT='/opt/telo365/releases'
+readonly ORIGIN_BASE='http://127.0.0.1:1435'
+readonly -a ALLOWED=(
+  'mixamo-male-air-squat-combined-test.glb'
+  'mixamo-female-air-squat-combined-test.glb'
+)
+
+mode=''
+public_base=''
+while (($#)); do
+  case "$1" in
+    --dry-run|--confirm)
+      [[ -z "$mode" ]] || { echo 'Specify only one of --dry-run or --confirm.' >&2; exit 64; }
+      mode="$1"
+      ;;
+    --public-base)
+      shift
+      [[ $# -gt 0 ]] || { echo '--public-base requires an https URL.' >&2; exit 64; }
+      public_base="${1%/}"
+      [[ "$public_base" =~ ^https://[A-Za-z0-9.-]+$ ]] || { echo 'Only a plain https origin is accepted.' >&2; exit 64; }
+      ;;
+    *) echo "Unknown argument: $1" >&2; exit 64 ;;
+  esac
+  shift
+done
+
+[[ -n "$mode" ]] || { echo 'Usage: telo365-cleanup-mixamo-test-assets --dry-run|--confirm [--public-base https://telo365.ru]' >&2; exit 64; }
+[[ -d "$RELEASE_ROOT" ]] || { echo "Release root is missing: $RELEASE_ROOT" >&2; exit 1; }
+
+declare -a files=()
+for name in "${ALLOWED[@]}"; do
+  while IFS= read -r -d '' candidate; do
+    target="$(realpath -e -- "$candidate")"
+    [[ "$target" == "$RELEASE_ROOT"/*/dist/media/exercises/models/"$name" ]] || { echo "Refusing unexpected path: $target" >&2; exit 1; }
+    files+=("$target")
+  done < <(find "$RELEASE_ROOT" -type f -path "*/dist/media/exercises/models/$name" -print0)
+done
+
+if ((${#files[@]}==0)); then
+  echo 'No targeted Mixamo test GLB files were found in release dist directories.'
+else
+  printf 'Targeted files (%s):\n' "${#files[@]}"
+  printf '  %s\n' "${files[@]}"
+fi
+
+if [[ "$mode" == '--dry-run' ]]; then
+  echo 'Dry run complete. Nothing was deleted.'
+  exit 0
+fi
+
+for file in "${files[@]}"; do
+  rm -f -- "$file"
+done
+echo 'Targeted test GLB files removed from release directories.'
+
+failed=0
+for name in "${ALLOWED[@]}"; do
+  path="/media/exercises/models/$name"
+  origin_status="$(curl --connect-timeout 5 --max-time 15 -sS -o /dev/null -w '%{http_code}' "$ORIGIN_BASE$path" || true)"
+  echo "origin $path -> ${origin_status:-unreachable}"
+  [[ "$origin_status" != '200' ]] || failed=1
+  if [[ -n "$public_base" ]]; then
+    public_status="$(curl --connect-timeout 10 --max-time 30 -sS -o /dev/null -w '%{http_code}' "$public_base$path" || true)"
+    echo "public $path -> ${public_status:-unreachable}"
+    [[ "$public_status" != '200' ]] || failed=1
+  fi
+done
+
+((failed==0)) || { echo 'At least one test GLB still returns HTTP 200. Check proxy/CDN or another serving directory.' >&2; exit 1; }
+echo 'Cleanup verification passed: no targeted URL returned HTTP 200.'

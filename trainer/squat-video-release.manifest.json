@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "exerciseId": "squat",
+  "purpose": "Candidate public delivery by rendered video only. Raw Mixamo GLB/FBX, skeletons and animation tracks are excluded from this release.",
+  "delivery": "rendered-video-only",
+  "sourceCandidateManifest": "trainer/mixamo-air-squat-combined.manifest.json",
+  "avatars": {
+    "male": {
+      "label": "Мужчина",
+      "video": "/media/exercises/videos/squat-male.webm",
+      "poster": "/media/exercises/posters/squat-male-side.png"
+    },
+    "female": {
+      "label": "Женщина",
+      "video": "/media/exercises/videos/squat-female.webm",
+      "poster": "/media/exercises/posters/squat-female-side.png"
+    }
+  },
+  "technicalAssetReview": "passed",
+  "interfaceValidation": "passed",
+  "visualReview": "passed",
+  "visualReviewDocument": "artifacts/mixamo-air-squat-specialist-review/VISUAL_TECHNICAL_REVIEW_2026-09-24.md",
+  "specialistTechniqueReview": "pending",
+  "rawGlbPublicDeliveryApproved": false,
+  "verified": false,
+  "readyForPublication": false,
+  "automaticPublication": false
+}

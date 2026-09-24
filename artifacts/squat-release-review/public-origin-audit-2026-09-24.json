@@ -1,0 +1,12 @@
+{
+  "checkedAt": "2026-09-24",
+  "method": "HTTPS HEAD from the release-preparation environment",
+  "origin": "https://telo365.ru",
+  "results": {
+    "/media/exercises/videos/squat-male.webm": 404,
+    "/media/exercises/videos/squat-female.webm": 404,
+    "/media/exercises/models/mixamo-male-air-squat-combined-test.glb": 200,
+    "/media/exercises/models/mixamo-female-air-squat-combined-test.glb": 200
+  },
+  "conclusion": "The video-only release is not deployed. Both unpublished raw Mixamo test GLB files remain publicly accessible and require the separately authorized server cleanup before any release."
+}

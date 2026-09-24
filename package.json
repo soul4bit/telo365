@@ -14,15 +14,15 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "test:e2e": "playwright test",
-    "verify:trainer-assets": "node scripts/verify-trainer-assets.mjs",
-    "verify:male-squat-candidate": "node scripts/verify-male-squat-candidate.mjs",
-    "verify:female-squat-candidate": "node scripts/verify-female-squat-candidate.mjs",
-    "verify:visual-squat-candidates": "node scripts/verify-visual-squat-candidates.mjs",
     "trainer:new": "node scripts/trainer-new.mjs",
     "trainer:verify": "node scripts/trainer-verify.mjs",
     "trainer:publish": "node scripts/trainer-publish.mjs",
     "test:trainer-pipeline": "node scripts/test-trainer-pipeline.mjs",
-    "test:trainer-preview": "node tools/test-trainer-preview-browser.mjs"
+    "verify:mixamo-air-squat-combined": "node scripts/verify-mixamo-air-squat-combined.mjs",
+    "generate:squat-release-videos": "node tools/create-squat-release-videos.mjs",
+    "verify:squat-video-release": "node scripts/verify-squat-video-release.mjs",
+    "diagnose:mixamo-air-squat": "node scripts/diagnose-mixamo-squat-technique.mjs",
+    "verify:public-assets": "node scripts/verify-no-test-assets-in-dist.mjs"
   },
   "dependencies": {
     "@react-three/fiber": "^9.8.0",

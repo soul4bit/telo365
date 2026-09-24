@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Isolated review of original Adobe Mixamo With Skin Air Squat FBX exports. Not a production registry.",
+  "productionViewerChanged": false,
+  "verified": false,
+  "publication": {
+    "state": "draft",
+    "approvedByUser": false,
+    "trainerPublishRun": false
+  },
+  "exercise": {
+    "id": "squat",
+    "clip": "squat",
+    "source": "Original per-character Mixamo Air Squat With Skin FBX",
+    "technicalReview": "passed",
+    "visualReview": "passed",
+    "visualReviewDocument": "artifacts/mixamo-air-squat-specialist-review/VISUAL_TECHNICAL_REVIEW_2026-09-24.md",
+    "specialistTechniqueReview": "pending",
+    "readyForPublication": false
+  },
+  "avatars": {
+    "male": {
+      "label": "CH08_NONPBR",
+      "sourceFbx": "assets-source/external-characters/mixamo-male/animations/Air Squat.fbx",
+      "workingBlend": "assets-work/mixamo-male-air-squat-combined-working.blend",
+      "combinedGlb": "assets-work/mixamo-review/models/mixamo-male-air-squat-combined-test.glb",
+      "sourceBonePrefix": "mixamorig7:",
+      "bones": 65,
+      "skinnedMeshes": 7,
+      "triangles": 56258,
+      "sourceFbxSha256": "0deb46a4fe454a23dd2ce84ccb96cbeea645f31239354b016010124c78992a18",
+      "combinedGlbSha256": "97b20550c320d786cfb544039ce8867b3f3866fdac4e8c9c4eafc79d31367e97"
+    },
+    "female": {
+      "label": "Jody",
+      "sourceFbx": "assets-source/external-characters/mixamo-female/animations/Air Squat Bent Arms.fbx",
+      "workingBlend": "assets-work/mixamo-female-air-squat-combined-working.blend",
+      "combinedGlb": "assets-work/mixamo-review/models/mixamo-female-air-squat-combined-test.glb",
+      "sourceBonePrefix": "mixamorig6:",
+      "bones": 65,
+      "skinnedMeshes": 7,
+      "triangles": 52126,
+      "sourceFbxSha256": "fcb4445b3f31fc8bfd3f5be6f4376d802825b40ea183045b0378c1eeabfd82aa",
+      "combinedGlbSha256": "586fa365b556d647d602dbb89e37f0488e65356b73941b3b183e76da957e4ac4"
+    }
+  },
+  "retargeting": "none"
+}

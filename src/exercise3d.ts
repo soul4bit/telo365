@@ -1,3 +1,5 @@
+import { localReviewAssetUrl } from './local-review-assets'
+
 export type ExerciseCameraPreset = 'front'|'threeQuarter'|'side'|'low'
 export type ExercisePlaybackMode = 'loop'
 export type TrainerAvatar = 'male'|'female'
@@ -17,90 +19,70 @@ export type Exercise3DAsset = {
   trainerAvatar?:TrainerAvatar
 }
 
-export type TrainerAvatarOption = {
-  id:TrainerAvatar
+/**
+ * Public release media is deliberately a rendered end-user video, not a raw
+ * Mixamo model or animation file. It keeps the exercise usable while direct
+ * browser delivery of combined GLBs remains unapproved.
+ */
+export type TechniqueVideoAsset={
+  videoUrl:string
+  posterUrl:string
   label:string
-  modelUrl:string
-  animationBasePath:string
-  rigId:string
-  /**
-   * Keep false until the supplied GLB has been inspected in a DCC tool and in
-   * the viewer: SkinnedMesh, bind/rest pose, bone axes and animation tracks.
-   */
-  verified:boolean
-  /** Only add clips that were exported or retargeted specifically for this rig. */
-  verifiedClips:readonly string[]
 }
 
-export type TrainerPreviewAsset = {
-  id:TrainerAvatar
-  label:string
-  modelUrl:string
-  cameraPreset:ExerciseCameraPreset
+export const squatTechniqueVideos:Record<TrainerAvatar,TechniqueVideoAsset>={
+  male:{label:'Мужчина',videoUrl:'/media/exercises/videos/squat-male.webm',posterUrl:'/media/exercises/posters/squat-male-side.png'},
+  female:{label:'Женщина',videoUrl:'/media/exercises/videos/squat-female.webm',posterUrl:'/media/exercises/posters/squat-female-side.png'}
 }
 
-const legacyTrainerModel='/media/exercises/models/telo-trainer.glb'
+export const getSquatTechniqueVideo=(avatar:TrainerAvatar)=>squatTechniqueVideos[avatar]
+
 const placeholderPoster='/media/exercises/poster-placeholder.svg'
 
-// Paths are reserved for genuine, separately authored GLB models. They are
-// deliberately not aliases of the procedural legacy trainer.
-export const trainerAvatarOptions:Record<TrainerAvatar,TrainerAvatarOption>={
-  male:{id:'male',label:'Мужчина',modelUrl:'/media/exercises/models/telo-trainer-male.glb',animationBasePath:'/media/exercises/animations/male',rigId:'telo-humanoid-v1',verified:false,verifiedClips:[]},
-  female:{id:'female',label:'Женщина',modelUrl:'/media/exercises/models/telo-trainer-female.glb',animationBasePath:'/media/exercises/animations/female',rigId:'telo-humanoid-v1',verified:false,verifiedClips:[]}
+/** Test-only original Mixamo With Skin exports. They are deliberately separate
+ * from the production exercise registry and must never make `verified` true. */
+export type MixamoAirSquatTestAsset=Exercise3DAsset&{label:string;technicalLabel:string;verified:false}
+export const mixamoAirSquatTestAssets:Record<TrainerAvatar,MixamoAirSquatTestAsset>={
+  male:{label:'Мужчина',technicalLabel:'CH08_NONPBR',modelUrl:localReviewAssetUrl('models/mixamo-male-air-squat-combined-test.glb')||'',animationUrl:localReviewAssetUrl('models/mixamo-male-air-squat-combined-test.glb')||'',animationClip:'squat',cameraPreset:'side',playbackSpeed:1,playbackMode:'loop',posterUrl:placeholderPoster,ready:!!localReviewAssetUrl('models/mixamo-male-air-squat-combined-test.glb'),requireSkinnedMesh:true,rigId:'mixamo-ch08-test',trainerAvatar:'male',verified:false},
+  female:{label:'Женщина',technicalLabel:'Jody',modelUrl:localReviewAssetUrl('models/mixamo-female-air-squat-combined-test.glb')||'',animationUrl:localReviewAssetUrl('models/mixamo-female-air-squat-combined-test.glb')||'',animationClip:'squat',cameraPreset:'side',playbackSpeed:1,playbackMode:'loop',posterUrl:placeholderPoster,ready:!!localReviewAssetUrl('models/mixamo-female-air-squat-combined-test.glb'),requireSkinnedMesh:true,rigId:'mixamo-jody-test',trainerAvatar:'female',verified:false}
 }
+export const getMixamoAirSquatTestAsset=(avatar:TrainerAvatar)=>mixamoAirSquatTestAssets[avatar]
 
-// These are real base-mesh exports for visual review only. They have no skin,
-// no materials and no exercise animations, so they must never unlock technique.
-export const trainerPreviewAssets:Record<TrainerAvatar,TrainerPreviewAsset>={
-  male:{id:'male',label:'Мужчина',modelUrl:'/media/exercises/models/telo-trainer-male.glb',cameraPreset:'threeQuarter'},
-  female:{id:'female',label:'Женщина',modelUrl:'/media/exercises/models/telo-trainer-female.glb',cameraPreset:'threeQuarter'}
-}
-export const getTrainerPreviewAsset=(avatar:TrainerAvatar)=>trainerPreviewAssets[avatar]
-
-// A selector is useful only when both real models and the current exercise's
-// specifically validated clips are present. This prevents unverified retargeting.
-export const getAvailableTrainerAvatars=(animationClip?:string)=>animationClip?Object.values(trainerAvatarOptions).filter(option=>option.verified&&option.verifiedClips.includes(animationClip)):[]
-export const isTrainerAvatarSelectionEnabled=(animationClip?:string)=>getAvailableTrainerAvatars(animationClip).length===2
-
-const animation=(clip:string,cameraPreset:ExerciseCameraPreset='threeQuarter',ready=false):Exercise3DAsset=>({
-  modelUrl:legacyTrainerModel,
-  animationUrl:`/media/exercises/animations/${clip}.glb`,
+/** Unpublished exercises retain a typed fallback; prototype GLBs are not public. */
+const unavailableAnimation=(clip:string,cameraPreset:ExerciseCameraPreset='threeQuarter'):Exercise3DAsset=>({
+  modelUrl:'',
+  animationUrl:'',
   animationClip:clip,
   cameraPreset,
   playbackSpeed:1,
   playbackMode:'loop',
   posterUrl:placeholderPoster,
-  ready
+  ready:false
 })
 
-// These five entries request local GLB files only when the user opens the
-// lazy-loaded technique dialog. Missing assets fall back to this local poster.
-const readyAnimation=(clip:string,cameraPreset:ExerciseCameraPreset)=>animation(clip,cameraPreset,true)
-
 export const exercise3DAssets:Record<string,Exercise3DAsset>={
-  squat:readyAnimation('squat','threeQuarter'),
-  'push-up':readyAnimation('pushup','side'),
-  pushup:readyAnimation('pushup','side'),
-  plank:readyAnimation('plank','side'),
-  row:readyAnimation('dumbbell_row','threeQuarter'),
-  'dumbbell-row':readyAnimation('dumbbell_row','threeQuarter'),
-  'dumbbell_row':readyAnimation('dumbbell_row','threeQuarter'),
-  'supported-row':readyAnimation('dumbbell_row','threeQuarter'),
-  'dumbbell-overhead-press':readyAnimation('shoulder_press','threeQuarter'),
-  shoulder_press:readyAnimation('shoulder_press','threeQuarter'),
+  // Mixamo candidates are review-only. Until approval and an allowed delivery
+  // method exist, the normal dialog shows its local poster fallback.
+  squat:unavailableAnimation('squat','side'),
+  'push-up':unavailableAnimation('pushup','side'),
+  pushup:unavailableAnimation('pushup','side'),
+  plank:unavailableAnimation('plank','side'),
+  row:unavailableAnimation('dumbbell_row','threeQuarter'),
+  'dumbbell-row':unavailableAnimation('dumbbell_row','threeQuarter'),
+  'dumbbell_row':unavailableAnimation('dumbbell_row','threeQuarter'),
+  'supported-row':unavailableAnimation('dumbbell_row','threeQuarter'),
+  'dumbbell-overhead-press':unavailableAnimation('shoulder_press','threeQuarter'),
+  shoulder_press:unavailableAnimation('shoulder_press','threeQuarter'),
 
-  'dumbbell-goblet-squat':animation('goblet_squat','threeQuarter'),
-  press:animation('dumbbell_press','threeQuarter'),
-  'dumbbell-floor-press':animation('dumbbell_press','threeQuarter'),
-  'dumbbell-bench-press':animation('dumbbell_press','threeQuarter'),
-  'biceps-curl':animation('biceps_curl','front'),
-  'dumbbell-rdl':animation('romanian_deadlift','threeQuarter')
+  'dumbbell-goblet-squat':unavailableAnimation('goblet_squat','threeQuarter'),
+  press:unavailableAnimation('dumbbell_press','threeQuarter'),
+  'dumbbell-floor-press':unavailableAnimation('dumbbell_press','threeQuarter'),
+  'dumbbell-bench-press':unavailableAnimation('dumbbell_press','threeQuarter'),
+  'biceps-curl':unavailableAnimation('biceps_curl','front'),
+  'dumbbell-rdl':unavailableAnimation('romanian_deadlift','threeQuarter')
 }
 
-export const getExercise3DAsset=(exerciseId:string,avatar?:TrainerAvatar):Exercise3DAsset|null=>{
+export const getExercise3DAsset=(exerciseId:string,_avatar?:TrainerAvatar):Exercise3DAsset|null=>{
   const source=exercise3DAssets[exerciseId]
-  if(!source)return null
-  const trainer=getAvailableTrainerAvatars(source.animationClip).find(option=>option.id===avatar)
-  if(!trainer)return source
-  return {...source,modelUrl:trainer.modelUrl,animationUrl:`${trainer.animationBasePath}/${source.animationClip}.glb`,requireSkinnedMesh:true,rigId:trainer.rigId,trainerAvatar:trainer.id}
+  return source||null
 }

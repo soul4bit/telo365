@@ -1,9 +1,10 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Activity, ArrowRight, CalendarDays, Check, ChevronLeft, ChevronRight, CircleHelp, Clock3, Dumbbell, Play, Repeat2, ShieldCheck, Video } from 'lucide-react'
 import { type CatalogItem, type ExerciseLog, type ExerciseMedia, type Mutate, type State, type TrainingDay, type TrainingPlan, type Workout } from '../api'
-import { getAvailableTrainerAvatars, getExercise3DAsset, getTrainerPreviewAsset, type TrainerAvatar } from '../exercise3d'
+import { getExercise3DAsset, getMixamoAirSquatTestAsset, getSquatTechniqueVideo, type TrainerAvatar } from '../exercise3d'
 import { Dialog, Empty, ErrorMessage, errorText, Title } from './ui'
 import WorkoutHero from './WorkoutHero'
+import TechniqueVideoViewer from './TechniqueVideoViewer'
 
 const Exercise3DViewer=lazy(()=>import('./Exercise3DViewer'))
 
@@ -14,6 +15,7 @@ const words={
 }
 const noMedia:ExerciseMedia={shortVideoUrl:null,posterUrl:null,duration:null,angle:null,trainerName:null}
 const trainerAvatarStorageKey='telo365.technique-trainer-avatar'
+const isLocalMixamoPreview=()=>typeof window!=='undefined'&&['localhost','127.0.0.1'].includes(window.location.hostname)&&new URLSearchParams(window.location.search).get('mixamoSquatPreview')==='1'
 const initialTrainerAvatar=():TrainerAvatar=>{
   if(typeof window==='undefined')return 'female'
   const saved=window.localStorage.getItem(trainerAvatarStorageKey)
@@ -34,6 +36,7 @@ const defaultTechniqueTips=['Двигайся плавно и подконтро
 export default function Workouts({data,mutate,busy,onGoHome}:{data:State;mutate:Mutate;busy:boolean;onGoHome?:()=>void}){
   const [editing,setEditing]=useState<Workout|null>(null),[error,setError]=useState(''),[creating,setCreating]=useState(false),[overrides,setOverrides]=useState<Record<string,string>>({}),[technique,setTechnique]=useState<TechniqueItem|null>(null),[showAllPrograms,setShowAllPrograms]=useState(false),[completion,setCompletion]=useState<WorkoutCompletion|null>(null)
   const [trainerAvatar,setTrainerAvatar]=useState<TrainerAvatar>(initialTrainerAvatar)
+  const mixamoTechniquePreviewEnabled=isLocalMixamoPreview()
   useEffect(()=>{try{window.localStorage.setItem(trainerAvatarStorageKey,trainerAvatar)}catch{/* Storage is optional for the technique viewer. */}},[trainerAvatar])
   const plan=data.trainingPlan as TrainingPlan|undefined|null
   const week=plan?.currentWeek
@@ -70,7 +73,7 @@ export default function Workouts({data,mutate,busy,onGoHome}:{data:State;mutate:
       {visiblePrograms.length?<div className="other-program-grid">{visiblePrograms.map(program=><article className="other-program-card" key={program.id}><span className="other-program-icon"><Activity size={17}/></span><div><h3>{program.name}</h3><small><Clock3 size={13}/>{program.minutes} {'мин'}</small><p>{program.description}</p></div><button className="text-button other-program-open" disabled={busy||creating} onClick={()=>startGeneric(program)}>{'Открыть'} <ArrowRight size={14}/></button></article>)}</div>:<p className="form-note">{words.noPrograms}</p>}
     </section>}
     {editing&&<Dialog title={editing.data.name} close={()=>setEditing(null)}><WorkoutSession workout={editing} mutate={mutate} catalogExercises={exerciseById} onTechnique={setTechnique} outsidePlan={!!todayDay&&!(editing.data.planId===plan?.id&&editing.data.trainingDayId===todayDay.id)} onCompleted={value=>{setCompletion(value);setEditing(null)}}/></Dialog>}
-    {technique&&<TechniqueDialog item={technique} trainerAvatar={trainerAvatar} setTrainerAvatar={setTrainerAvatar} close={()=>setTechnique(null)}/>}
+    {technique&&<TechniqueDialog item={technique} trainerAvatar={trainerAvatar} setTrainerAvatar={setTrainerAvatar} enableMixamoPreview={mixamoTechniquePreviewEnabled} close={()=>setTechnique(null)}/>}
   </>
 }
 
@@ -95,20 +98,41 @@ function SessionLog({workout,onOpen}:{workout:Workout;onOpen:()=>void}){
   </article>
 }
 function SafetyState({message}:{message:string}){return <div className="workout-safety-state"><ShieldCheck size={22}/><div><strong>Сперва ориентируйся на ограничения специалиста</strong><p>{message}</p></div></div>}
-function TechniqueDialog({item,trainerAvatar,setTrainerAvatar,close}:{item:{exerciseId:string;name:string;media:ExerciseMedia};trainerAvatar:TrainerAvatar;setTrainerAvatar:(avatar:TrainerAvatar)=>void;close:()=>void}){
+const techniqueDialogCopy={
+  viewMode:'\u0420\u0435\u0436\u0438\u043c \u043f\u0440\u043e\u0441\u043c\u043e\u0442\u0440\u0430',
+  technique:'\u0422\u0435\u0445\u043d\u0438\u043a\u0430',mixamo:'Mixamo \u0442\u0435\u0441\u0442',
+  testTrainer:'\u0422\u0435\u0441\u0442\u043e\u0432\u044b\u0439 \u0442\u0440\u0435\u043d\u0435\u0440',mixamoTrainerChoice:'\u0412\u044b\u0431\u043e\u0440 Mixamo-\u0442\u0440\u0435\u043d\u0435\u0440\u0430',
+  female:'\u0416\u0435\u043d\u0449\u0438\u043d\u0430',male:'\u041c\u0443\u0436\u0447\u0438\u043d\u0430',trainer:'\u0422\u0440\u0435\u043d\u0435\u0440',trainerChoice:'\u0412\u044b\u0431\u043e\u0440 3D-\u0442\u0440\u0435\u043d\u0435\u0440\u0430',
+  loadingMixamo:'\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043c Mixamo Air Squat',loadingTechnique:'\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043c 3D-\u0442\u0435\u0445\u043d\u0438\u043a\u0443',
+  unavailable:'\u0414\u0435\u043c\u043e\u043d\u0441\u0442\u0440\u0430\u0446\u0438\u044f \u0442\u0435\u0445\u043d\u0438\u043a\u0438 \u0441\u043a\u043e\u0440\u043e \u0431\u0443\u0434\u0435\u0442 \u0434\u043e\u0441\u0442\u0443\u043f\u043d\u0430',fallback:'\u041f\u043e\u043a\u0430 \u043e\u0440\u0438\u0435\u043d\u0442\u0438\u0440\u0443\u0439\u0441\u044f \u043d\u0430 \u043a\u043b\u044e\u0447\u0435\u0432\u044b\u0435 \u043c\u043e\u043c\u0435\u043d\u0442\u044b \u0443\u043f\u0440\u0430\u0436\u043d\u0435\u043d\u0438\u044f.',
+  testEyebrow:'\u0422\u0415\u0421\u0422\u041e\u0412\u042b\u0419 \u0420\u0415\u0416\u0418\u041c \u00b7 MIXAMO',
+  mixamoDescription:'\u041e\u0440\u0438\u0433\u0438\u043d\u0430\u043b\u044c\u043d\u044b\u0439 Air Squat \u0438\u0437 combined GLB: \u043c\u043e\u0434\u0435\u043b\u044c, \u043c\u0430\u0442\u0435\u0440\u0438\u0430\u043b\u044b \u0438 clip squat \u0437\u0430\u0433\u0440\u0443\u0436\u0430\u044e\u0442\u0441\u044f \u0438\u0437 \u043e\u0434\u043d\u043e\u0433\u043e \u0444\u0430\u0439\u043b\u0430.',
+  testStatus:'\u0422\u0435\u0445\u043d\u0438\u0447\u0435\u0441\u043a\u0430\u044f \u0438 \u0432\u0438\u0437\u0443\u0430\u043b\u044c\u043d\u0430\u044f \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0438 \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043d\u044b. \u041f\u0440\u043e\u0432\u0435\u0440\u043a\u0430 \u0442\u0435\u0445\u043d\u0438\u043a\u0438 \u0441\u043f\u0435\u0446\u0438\u0430\u043b\u0438\u0441\u0442\u043e\u043c \u043e\u0441\u0442\u0430\u0451\u0442\u0441\u044f \u043e\u0436\u0438\u0434\u0430\u044e\u0449\u0435\u0439.',
+  keyMoments:'\u041a\u041b\u042e\u0427\u0415\u0412\u042b\u0415 \u041c\u041e\u041c\u0415\u041d\u0422\u042b',comfort:'\u0420\u0430\u0431\u043e\u0442\u0430\u0439 \u0432 \u043a\u043e\u043c\u0444\u043e\u0440\u0442\u043d\u043e\u0439 \u0430\u043c\u043f\u043b\u0438\u0442\u0443\u0434\u0435. \u041f\u0440\u0438 \u0431\u043e\u043b\u0438 \u0438\u043b\u0438 \u0432\u044b\u0440\u0430\u0436\u0435\u043d\u043d\u043e\u043c \u0434\u0438\u0441\u043a\u043e\u043c\u0444\u043e\u0440\u0442\u0435 \u043e\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0441\u044c.'
+}
+const mixamoSquatTechniqueTips=['\u0421\u0442\u043e\u043f\u044b \u043f\u0440\u0438\u043c\u0435\u0440\u043d\u043e \u043d\u0430 \u0448\u0438\u0440\u0438\u043d\u0435 \u043f\u043b\u0435\u0447.','\u041a\u043e\u043b\u0435\u043d\u0438 \u0434\u0432\u0438\u0436\u0443\u0442\u0441\u044f \u043f\u043e \u043d\u0430\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u044e \u043d\u043e\u0441\u043a\u043e\u0432.','\u0421\u043f\u0438\u043d\u0430 \u043e\u0441\u0442\u0430\u0451\u0442\u0441\u044f \u043d\u0435\u0439\u0442\u0440\u0430\u043b\u044c\u043d\u043e\u0439.','\u041e\u043f\u0443\u0441\u043a\u0430\u0439\u0441\u044f \u043f\u043b\u0430\u0432\u043d\u043e \u0438 \u043f\u043e\u0434\u043a\u043e\u043d\u0442\u0440\u043e\u043b\u044c\u043d\u043e, \u0431\u0435\u0437 \u0440\u044b\u0432\u043a\u0430.']
+
+export function TechniqueDialog({item,trainerAvatar,setTrainerAvatar,close,enableMixamoPreview=false,initialViewerMode='technique',startPaused=false}:{item:{exerciseId:string;name:string;media:ExerciseMedia};trainerAvatar:TrainerAvatar;setTrainerAvatar:(avatar:TrainerAvatar)=>void;close:()=>void;enableMixamoPreview?:boolean;initialViewerMode?:'technique'|'mixamo';startPaused?:boolean}){
   const [reduced,setReduced]=useState(()=>typeof window!=='undefined'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)
-  const [viewerMode,setViewerMode]=useState<'technique'|'preview'>('technique')
+  const [viewerMode,setViewerMode]=useState<'technique'|'mixamo'>(initialViewerMode)
   useEffect(()=>{const query=window.matchMedia('(prefers-reduced-motion: reduce)'),update=()=>setReduced(query.matches);query.addEventListener('change',update);return()=>query.removeEventListener('change',update)},[])
+  const squatVideo=item.exerciseId==='squat'?getSquatTechniqueVideo(trainerAvatar):null
   const asset=getExercise3DAsset(item.exerciseId,trainerAvatar)
-  const avatars=getAvailableTrainerAvatars(asset?.animationClip)
-  const canSelectTrainer=!!asset?.ready&&avatars.length===2
-  const preview=getTrainerPreviewAsset(trainerAvatar)
+  const isMixamoSquatPreview=enableMixamoPreview&&item.exerciseId==='squat'
+  const mixamoAsset=isMixamoSquatPreview?getMixamoAirSquatTestAsset(trainerAvatar):null
   const showVideo=!reduced&&!!item.media.shortVideoUrl
   const tips=item.exerciseId==='squat'?squatTechniqueTips:defaultTechniqueTips
   return <Dialog className="technique-dialog" title={`${words.technique}: ${item.name}`} close={close}>
-    <div className="technique-view-switch" role="group" aria-label="Режим просмотра"><button className={viewerMode==='technique'?'is-active':''} type="button" aria-pressed={viewerMode==='technique'} onClick={()=>setViewerMode('technique')}>Техника</button><button className={viewerMode==='preview'?'is-active':''} type="button" aria-pressed={viewerMode==='preview'} onClick={()=>setViewerMode('preview')}>3D-модель</button></div>
-    {viewerMode==='preview'?<div className="trainer-avatar-switch"><span>Предпросмотр</span><div role="group" aria-label="Выбор 3D-модели"><button type="button" aria-pressed={trainerAvatar==='female'} className={trainerAvatar==='female'?'is-active':''} onClick={()=>setTrainerAvatar('female')}>Женщина</button><button type="button" aria-pressed={trainerAvatar==='male'} className={trainerAvatar==='male'?'is-active':''} onClick={()=>setTrainerAvatar('male')}>Мужчина</button></div></div>:canSelectTrainer&&<div className="trainer-avatar-switch"><span>Тренер</span><div role="group" aria-label="Выбор 3D-тренера">{avatars.map(avatar=><button key={avatar.id} type="button" aria-pressed={trainerAvatar===avatar.id} className={trainerAvatar===avatar.id?'is-active':''} onClick={()=>setTrainerAvatar(avatar.id)}>{avatar.label}</button>)}</div></div>}
-    <div className="technique-dialog-layout"><div className="exercise-technique-video" data-exercise-id={item.exerciseId}>{viewerMode==='preview'?<Suspense fallback={<div className="exercise-3d-skeleton" aria-label="Загружаем 3D-модель"/>}><Exercise3DViewer key={preview.modelUrl} modelUrl={preview.modelUrl} cameraPreset={preview.cameraPreset} playbackSpeed={1} mode="preview"/></Suspense>:asset?.ready?<Suspense fallback={<div className="exercise-3d-skeleton" aria-label="Загружаем 3D-технику"/>}><Exercise3DViewer key={`${asset.modelUrl}:${asset.animationUrl}:${asset.animationClip}`} {...asset}/></Suspense>:showVideo?<video autoPlay muted playsInline loop controls={false} preload="metadata" poster={item.media.posterUrl||undefined}><source src={item.media.shortVideoUrl||undefined} type="video/mp4"/></video>:item.media.posterUrl?<img src={item.media.posterUrl} alt=""/>:<div className="exercise-technique-placeholder"><Video size={28}/><strong>Демонстрация техники скоро будет доступна</strong><p>Пока ориентируйся на ключевые моменты упражнения.</p></div>}</div><aside className="technique-guidance">{viewerMode==='preview'?<><span className="eyebrow">ПРЕДВАРИТЕЛЬНАЯ МОДЕЛЬ</span><h3>{preview.label}</h3><p className="technique-preview-note">Реальная базовая сетка из Human Base Meshes. В ней пока нет одежды, материалов, анимационного скелета или упражнений.</p><p>Можно повернуть модель и изменить масштаб. Этот режим не влияет на технику упражнения.</p></>:<><span className="eyebrow">КЛЮЧЕВЫЕ МОМЕНТЫ</span><h3>{item.name}</h3><ul>{tips.map(tip=><li key={tip}>{tip}</li>)}</ul><p>Работай в комфортной амплитуде. При боли или выраженном дискомфорте остановись.</p></>}</aside></div>
+    {enableMixamoPreview&&<div className="technique-view-switch" role="group" aria-label={techniqueDialogCopy.viewMode}>
+      <button className={viewerMode==='technique'?'is-active':''} type="button" aria-pressed={viewerMode==='technique'} onClick={()=>setViewerMode('technique')}>{techniqueDialogCopy.technique}</button>
+      {isMixamoSquatPreview&&<button className={viewerMode==='mixamo'?'is-active':''} type="button" aria-pressed={viewerMode==='mixamo'} onClick={()=>setViewerMode('mixamo')}>{techniqueDialogCopy.mixamo}</button>}
+    </div>}
+    {viewerMode==='mixamo'&&mixamoAsset?<div className="trainer-avatar-switch mixamo-avatar-switch"><span>{techniqueDialogCopy.testTrainer}</span><div role="group" aria-label={techniqueDialogCopy.mixamoTrainerChoice}>{(['female','male'] as TrainerAvatar[]).map(avatar=><button key={avatar} type="button" aria-pressed={trainerAvatar===avatar} className={trainerAvatar===avatar?'is-active':''} onClick={()=>setTrainerAvatar(avatar)}>{getMixamoAirSquatTestAsset(avatar).label}</button>)}</div></div>:squatVideo?<div className="trainer-avatar-switch"><span>{techniqueDialogCopy.trainer}</span><div role="group" aria-label={techniqueDialogCopy.trainerChoice}>{(['female','male'] as TrainerAvatar[]).map(avatar=><button key={avatar} type="button" aria-pressed={trainerAvatar===avatar} className={trainerAvatar===avatar?'is-active':''} onClick={()=>setTrainerAvatar(avatar)}>{avatar==='female'?techniqueDialogCopy.female:techniqueDialogCopy.male}</button>)}</div></div>:null}
+    <div className={`technique-dialog-layout ${viewerMode==='mixamo'?'is-mixamo-review':''}`}><div className="exercise-technique-video" data-exercise-id={item.exerciseId}>
+      {viewerMode==='mixamo'&&mixamoAsset?<Suspense fallback={<div className="exercise-3d-skeleton" aria-label={techniqueDialogCopy.loadingMixamo}/>}><Exercise3DViewer key={`mixamo-air-squat:${trainerAvatar}:${mixamoAsset.modelUrl}`} {...mixamoAsset} cameraPosition={[4.25,1.25,.33]} controlsTarget={[0,0,0]} lightingPreset="mixamo-review" startPaused={startPaused}/></Suspense>:squatVideo?<TechniqueVideoViewer key={squatVideo.videoUrl} asset={squatVideo} reducedMotion={reduced}/>:asset?.ready?<Suspense fallback={<div className="exercise-3d-skeleton" aria-label={techniqueDialogCopy.loadingTechnique}/>}><Exercise3DViewer key={`${asset.modelUrl}:${asset.animationUrl}:${asset.animationClip}`} {...asset}/></Suspense>:showVideo?<video autoPlay muted playsInline loop controls={false} preload="metadata" poster={item.media.posterUrl||undefined}><source src={item.media.shortVideoUrl||undefined} type="video/mp4"/></video>:item.media.posterUrl?<img src={item.media.posterUrl} alt=""/>:asset?<div className="exercise-3d-fallback"><img src={asset.posterUrl} alt=""/><div><strong>{techniqueDialogCopy.unavailable}</strong><p>{techniqueDialogCopy.fallback}</p></div></div>:<div className="exercise-technique-placeholder"><Video size={28}/><strong>{techniqueDialogCopy.unavailable}</strong><p>{techniqueDialogCopy.fallback}</p></div>}
+    </div><aside className="technique-guidance">
+      {viewerMode==='mixamo'&&mixamoAsset?<><span className="eyebrow">{techniqueDialogCopy.testEyebrow}</span><h3>{mixamoAsset.label}</h3><p className="technique-preview-note">{techniqueDialogCopy.mixamoDescription}</p><p className="mixamo-technical-id">Mixamo ID: {mixamoAsset.technicalLabel}</p><ul>{mixamoSquatTechniqueTips.map(tip=><li key={tip}>{tip}</li>)}</ul><p className="mixamo-technique-status">{techniqueDialogCopy.testStatus}</p></>:<><span className="eyebrow">{techniqueDialogCopy.keyMoments}</span><h3>{item.name}</h3><ul>{tips.map(tip=><li key={tip}>{tip}</li>)}</ul><p>{techniqueDialogCopy.comfort}</p></>}
+    </aside></div>
   </Dialog>
 }
 

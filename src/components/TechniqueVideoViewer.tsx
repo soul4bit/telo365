@@ -5,7 +5,7 @@ import type { TechniqueVideoAngle, TechniqueVideoAsset } from '../exercise3d'
 export default function TechniqueVideoViewer({asset,reducedMotion=false}:{asset:TechniqueVideoAsset;reducedMotion?:boolean}){
   const video=useRef<HTMLVideoElement>(null)
   const [playing,setPlaying]=useState(!reducedMotion)
-  const [speed,setSpeed]=useState(.5)
+  const [speed,setSpeed]=useState(1)
   const [failed,setFailed]=useState(false)
   const [angle,setAngle]=useState<TechniqueVideoAngle>(asset.defaultAngle)
   const selected=asset.angles[angle]
@@ -13,9 +13,9 @@ export default function TechniqueVideoViewer({asset,reducedMotion=false}:{asset:
   useEffect(()=>{
     const element=video.current
     setFailed(false)
-    setSpeed(.5)
+    setSpeed(1)
     setPlaying(!reducedMotion)
-    if(element){element.currentTime=0;element.playbackRate=.5}
+    if(element){element.currentTime=0;element.playbackRate=1}
   },[reducedMotion,selected.videoUrl])
 
   useEffect(()=>setAngle(asset.defaultAngle),[asset.defaultAngle])

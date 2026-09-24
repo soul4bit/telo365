@@ -17,8 +17,8 @@ if(!/rendered frames.*not raw Mixamo GLB/i.test(manifest.purpose||''))throw new 
 const verified={}
 for(const [avatar,angleMap] of Object.entries(expected)){
   const release=manifest.avatars?.[avatar]
-  if(!release?.angles||release.defaultAngle!=='side')throw new Error(`${avatar}: release manifest must declare all angles with side as default`)
-  verified[avatar]={defaultAngle:'side',angles:{}}
+  if(!release?.angles||release.defaultAngle!=='threeQuarter')throw new Error(`${avatar}: release manifest must declare all angles with threeQuarter as default`)
+  verified[avatar]={defaultAngle:'threeQuarter',angles:{}}
   for(const [angle,paths] of Object.entries(angleMap)){
     const video=await exists(resolve(mediaRoot,paths.video))
     const poster=await exists(resolve(mediaRoot,paths.poster))

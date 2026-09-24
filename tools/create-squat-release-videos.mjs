@@ -67,7 +67,7 @@ const page=await browser.newPage()
 const produced={}
 try{
   for(const [avatar,asset] of Object.entries(avatars)){
-    const avatarResult={label:asset.label,defaultAngle:'side',angles:{}}
+    const avatarResult={label:asset.label,defaultAngle:'threeQuarter',angles:{}}
     for(const angle of angles){
       // File URLs taint a canvas in Chromium and create a header-only recording.
       // Embedded review frames keep rendering local and publish only final video.

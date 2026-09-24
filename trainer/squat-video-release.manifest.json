@@ -8,7 +8,7 @@
   "avatars": {
     "male": {
       "label": "Мужчина",
-      "defaultAngle": "side",
+      "defaultAngle": "threeQuarter",
       "angles": {
         "front": {"video": "/media/exercises/videos/squat-male-front.webm", "poster": "/media/exercises/posters/squat-male-front.png"},
         "side": {"video": "/media/exercises/videos/squat-male-side.webm", "poster": "/media/exercises/posters/squat-male-side.png"},
@@ -18,7 +18,7 @@
     },
     "female": {
       "label": "Женщина",
-      "defaultAngle": "side",
+      "defaultAngle": "threeQuarter",
       "angles": {
         "front": {"video": "/media/exercises/videos/squat-female-front.webm", "poster": "/media/exercises/posters/squat-female-front.png"},
         "side": {"video": "/media/exercises/videos/squat-female-side.webm", "poster": "/media/exercises/posters/squat-female-side.png"},

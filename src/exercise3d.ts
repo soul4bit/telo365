@@ -28,7 +28,7 @@ export type TechniqueVideoAngle='front'|'side'|'back'|'threeQuarter'
 export type TechniqueVideoAngleAsset={label:string;videoUrl:string;posterUrl:string}
 export type TechniqueVideoAsset={
   label:string
-  /** The side view remains the first view because it best shows hip travel. */
+  /** The 3/4 view is the first view; it shows both the hip path and knee alignment. */
   defaultAngle:TechniqueVideoAngle
   angles:Record<TechniqueVideoAngle,TechniqueVideoAngleAsset>
 }
@@ -45,8 +45,8 @@ const squatVideoAngles=(avatar:TrainerAvatar):Record<TechniqueVideoAngle,Techniq
 }
 
 export const squatTechniqueVideos:Record<TrainerAvatar,TechniqueVideoAsset>={
-  male:{label:'Мужчина',defaultAngle:'side',angles:squatVideoAngles('male')},
-  female:{label:'Женщина',defaultAngle:'side',angles:squatVideoAngles('female')}
+  male:{label:'Мужчина',defaultAngle:'threeQuarter',angles:squatVideoAngles('male')},
+  female:{label:'Женщина',defaultAngle:'threeQuarter',angles:squatVideoAngles('female')}
 }
 
 export const getSquatTechniqueVideo=(avatar:TrainerAvatar)=>squatTechniqueVideos[avatar]

@@ -2,7 +2,7 @@
 
 ## Выбранный вариант
 
-К релизу подготовлен вариант **B: видеодемонстрация**. В пользовательском окне «Техника: Приседания» можно выбрать «Женщина» или «Мужчина», запустить/поставить на паузу видео, вернуть его к началу и переключить скорость 0.5×/1×. При `prefers-reduced-motion` показывается poster без запуска видео.
+К релизу подготовлен вариант **B: видеодемонстрация**. В пользовательском окне «Техника: Приседания» можно выбрать «Женщина» или «Мужчина», запустить/поставить на паузу видео, вернуть его к началу и переключить скорость 0.5×/1×. Стартовый ракурс — «Сбоку»; дополнительно доступны «Спереди», «Сзади» и «3/4». Сцена оформлена светлым фоном TELO365 и watermark `TELO365.RU`. При `prefers-reduced-motion` показывается poster выбранного ракурса без запуска видео.
 
 Видеофайлы находятся в `public/media/exercises/videos/`, posters — в `public/media/exercises/posters/`. Они являются отрендеренным конечным видео; raw GLB, FBX, кости и ключи анимаций в них не входят.
 
@@ -30,7 +30,7 @@ npm.cmd run verify:public-assets
 npm.cmd run verify:mixamo-air-squat-combined
 ```
 
-После `npm.cmd run build` убедитесь, что `dist/media/exercises/videos/squat-male.webm` и `squat-female.webm` существуют, а команда ниже не выводит путей:
+После `npm.cmd run build` убедитесь, что в `dist/media/exercises/videos/` есть восемь файлов `squat-{male|female}-{front|side|back|three-quarter}.webm`, а команда ниже не выводит путей:
 
 ```powershell
 rg --files dist | rg 'mixamo-.*-air-squat-combined-test\.glb'
@@ -65,13 +65,13 @@ sudo /usr/local/sbin/telo365-cleanup-mixamo-test-assets --confirm --public-base 
 После деплоя проверить:
 
 ```bash
-curl -I https://telo365.ru/media/exercises/videos/squat-male.webm
-curl -I https://telo365.ru/media/exercises/videos/squat-female.webm
+curl -I https://telo365.ru/media/exercises/videos/squat-male-side.webm
+curl -I https://telo365.ru/media/exercises/videos/squat-female-side.webm
 curl -I https://telo365.ru/media/exercises/models/mixamo-male-air-squat-combined-test.glb
 curl -I https://telo365.ru/media/exercises/models/mixamo-female-air-squat-combined-test.glb
 ```
 
-Два WebM должны отвечать HTTP 200, два test GLB — не HTTP 200. Затем откройте «Тренировки → Техника: Приседания», проверьте выбор персонажа, controls, reduced motion, mobile-прокрутку и fallback при недоступном WebM.
+Проверенные WebM должны отвечать HTTP 200, два test GLB — не HTTP 200. Затем откройте «Тренировки → Техника: Приседания», проверьте выбор персонажа, четыре ракурса, watermark, controls, reduced motion, mobile-прокрутку и fallback при недоступном WebM.
 
 ## Откат
 

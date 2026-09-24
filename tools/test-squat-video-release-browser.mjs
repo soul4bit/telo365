@@ -25,12 +25,35 @@ async function desktop(){
   const video=await waitForVideo(dialog)
   const text=await dialog.innerText()
   if(/Mixamo|CH08|Jody|\.glb|test/i.test(text))throw new Error(`technical text leaked into the release dialog: ${text}`)
-  const initialSource=await video.getAttribute('src')||await video.locator('source').getAttribute('src')
-  if(!initialSource?.endsWith('/squat-female.webm'))throw new Error(`expected saved female video, got ${initialSource}`)
+  const source=async()=>{
+    const current=dialog.locator('.exercise-video-viewer video')
+    await current.waitFor({state:'visible',timeout:15000})
+    return await current.getAttribute('src')||await current.locator('source').getAttribute('src')
+  }
+  const initialSource=await source()
+  if(!initialSource?.endsWith('/squat-female-side.webm'))throw new Error(`expected default female side video, got ${initialSource}`)
+  const angles={
+    'Спереди':'front',
+    'Сбоку':'side',
+    'Сзади':'back',
+    '3/4':'three-quarter'
+  }
+  const angleSwitch=dialog.getByRole('group',{name:'Ракурс демонстрации'})
+  for(const [label,fileAngle] of Object.entries(angles)){
+    await angleSwitch.getByRole('button',{name:label}).click()
+    const current=await source()
+    if(!current?.endsWith(`/squat-female-${fileAngle}.webm`))throw new Error(`female ${label} view did not load: ${current}`)
+  }
+  if(!await dialog.getByText('TELO365.RU',{exact:true}).isVisible())throw new Error('TELO365.RU watermark is not visible')
   await dialog.getByRole('button',{name:'Мужчина'}).click()
-  const maleVideo=await waitForVideo(dialog)
-  const maleSource=await maleVideo.getAttribute('src')||await maleVideo.locator('source').getAttribute('src')
-  if(!maleSource?.endsWith('/squat-male.webm'))throw new Error(`avatar switch did not change video: ${maleSource}`)
+  await waitForVideo(dialog)
+  const maleSource=await source()
+  if(!maleSource?.endsWith('/squat-male-side.webm'))throw new Error(`avatar switch did not restore male side video: ${maleSource}`)
+  for(const [label,fileAngle] of Object.entries(angles)){
+    await angleSwitch.getByRole('button',{name:label}).click()
+    const current=await source()
+    if(!current?.endsWith(`/squat-male-${fileAngle}.webm`))throw new Error(`male ${label} view did not load: ${current}`)
+  }
   if(!await dialog.locator('.technique-guidance').isVisible())throw new Error('technique guidance is not visible beside the release video')
   const controls=dialog.locator('.exercise-video-controls')
   await controls.getByRole('button',{name:'Пауза видео'}).click()
@@ -44,7 +67,7 @@ async function desktop(){
   await browser.close()
   if(errors.length)throw new Error(`desktop console errors: ${errors.join(' | ')}`)
   if(rawAssetRequests.length)throw new Error(`release dialog requested raw review asset: ${rawAssetRequests.join(', ')}`)
-  return {avatarSwitch:true,playPause:true,reset:true,speed:true,dialogClose:true}
+  return {avatarSwitch:true,angleSwitch:true,watermark:true,playPause:true,reset:true,speed:true,dialogClose:true}
 }
 
 async function mobile(){
@@ -57,10 +80,10 @@ async function mobile(){
   await dialog.evaluate(element=>{element.scrollTop=element.scrollHeight})
   await page.waitForTimeout(80)
   const result=await dialog.evaluate(element=>{
-    const box=element.getBoundingClientRect(),guidance=element.querySelector('.technique-guidance')?.getBoundingClientRect(),controls=element.querySelector('.exercise-video-controls')?.getBoundingClientRect()
-    return {atBottom:Math.ceil(element.scrollTop+element.clientHeight)>=element.scrollHeight,guidanceVisible:!!guidance&&guidance.bottom<=box.bottom&&guidance.top>=box.top,controlsVisible:!!controls&&controls.bottom<=box.bottom&&controls.top>=box.top}
+    const box=element.getBoundingClientRect(),guidance=element.querySelector('.technique-guidance')?.getBoundingClientRect(),controls=element.querySelector('.exercise-video-controls')?.getBoundingClientRect(),angles=element.querySelector('.exercise-video-angle-switch')?.getBoundingClientRect()
+    return {atBottom:Math.ceil(element.scrollTop+element.clientHeight)>=element.scrollHeight,guidanceVisible:!!guidance&&guidance.bottom<=box.bottom&&guidance.top>=box.top,controlsVisible:!!controls&&controls.bottom<=box.bottom&&controls.top>=box.top,anglesVisible:!!angles&&angles.bottom<=box.bottom&&angles.top>=box.top}
   })
-  if(!result.atBottom||!result.guidanceVisible)throw new Error(`mobile modal bottom is inaccessible: ${JSON.stringify(result)}`)
+  if(!result.atBottom||!result.guidanceVisible||!result.anglesVisible)throw new Error(`mobile modal bottom is inaccessible: ${JSON.stringify(result)}`)
   await page.screenshot({path:`${artifacts}/squat-video-mobile-bottom.png`,fullPage:false})
   await browser.close()
   if(errors.length)throw new Error(`mobile console errors: ${errors.join(' | ')}`)

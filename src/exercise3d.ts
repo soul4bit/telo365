@@ -24,15 +24,29 @@ export type Exercise3DAsset = {
  * Mixamo model or animation file. It keeps the exercise usable while direct
  * browser delivery of combined GLBs remains unapproved.
  */
+export type TechniqueVideoAngle='front'|'side'|'back'|'threeQuarter'
+export type TechniqueVideoAngleAsset={label:string;videoUrl:string;posterUrl:string}
 export type TechniqueVideoAsset={
-  videoUrl:string
-  posterUrl:string
   label:string
+  /** The side view remains the first view because it best shows hip travel. */
+  defaultAngle:TechniqueVideoAngle
+  angles:Record<TechniqueVideoAngle,TechniqueVideoAngleAsset>
+}
+
+const squatVideoAngles=(avatar:TrainerAvatar):Record<TechniqueVideoAngle,TechniqueVideoAngleAsset>=>{
+  const prefix=`/media/exercises/videos/squat-${avatar}`
+  const posterPrefix=`/media/exercises/posters/squat-${avatar}`
+  return {
+    front:{label:'Спереди',videoUrl:`${prefix}-front.webm`,posterUrl:`${posterPrefix}-front.png`},
+    side:{label:'Сбоку',videoUrl:`${prefix}-side.webm`,posterUrl:`${posterPrefix}-side.png`},
+    back:{label:'Сзади',videoUrl:`${prefix}-back.webm`,posterUrl:`${posterPrefix}-back.png`},
+    threeQuarter:{label:'3/4',videoUrl:`${prefix}-three-quarter.webm`,posterUrl:`${posterPrefix}-three-quarter.png`}
+  }
 }
 
 export const squatTechniqueVideos:Record<TrainerAvatar,TechniqueVideoAsset>={
-  male:{label:'Мужчина',videoUrl:'/media/exercises/videos/squat-male.webm',posterUrl:'/media/exercises/posters/squat-male-side.png'},
-  female:{label:'Женщина',videoUrl:'/media/exercises/videos/squat-female.webm',posterUrl:'/media/exercises/posters/squat-female-side.png'}
+  male:{label:'Мужчина',defaultAngle:'side',angles:squatVideoAngles('male')},
+  female:{label:'Женщина',defaultAngle:'side',angles:squatVideoAngles('female')}
 }
 
 export const getSquatTechniqueVideo=(avatar:TrainerAvatar)=>squatTechniqueVideos[avatar]

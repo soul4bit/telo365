@@ -7,13 +7,23 @@
   "avatars": {
     "male": {
       "label": "Мужчина",
-      "video": "/media/exercises/videos/squat-male.webm",
-      "poster": "/media/exercises/posters/squat-male-side.png"
+      "defaultAngle": "side",
+      "angles": {
+        "front": {"video": "/media/exercises/videos/squat-male-front.webm", "poster": "/media/exercises/posters/squat-male-front.png"},
+        "side": {"video": "/media/exercises/videos/squat-male-side.webm", "poster": "/media/exercises/posters/squat-male-side.png"},
+        "back": {"video": "/media/exercises/videos/squat-male-back.webm", "poster": "/media/exercises/posters/squat-male-back.png"},
+        "threeQuarter": {"video": "/media/exercises/videos/squat-male-three-quarter.webm", "poster": "/media/exercises/posters/squat-male-three-quarter.png"}
+      }
     },
     "female": {
       "label": "Женщина",
-      "video": "/media/exercises/videos/squat-female.webm",
-      "poster": "/media/exercises/posters/squat-female-side.png"
+      "defaultAngle": "side",
+      "angles": {
+        "front": {"video": "/media/exercises/videos/squat-female-front.webm", "poster": "/media/exercises/posters/squat-female-front.png"},
+        "side": {"video": "/media/exercises/videos/squat-female-side.webm", "poster": "/media/exercises/posters/squat-female-side.png"},
+        "back": {"video": "/media/exercises/videos/squat-female-back.webm", "poster": "/media/exercises/posters/squat-female-back.png"},
+        "threeQuarter": {"video": "/media/exercises/videos/squat-female-three-quarter.webm", "poster": "/media/exercises/posters/squat-female-three-quarter.png"}
+      }
     }
   },
   "technicalAssetReview": "passed",

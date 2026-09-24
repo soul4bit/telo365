@@ -14,9 +14,15 @@ const sourceRoot=resolve(root,'artifacts','squat-technique-review')
 const publicRoot=resolve(root,'public','media','exercises')
 const reviewRoot=resolve(root,'artifacts','squat-release-review')
 const avatars={
-  male:{label:'Мужчина',source:'male',video:'videos/squat-male.webm',poster:'posters/squat-male-side.png'},
-  female:{label:'Женщина',source:'female',video:'videos/squat-female.webm',poster:'posters/squat-female-side.png'}
+  male:{label:'Мужчина',source:'male'},
+  female:{label:'Женщина',source:'female'}
 }
+const angles=[
+  {id:'front',source:'front',label:'Спереди'},
+  {id:'side',source:'side',label:'Сбоку'},
+  {id:'back',source:'back',label:'Сзади'},
+  {id:'threeQuarter',source:'three-quarter',label:'3/4'}
+]
 
 const digest=async path=>createHash('sha256').update(await readFile(path)).digest('hex')
 const dataUrl=async path=>`data:image/png;base64,${(await readFile(path)).toString('base64')}`
@@ -61,27 +67,30 @@ const page=await browser.newPage()
 const produced={}
 try{
   for(const [avatar,asset] of Object.entries(avatars)){
-    // File URLs taint a canvas in Chromium and create a header-only recording.
-    // Embedded source-frame data keeps the rendering local and produces a
-    // playable WebM without ever exposing source frames through a server.
-    const frames=await Promise.all(Array.from({length:frameCount},(_,index)=>dataUrl(resolve(sourceRoot,asset.source,'source-frames','side',`frame-${String(index).padStart(3,'0')}.png`))))
-    const encoded=await renderVideo(page,frames)
-    const videoPath=resolve(publicRoot,asset.video),posterPath=resolve(publicRoot,asset.poster)
-    await writeFile(videoPath,Buffer.from(encoded.base64,'base64'))
-    await copyFile(resolve(sourceRoot,asset.source,'control-frames','standing-side.png'),posterPath)
-    await copyFile(videoPath,resolve(reviewRoot,`squat-${avatar}.webm`))
-    produced[avatar]={
-      label:asset.label,video:`/media/exercises/${asset.video}`,poster:`/media/exercises/${asset.poster}`,
-      reviewVideo:`squat-${avatar}.webm`,
-      mimeType:encoded.mimeType,width:encoded.width,height:encoded.height,frameCount,durationSeconds:Number(encoded.durationSeconds.toFixed(6)),
-      videoSha256:await digest(videoPath),posterSha256:await digest(posterPath),videoBytes:(await readFile(videoPath)).byteLength
+    const avatarResult={label:asset.label,defaultAngle:'side',angles:{}}
+    for(const angle of angles){
+      // File URLs taint a canvas in Chromium and create a header-only recording.
+      // Embedded review frames keep rendering local and publish only final video.
+      const frames=await Promise.all(Array.from({length:frameCount},(_,index)=>dataUrl(resolve(sourceRoot,asset.source,'source-frames',angle.source,`frame-${String(index).padStart(3,'0')}.png`))))
+      const encoded=await renderVideo(page,frames)
+      const basename=`squat-${avatar}-${angle.source}`
+      const videoPath=resolve(publicRoot,'videos',`${basename}.webm`),posterPath=resolve(publicRoot,'posters',`${basename}.png`)
+      await writeFile(videoPath,Buffer.from(encoded.base64,'base64'))
+      await copyFile(resolve(sourceRoot,asset.source,'source-frames',angle.source,'frame-000.png'),posterPath)
+      await copyFile(videoPath,resolve(reviewRoot,`${basename}.webm`))
+      avatarResult.angles[angle.id]={
+        label:angle.label,video:`/media/exercises/videos/${basename}.webm`,poster:`/media/exercises/posters/${basename}.png`,reviewVideo:`${basename}.webm`,
+        mimeType:encoded.mimeType,width:encoded.width,height:encoded.height,frameCount,durationSeconds:Number(encoded.durationSeconds.toFixed(6)),
+        videoSha256:await digest(videoPath),posterSha256:await digest(posterPath),videoBytes:(await readFile(videoPath)).byteLength
+      }
     }
+    produced[avatar]=avatarResult
   }
 }finally{await browser.close()}
 
 await writeFile(resolve(reviewRoot,'video-release-manifest.json'),JSON.stringify({
   purpose:'Video-only candidate for user and specialist review. It contains rendered frames, not raw Mixamo GLB, FBX, skeletons or animation tracks.',
-  source:'artifacts/squat-technique-review/<avatar>/source-frames/side/frame-000.png..frame-071.png',
+  source:'artifacts/squat-technique-review/<avatar>/source-frames/<view>/frame-000.png..frame-071.png',
   clip:'Original embedded Mixamo squat clip rendered earlier for local review; no retargeting or animation edit during video generation.',
   fps,avatars:produced
 },null,2)+'\n')

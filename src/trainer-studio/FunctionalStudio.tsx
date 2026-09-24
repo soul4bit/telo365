@@ -7,7 +7,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 type Vec3 = [number, number, number]
 type Placement = { position: Vec3; rotation?: Vec3 }
 const floorY = -1.06
-const palette = { plaster: '#e1e0d4', sage: '#94a18e', green: '#354e40', metal: '#343d37', rubber: '#606960', oak: '#c3ac89', upholstery: '#536857' }
+const palette = { plaster: '#e3e2d9', sage: '#94a18e', green: '#354e40', metal: '#343d37', rubber: '#606960', oak: '#bbad95', upholstery: '#536857' }
 
 function SoftBox({ size, position = [0, 0, 0], rotation = [0, 0, 0], color, radius = .012, metalness = 0, roughness = .7, map }: {
   size: Vec3; position?: Vec3; rotation?: Vec3; color: string; radius?: number; metalness?: number; roughness?: number; map?: THREE.Texture
@@ -27,12 +27,12 @@ function useSurfaceTexture(kind: 'rubber' | 'oak' | 'plaster') {
     const ctx = canvas.getContext('2d')!
     let seed = 74921
     const random = () => { seed = (1664525 * seed + 1013904223) >>> 0; return seed / 4294967296 }
-    ctx.fillStyle = kind === 'oak' ? '#dfc9a5' : '#e3e3df'
+    ctx.fillStyle = kind === 'oak' ? '#e1d5bf' : '#e3e3df'
     ctx.fillRect(0, 0, 512, 512)
     if (kind === 'oak') {
       for (let i = 0; i < 450; i++) {
         const x = random() * 512
-        ctx.strokeStyle = `rgba(92,61,28,${.025 + random() * .09})`
+        ctx.strokeStyle = `rgba(103,87,62,${.025 + random() * .065})`
         ctx.lineWidth = .4 + random() * 1.2
         ctx.beginPath(); ctx.moveTo(x, 0)
         ctx.bezierCurveTo(x + random() * 9, 170, x - random() * 8, 340, x + random() * 5, 512)
@@ -41,7 +41,7 @@ function useSurfaceTexture(kind: 'rubber' | 'oak' | 'plaster') {
     } else {
       for (let i = 0; i < 28000; i++) {
         const shade = random() > .5 ? '255,255,250' : '35,42,35'
-        ctx.fillStyle = `rgba(${shade},${random() * (kind === 'rubber' ? .18 : .055)})`
+        ctx.fillStyle = `rgba(${shade},${random() * (kind === 'rubber' ? .18 : .025)})`
         const size = kind === 'rubber' ? .4 + random() * 1.2 : .6 + random() * 2
         ctx.fillRect(random() * 512, random() * 512, size, size)
       }
@@ -82,7 +82,7 @@ function Brand({ position, rotation = [0, 0, 0], width = 1.75 }: Placement & { w
     const ctx = canvas.getContext('2d')!
     ctx.clearRect(0, 0, 1536, 256)
     ctx.font = '500 166px Arial, sans-serif'
-    ctx.fillStyle = '#354e40'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+    ctx.fillStyle = '#6c7968'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
     ctx.fillText('TELO365.RU', 768, 140)
     const map = new THREE.CanvasTexture(canvas)
     map.colorSpace = THREE.SRGBColorSpace; map.anisotropy = 8
@@ -170,7 +170,7 @@ function WallBars({ position, rotation = [0, 0, 0] }: Placement) {
   return <group position={position} rotation={rotation}>
     <SoftBox size={[1.58, 2.5, .06]} position={[0, 1.26, -.09]} color={palette.sage} radius={.045}/>
     {[-.48, .48].map(x => <SoftBox key={x} size={[.06, 2.22, .085]} position={[x, 1.17, .045]} color={palette.oak} map={oak}/>) }
-    {Array.from({ length: 9 }, (_, i) => <Bar key={i} from={[-.51, .24 + i * .235, .10]} to={[.51, .24 + i * .235, .10]} radius={.025} color="#b69a75"/>) }
+    {Array.from({ length: 9 }, (_, i) => <Bar key={i} from={[-.51, .24 + i * .235, .10]} to={[.51, .24 + i * .235, .10]} radius={.025} color="#b1a086"/>) }
   </group>
 }
 
@@ -211,7 +211,7 @@ export function FunctionalStudio() {
     <OakPanel position={[-2.1, 0, -4.73]} width={1.85}/>
     <Rack position={[-1.75, floorY, -4.2]}/>
     <WeightsShelf position={[1.53, floorY, -4.18]}/>
-    <Brand position={[.45, 1.58, -4.79]} width={1.92}/>
+    <Brand position={[.45, 1.58, -4.79]} width={1.62}/>
     <SoftBox size={[2.0, 1.48, .035]} position={[1.54, -.17, -4.74]} color="#aab4a0" radius={.035}/>
     {/* Side zone: matching timber wall bars, low bench and kettlebell shelf. */}
     <WallBars position={[-4.64, floorY, -2.1]} rotation={[0, Math.PI / 2, 0]}/>
@@ -221,7 +221,7 @@ export function FunctionalStudio() {
       <SoftBox size={[1.07, .11, .38]} position={[0, .055, 0]} color={palette.metal}/>
       {[-.32, 0, .32].map((x, i) => <Kettlebell key={x} position={[x, .11, 0]} size={.88 + i * .1}/>) }
     </group>
-    <Brand position={[-4.79, 1.60, -3.55]} rotation={[0, Math.PI / 2, 0]} width={1.52}/>
+    <Brand position={[-4.79, 1.60, -3.55]} rotation={[0, Math.PI / 2, 0]} width={1.28}/>
     {/* Opposite wall: recovery/bench zone, distinct rather than a mirrored copy. */}
     <OakPanel position={[1.6, 0, 4.73]} rotation={[0, Math.PI, 0]} width={1.45}/>
     <WallBars position={[-1.53, floorY, 4.62]} rotation={[0, Math.PI, 0]}/>

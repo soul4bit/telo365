@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { access, readFile, stat } from 'node:fs/promises'
 import { resolve } from 'node:path'
+import { inspectWebmFrameTiming } from '../tools/webm-frame-timing.mjs'
 
 const root=process.cwd()
 const mediaRoot=resolve(root,'public','media','exercises')
@@ -12,6 +13,7 @@ const techniqueViewerPath=resolve(root,'src','components','TechniqueVideoViewer.
 const exerciseRegistryPath=resolve(root,'src','exercise3d.ts')
 const expectedAngles={front:'front',side:'side',back:'back',threeQuarter:'three-quarter'}
 const expected=Object.fromEntries(['male','female'].map(avatar=>[avatar,Object.fromEntries(Object.entries(expectedAngles).map(([angle,fileAngle])=>[angle,{video:`videos/squat-${avatar}-${fileAngle}.webm`,poster:`posters/squat-${avatar}-${fileAngle}.png`}]))]))
+const phaseData=JSON.parse(await readFile(resolve(root,'artifacts','squat-technique-review','phase-times.json'),'utf8'))
 
 const hash=async file=>createHash('sha256').update(await readFile(file)).digest('hex')
 const exists=async file=>{await access(file);return file}
@@ -52,10 +54,16 @@ for(const [avatar,angleMap] of Object.entries(expected)){
     if(paths.video.includes('.glb')||paths.poster.includes('.glb'))throw new Error(`${avatar}/${angle}: release media must not point to a GLB`)
     const generated=manifest.avatars?.[avatar]?.angles?.[angle]
     if(!generated)throw new Error(`${avatar}/${angle}: missing from generated release manifest`)
+    const timing=inspectWebmFrameTiming(videoBuffer),sourceDuration=phaseData.avatars?.[avatar]?.durationSeconds
+    if(!Number.isFinite(sourceDuration)||sourceDuration<=0||timing.frameCount!==72||Math.abs(timing.durationSeconds-sourceDuration)>1e-6)throw new Error(`${avatar}/${angle}: actual WebM frame count or duration differs from original clip`)
+    if(generated.durationSeconds!==timing.durationSeconds||generated.frameCount!==timing.frameCount)throw new Error(`${avatar}/${angle}: declared video timing differs from WebM`)
+    for(const [index,time] of timing.timestampsSeconds.entries()){
+      if(Math.abs(time-index*sourceDuration/timing.frameCount)>timing.timestampScaleNanoseconds/2e9+1e-9)throw new Error(`${avatar}/${angle}: frame ${index} does not preserve the original timing`)
+    }
     const videoSha256=await hash(video),posterSha256=await hash(poster)
     if(generated.videoSha256!==videoSha256||generated.posterSha256!==posterSha256)throw new Error(`${avatar}/${angle}: generated release manifest hashes do not match media`)
     if(await hash(reviewVideo)!==videoSha256)throw new Error(`${avatar}/${angle}: review WebM does not match release media`)
-    verified[avatar].angles[angle]={video:paths.video,poster:paths.poster,videoBytes:videoStats.size,posterBytes:posterStats.size,videoSha256,posterSha256}
+    verified[avatar].angles[angle]={video:paths.video,poster:paths.poster,videoBytes:videoStats.size,posterBytes:posterStats.size,videoSha256,posterSha256,frameCount:timing.frameCount,durationSeconds:timing.durationSeconds}
   }
 }
 

@@ -6,13 +6,17 @@ import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import { resolve } from 'node:path'
 import { chromium } from 'playwright'
+import { retimeWebmFrames } from './webm-frame-timing.mjs'
 
 const root=resolve('.')
-const fps=30.25
+// MediaRecorder's wall-clock capture is only a transport for encoded images.
+// Final timestamps are reconstructed from the actual source clip below.
+const captureFps=30.25
 const frameCount=72
 const sourceRoot=resolve(root,'artifacts','squat-technique-review')
 const publicRoot=resolve(root,'public','media','exercises')
 const reviewRoot=resolve(root,'artifacts','squat-release-review')
+const phaseData=JSON.parse(await readFile(resolve(sourceRoot,'phase-times.json'),'utf8'))
 const avatars={
   male:{label:'Мужчина',source:'male'},
   female:{label:'Женщина',source:'female'}
@@ -38,9 +42,8 @@ async function renderVideo(page,frames){
     canvas.width=width;canvas.height=height
     const preferred=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(type=>MediaRecorder.isTypeSupported(type))
     if(!preferred)throw new Error('This Chromium instance cannot encode WebM')
-    // A zero-rate stream with explicit requestFrame calls is deterministic in
-    // Chromium headless; captureStream(fps) can otherwise drop the canvas
-    // updates and leave a header-only WebM.
+    // Explicit requests preserve canvas updates, but MediaRecorder timestamps
+    // still follow elapsed wall-clock time. They are checked and retimed later.
     const stream=canvas.captureStream(0),track=stream.getVideoTracks()[0],chunks=[]
     const recorder=new MediaRecorder(stream,{mimeType:preferred,videoBitsPerSecond:4_500_000})
     const complete=new Promise((resolve,reject)=>{recorder.ondataavailable=event=>{if(event.data.size)chunks.push(event.data)};recorder.onerror=()=>reject(recorder.error||new Error('MediaRecorder failed'));recorder.onstop=resolve})
@@ -57,8 +60,8 @@ async function renderVideo(page,frames){
     stream.getTracks().forEach(item=>item.stop())
     const blob=new Blob(chunks,{type:preferred})
     const base64=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=()=>reject(reader.error);reader.readAsDataURL(blob)})
-    return {base64,mimeType:preferred,width,height,durationSeconds:images.length/fps}
-  },{frames,fps})
+    return {base64,mimeType:preferred,width,height}
+  },{frames,fps:captureFps})
 }
 
 await Promise.all([mkdir(resolve(publicRoot,'videos'),{recursive:true}),mkdir(resolve(publicRoot,'posters'),{recursive:true}),mkdir(reviewRoot,{recursive:true})])
@@ -67,20 +70,23 @@ const page=await browser.newPage()
 const produced={}
 try{
   for(const [avatar,asset] of Object.entries(avatars)){
+    const durationSeconds=phaseData.avatars?.[avatar]?.durationSeconds
+    if(!Number.isFinite(durationSeconds)||durationSeconds<=0)throw new Error(`Missing original ${avatar} clip duration`)
     const avatarResult={label:asset.label,defaultAngle:'threeQuarter',angles:{}}
     for(const angle of angles){
       // File URLs taint a canvas in Chromium and create a header-only recording.
       // Embedded review frames keep rendering local and publish only final video.
       const frames=await Promise.all(Array.from({length:frameCount},(_,index)=>dataUrl(resolve(sourceRoot,asset.source,'source-frames',angle.source,`frame-${String(index).padStart(3,'0')}.png`))))
       const encoded=await renderVideo(page,frames)
+      const retimed=retimeWebmFrames(Buffer.from(encoded.base64,'base64'),{frameCount,durationSeconds})
       const basename=`squat-${avatar}-${angle.source}`
       const videoPath=resolve(publicRoot,'videos',`${basename}.webm`),posterPath=resolve(publicRoot,'posters',`${basename}.png`)
-      await writeFile(videoPath,Buffer.from(encoded.base64,'base64'))
+      await writeFile(videoPath,retimed.bytes)
       await copyFile(resolve(sourceRoot,asset.source,'source-frames',angle.source,'frame-000.png'),posterPath)
       await copyFile(videoPath,resolve(reviewRoot,`${basename}.webm`))
       avatarResult.angles[angle.id]={
         label:angle.label,video:`/media/exercises/videos/${basename}.webm`,poster:`/media/exercises/posters/${basename}.png`,reviewVideo:`${basename}.webm`,
-        mimeType:encoded.mimeType,width:encoded.width,height:encoded.height,frameCount,durationSeconds:Number(encoded.durationSeconds.toFixed(6)),
+        mimeType:encoded.mimeType,width:encoded.width,height:encoded.height,frameCount,durationSeconds:retimed.timing.durationSeconds,fps:retimed.timing.fps,timing:retimed.timing,
         videoSha256:await digest(videoPath),posterSha256:await digest(posterPath),videoBytes:(await readFile(videoPath)).byteLength
       }
     }
@@ -92,6 +98,7 @@ await writeFile(resolve(reviewRoot,'video-release-manifest.json'),JSON.stringify
   purpose:'Video-only candidate for user and specialist review. It contains rendered frames with a locally built stylized gym scene, not raw Mixamo GLB, FBX, skeletons or animation tracks.',
   source:'artifacts/squat-technique-review/<avatar>/source-frames/<view>/frame-000.png..frame-071.png',
   clip:'Original embedded Mixamo squat clip rendered earlier for local review; no retargeting or animation edit during video generation.',
-  fps,avatars:produced
+  timing:'Original clip duration; deterministic evenly spaced frame PTS, quantized only to the WebM timestamp scale. Encoded images are unchanged.',
+  captureFps,avatars:produced
 },null,2)+'\n')
 console.log(JSON.stringify({releaseVideoCandidates:produced},null,2))

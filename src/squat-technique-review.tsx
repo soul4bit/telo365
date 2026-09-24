@@ -18,6 +18,10 @@ declare global {
       set:(next:Partial<ReviewState>)=>void
       status:()=>{state:ReviewState}
     }
+    __teloSquatFrameBounds?:()=>{
+      avatar:Avatar;time:number;view:View|undefined;vertexCount:number;behindCamera:boolean
+      bounds:{minX:number;minY:number;maxX:number;maxY:number}
+    }
   }
 }
 
@@ -26,13 +30,14 @@ const assets:Record<Avatar,{path:string;label:string}>={
   female:{path:'models/mixamo-female-air-squat-combined-test.glb',label:'Mixamo Jody'}
 }
 
+const cameraRadius=4.35
 const cameraPositions:Record<View,[number,number,number]>={
-  front:[0,.12,4.35],
-  side:[4.35,.12,0],
-  back:[0,.12,-4.35],
-  'three-quarter':[3.08,.18,3.08]
+  front:[0,.12,cameraRadius],
+  side:[cameraRadius,.12,0],
+  back:[0,.12,-cameraRadius],
+  'three-quarter':[cameraRadius/Math.SQRT2,.12,cameraRadius/Math.SQRT2]
 }
-const cameraTarget=new THREE.Vector3(0,-.06,0)
+const cameraTarget=new THREE.Vector3(0,-.18,0)
 
 function Camera({view}:{view:View}){
   const {camera,invalidate}=useThree()
@@ -101,7 +106,7 @@ function ReviewAvatar({avatar,time,diagnostic}:{avatar:Avatar;time:number;diagno
   const mixer=useMemo(()=>new THREE.AnimationMixer(scene),[scene])
   const clip=useMemo(()=>gltf.animations.find(item=>item.name==='squat'),[gltf.animations])
   const action=useMemo(()=>clip?mixer.clipAction(clip):null,[clip,mixer])
-  const {invalidate}=useThree()
+  const {invalidate,camera}=useThree()
 
   if(!clip||!action)throw new Error(`Original squat clip is missing for ${avatar}`)
 
@@ -127,6 +132,33 @@ function ReviewAvatar({avatar,time,diagnostic}:{avatar:Avatar;time:number;diagno
     scene.updateMatrixWorld(true)
     invalidate()
   },[action,clip.duration,invalidate,mixer,time])
+
+  // Local inspection only: project actual deformed mesh vertices, not bone
+  // markers or a rest-pose box. Never executed during ordinary video playback.
+  useLayoutEffect(()=>{
+    const measure=()=>{
+      scene.updateWorldMatrix(true,true)
+      camera.updateMatrixWorld(true)
+      const point=new THREE.Vector3()
+      let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity,vertexCount=0,behindCamera=false
+      scene.traverse(node=>{
+        const mesh=node as THREE.Mesh
+        if(!mesh.isMesh||!mesh.visible)return
+        const skin=mesh as THREE.SkinnedMesh
+        if(skin.isSkinnedMesh)skin.skeleton.update()
+        const positions=mesh.geometry.getAttribute('position')
+        for(let i=0;i<positions.count;i++){
+          mesh.getVertexPosition(i,point).applyMatrix4(mesh.matrixWorld).project(camera)
+          if(point.z < -1 || point.z > 1)behindCamera=true
+          const x=(point.x+1)/2,y=(1-point.y)/2
+          minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);vertexCount++
+        }
+      })
+      return {avatar,time,view:window.__teloSquatTechniqueReview?.status().state.view,vertexCount,behindCamera,bounds:{minX,minY,maxX,maxY}}
+    }
+    window.__teloSquatFrameBounds=measure
+    return()=>{if(window.__teloSquatFrameBounds===measure)delete window.__teloSquatFrameBounds}
+  },[avatar,time,scene,camera])
 
   return <>
     <group position={[0,-1.05,0]}><primitive object={scene}/></group>

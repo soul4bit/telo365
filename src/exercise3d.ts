@@ -53,13 +53,12 @@ const techniqueVideoAngleOrder:TechniqueVideoAngle[]=['front','side','back','thr
 
 export const getTechniqueVideoAngles=(asset:TechniqueVideoAsset)=>techniqueVideoAngleOrder.flatMap(angle=>{
   const media=asset.angles[angle]
-  return media?[{angle,...media}]:[]
+  return media?.videoUrl?.trim()&&media.posterUrl?.trim()?[{angle,...media}]:[]
 })
 
 export const getTechniqueVideoAngle=(asset:TechniqueVideoAsset,requested:TechniqueVideoAngle=asset.defaultAngle)=>{
-  const selected=asset.angles[requested]||asset.angles[asset.defaultAngle]
-  if(selected)return {angle:asset.angles[requested]?requested:asset.defaultAngle,...selected}
-  return getTechniqueVideoAngles(asset)[0]||null
+  const available=getTechniqueVideoAngles(asset)
+  return available.find(media=>media.angle===requested)||available.find(media=>media.angle===asset.defaultAngle)||available[0]||null
 }
 
 const defaultExerciseTechnique:ExerciseTechnique={
@@ -98,7 +97,7 @@ export const telo365FunctionalStudio:TechniqueVideoStudio={
 }
 
 // Release media is cached for one day. Bump this only when rendered frames change.
-const squatVideoRevision='studio-v3-20260924'
+const squatVideoRevision='studio-v3-polish-local-20260924'
 
 const squatVideoAngles=(avatar:TrainerAvatar):Record<TechniqueVideoAngle,TechniqueVideoAngleAsset>=>{
   const prefix=`/media/exercises/videos/squat-${avatar}`
@@ -117,12 +116,19 @@ const squatStudio:TechniqueVideoStudio={
   ...telo365FunctionalStudio
 }
 
-export const squatTechniqueVideos:Record<TrainerAvatar,TechniqueVideoAsset>={
+export const squatTechniqueVideos:Partial<Record<TrainerAvatar,TechniqueVideoAsset>>={
   male:{label:'\u041c\u0443\u0436\u0447\u0438\u043d\u0430',defaultAngle:'threeQuarter',angles:squatVideoAngles('male'),studio:squatStudio},
   female:{label:'\u0416\u0435\u043d\u0449\u0438\u043d\u0430',defaultAngle:'threeQuarter',angles:squatVideoAngles('female'),studio:squatStudio}
 }
 
-export const getSquatTechniqueVideo=(avatar:TrainerAvatar)=>squatTechniqueVideos[avatar]
+export const getSquatTechniqueVideo=(avatar:TrainerAvatar)=>{
+  const asset=squatTechniqueVideos[avatar]
+  return asset&&getTechniqueVideoAngles(asset).length?asset:undefined
+}
+export const getSquatTechniqueVideoAvatars=():TrainerAvatar[]=>(['female','male'] as TrainerAvatar[]).filter(avatar=>{
+  const asset=getSquatTechniqueVideo(avatar)
+  return !!asset&&getTechniqueVideoAngles(asset).length>0
+})
 
 const placeholderPoster='/media/exercises/poster-placeholder.svg'
 

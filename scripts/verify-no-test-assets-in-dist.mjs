@@ -7,7 +7,7 @@ import { createApplication } from '../server/app.mjs'
 const root=resolve('.')
 const publicDir=join(root,'public')
 const distDir=join(root,'dist')
-const testAsset=/mixamo.*(?:test|air-squat).*\.glb$/i
+const testAsset=/mixamo.*(?:test|air-squat).*\.(?:glb|gltf|fbx)$/i
 
 async function files(directory){
   const items=await readdir(directory,{withFileTypes:true})
@@ -17,12 +17,12 @@ async function files(directory){
 
 async function assertNoPublicTestAssets(directory){
   const found=(await files(directory)).filter(path=>testAsset.test(path.replace(/\\/g,'/')))
-  assert.deepEqual(found,[],`Unpublished Mixamo test GLB leaked into ${directory}: ${found.join(', ')}`)
+  assert.deepEqual(found,[],`Unpublished Mixamo source asset leaked into ${directory}: ${found.join(', ')}`)
 }
 
-async function assertNoPublicExerciseGlb(directory){
-  const found=(await files(directory)).filter(path=>/\/media\/exercises\/.*\.glb$/i.test(path.replace(/\\/g,'/')))
-  assert.deepEqual(found,[],`Video-only squat release must not ship any exercise GLB in ${directory}: ${found.join(', ')}`)
+async function assertNoPublicRawModels(directory){
+  const found=(await files(directory)).filter(path=>/\.(?:glb|gltf|fbx)$/i.test(path))
+  assert.deepEqual(found,[],`Video-only release must not ship raw GLB/GLTF/FBX in ${directory}: ${found.join(', ')}`)
 }
 
 function fetchStatus(port,path){
@@ -37,8 +37,8 @@ function fetchStatus(port,path){
 await stat(distDir)
 await assertNoPublicTestAssets(publicDir)
 await assertNoPublicTestAssets(distDir)
-await assertNoPublicExerciseGlb(publicDir)
-await assertNoPublicExerciseGlb(distDir)
+await assertNoPublicRawModels(publicDir)
+await assertNoPublicRawModels(distDir)
 
 const resolver=await readFile(join(root,'src','exercise3d.ts'),'utf8')
 assert.doesNotMatch(resolver,/\/media\/exercises\/(?:models|animations)\/mixamo[^'"`\s]*/i,'The normal exercise resolver still exposes a public Mixamo test URL')
@@ -54,4 +54,4 @@ try{
   ])assert.equal(await fetchStatus(port,path),404,`Production static server exposes ${path}`)
 }finally{await new Promise(resolveClose=>app.server.close(resolveClose))}
 
-console.log(JSON.stringify({publicMixamoTestGlb:false,distMixamoTestGlb:false,publicExerciseGlb:false,distExerciseGlb:false,productionStaticUrlsReturn404:true},null,2))
+console.log(JSON.stringify({publicMixamoTestGlb:false,distMixamoTestGlb:false,publicExerciseGlb:false,distExerciseGlb:false,publicRawGlbGltfFbx:false,distRawGlbGltfFbx:false,productionStaticUrlsReturn404:true},null,2))

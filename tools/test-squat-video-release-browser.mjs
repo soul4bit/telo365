@@ -1,114 +1,220 @@
-import { mkdir } from 'node:fs/promises'
+import assert from 'node:assert/strict'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { chromium } from 'playwright'
 
 const base=`http://127.0.0.1:${process.env.TELO_DEV_PORT||'4174'}`
 const url=`${base}/tools/mixamo-squat-technique-dialog-preview.html`
 const artifacts='artifacts/squat-release-review'
+const angles={'Спереди':'front','Сбоку':'side','Сзади':'back','3/4':'three-quarter'}
+const report={generatedAt:new Date().toISOString(),scenarios:[],passed:false}
+await mkdir(artifacts,{recursive:true})
+const browser=await chromium.launch({headless:true})
 
-async function waitForVideo(dialog){
+async function scenario(name,options,run,{query='',setup,expectedNetworkErrors=false}={}){
+  const context=await browser.newContext(options),page=await context.newPage(),errors=[],raw=[]
+  page.on('pageerror',error=>errors.push(error.message))
+  page.on('console',message=>{
+    if(message.type()==='error'&&!(expectedNetworkErrors&&message.text().startsWith('Failed to load resource:')))errors.push(message.text())
+  })
+  page.on('request',request=>{if(/(?:__telo365-local-review-assets|\.(?:glb|fbx)(?:$|[?#]))/i.test(request.url()))raw.push(request.url())})
+  try{
+    if(setup)await setup(page)
+    await page.goto(url+query,{waitUntil:'domcontentloaded',timeout:30000})
+    const dialog=page.locator('dialog.technique-dialog')
+    await dialog.waitFor({state:'visible',timeout:15000})
+    const result=await run(page,dialog)
+    assert.deepEqual(errors,[],`${name}: browser errors`)
+    assert.deepEqual(raw,[],`${name}: public viewer requested raw assets`)
+    report.scenarios.push({name,passed:true,...result})
+    console.log(`${name}: PASS`)
+  }catch(error){report.scenarios.push({name,passed:false,error:error.message,errors,raw});throw error}
+  finally{await context.close()}
+}
+
+async function videoReady(dialog){
   const video=dialog.locator('.exercise-video-viewer video')
   await video.waitFor({state:'visible',timeout:15000})
   await video.evaluate(element=>new Promise((resolve,reject)=>{
     if(element.readyState>=2)return resolve()
-    element.addEventListener('loadeddata',()=>resolve(),{once:true})
-    element.addEventListener('error',()=>reject(new Error('release video failed to load')),{once:true})
+    const timeout=setTimeout(()=>reject(new Error('Video did not load')),12000)
+    element.addEventListener('loadeddata',()=>{clearTimeout(timeout);resolve()},{once:true})
+    element.addEventListener('error',()=>{clearTimeout(timeout);reject(new Error('Video load failed'))},{once:true})
   }))
   return video
 }
 
-async function desktop(){
-  const browser=await chromium.launch({headless:true}),page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[],rawAssetRequests=[]
-  page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>{if(message.type()==='error')errors.push(message.text())})
-  page.on('request',request=>{if(/(?:__telo365-local-review-assets|mixamo-.*\.glb|\.glb(?:$|[?#]))/i.test(request.url()))rawAssetRequests.push(request.url())})
-  await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000})
-  const dialog=page.locator('dialog.technique-dialog');await dialog.waitFor({state:'visible',timeout:10000})
-  const video=await waitForVideo(dialog)
-  const text=await dialog.innerText()
-  if(/Mixamo|CH08|Jody|\.glb|test/i.test(text))throw new Error(`technical text leaked into the release dialog: ${text}`)
-  const source=async()=>{
-    const current=dialog.locator('.exercise-video-viewer video')
-    await current.waitFor({state:'visible',timeout:15000})
-    return await current.getAttribute('src')||await current.locator('source').getAttribute('src')
-  }
-  const sourcePath=(value)=>new URL(value||'',url).pathname
-  const initialSource=await source()
-  if(sourcePath(initialSource)!=='/media/exercises/videos/squat-female-three-quarter.webm')throw new Error(`expected default female 3/4 video, got ${initialSource}`)
-  if(!await dialog.getByRole('heading',{name:'Техника: Приседания',exact:true}).isVisible())throw new Error('Air Squat dialog title is not canonical')
-  if(/с опорой/i.test(await dialog.innerText()))throw new Error('Air Squat dialog still exposes a supported-squat label')
-  const angles={
-    'Спереди':'front',
-    'Сбоку':'side',
-    'Сзади':'back',
-    '3/4':'three-quarter'
-  }
-  const angleSwitch=dialog.getByRole('group',{name:'Ракурс демонстрации'})
-  for(const [label,fileAngle] of Object.entries(angles)){
-    await angleSwitch.getByRole('button',{name:label}).click()
-    const current=await source()
-    if(sourcePath(current)!==`/media/exercises/videos/squat-female-${fileAngle}.webm`)throw new Error(`female ${label} view did not load: ${current}`)
-  }
-  if(await dialog.locator('.exercise-video-viewer').getAttribute('data-studio-id')!=='telo365-functional-studio-v3')throw new Error('functional studio metadata is missing')
-  if(await dialog.getByText('TELO365.RU',{exact:true}).count())throw new Error('physical studio branding must not use an HTML overlay')
-  if(!await dialog.getByText('\u0427\u0410\u0421\u0422\u042b\u0415 \u041e\u0428\u0418\u0411\u041a\u0418',{exact:true}).isVisible())throw new Error('exercise mistakes metadata is not visible')
-  if(!await dialog.getByText('\u041a\u043e\u043b\u0435\u043d\u0438 \u0437\u0430\u0432\u0430\u043b\u0438\u0432\u0430\u044e\u0442\u0441\u044f \u0432\u043d\u0443\u0442\u0440\u044c.',{exact:true}).isVisible())throw new Error('Air Squat mistakes are not rendered from metadata')
-  await dialog.getByRole('button',{name:'Мужчина'}).click()
-  await waitForVideo(dialog)
-  const maleSource=await source()
-  if(sourcePath(maleSource)!=='/media/exercises/videos/squat-male-three-quarter.webm')throw new Error(`avatar switch did not restore male 3/4 video: ${maleSource}`)
-  for(const [label,fileAngle] of Object.entries(angles)){
-    await angleSwitch.getByRole('button',{name:label}).click()
-    const current=await source()
-    if(sourcePath(current)!==`/media/exercises/videos/squat-male-${fileAngle}.webm`)throw new Error(`male ${label} view did not load: ${current}`)
-  }
-  if(!await dialog.locator('.technique-guidance').isVisible())throw new Error('technique guidance is not visible beside the release video')
-  const controls=dialog.locator('.exercise-video-controls')
-  await controls.getByRole('button',{name:'Пауза видео'}).click()
-  await controls.getByRole('button',{name:'Запустить видео'}).click()
-  await controls.getByRole('button',{name:'Вернуть на начало видео'}).click()
-  await controls.getByRole('button',{name:'1×'}).click()
-  if(!await controls.getByRole('button',{name:'1×'}).evaluate(element=>element.classList.contains('is-active')))throw new Error('1× control did not become active')
-  await page.screenshot({path:`${artifacts}/squat-video-desktop-male.png`,fullPage:true})
-  await dialog.locator('button[aria-label="Закрыть"]').click()
-  if(await page.locator('dialog.technique-dialog').count())throw new Error('technique dialog did not close')
-  await browser.close()
-  if(errors.length)throw new Error(`desktop console errors: ${errors.join(' | ')}`)
-  if(rawAssetRequests.length)throw new Error(`release dialog requested raw review asset: ${rawAssetRequests.join(', ')}`)
-  return {avatarSwitch:true,angleSwitch:true,embeddedStudioBranding:true,techniqueMetadata:true,playPause:true,reset:true,speed:true,dialogClose:true}
+async function media(dialog,avatar,angle){
+  const video=await videoReady(dialog)
+  const src=await video.locator('source').getAttribute('src')
+  assert.equal(new URL(src,url).pathname,`/media/exercises/videos/squat-${avatar}-${angle}.webm`)
+  assert.ok(await video.evaluate(element=>Math.abs(element.duration-2.375)<.002),'Video must retain the original clip duration')
+  return video
 }
 
-async function mobile(){
-  const browser=await chromium.launch({headless:true}),page=await browser.newPage({viewport:{width:390,height:568},isMobile:true,hasTouch:true}),errors=[]
-  page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>{if(message.type()==='error')errors.push(message.text())})
-  await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000})
-  const dialog=page.locator('dialog.technique-dialog');await dialog.waitFor({state:'visible',timeout:10000});await waitForVideo(dialog)
-  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth)
-  if(overflow)throw new Error('mobile page has horizontal overflow')
-  await dialog.evaluate(element=>{element.scrollTop=element.scrollHeight})
-  await page.waitForTimeout(80)
-  const result=await dialog.evaluate(element=>{
-    const box=element.getBoundingClientRect(),guidance=element.querySelector('.technique-guidance')?.getBoundingClientRect(),controls=element.querySelector('.exercise-video-controls')?.getBoundingClientRect(),angles=element.querySelector('.exercise-video-angle-switch')?.getBoundingClientRect()
-    return {atBottom:Math.ceil(element.scrollTop+element.clientHeight)>=element.scrollHeight,guidanceVisible:!!guidance&&guidance.bottom<=box.bottom&&guidance.top>=box.top,controlsVisible:!!controls&&controls.bottom<=box.bottom&&controls.top>=box.top,anglesVisible:!!angles&&angles.bottom<=box.bottom&&angles.top>=box.top}
+async function playback(page,dialog,paused,rate){
+  await page.waitForFunction(({paused,rate})=>{
+    const video=document.querySelector('.exercise-video-viewer video')
+    return video&&video.readyState>=2&&video.paused===paused&&video.playbackRate===rate
+  },{paused,rate},{timeout:10000})
+  assert.equal(await dialog.getByRole('button',{name:rate===.5?'0.5×':'1×',exact:true}).getAttribute('aria-pressed'),'true')
+}
+
+async function angle(dialog,label){
+  const button=dialog.getByRole('group',{name:'Ракурс демонстрации'}).getByRole('button',{name:label,exact:true})
+  await button.click()
+  assert.equal(await button.getAttribute('aria-pressed'),'true')
+}
+
+async function noOverflow(page,dialog){
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth),false,'Page overflows horizontally')
+  assert.equal(await dialog.evaluate(element=>element.scrollWidth>element.clientWidth),false,'Dialog overflows horizontally')
+}
+
+async function scrollVisible(dialog,element){
+  await element.scrollIntoViewIfNeeded()
+  const outer=await dialog.boundingBox(),inner=await element.boundingBox()
+  assert.ok(inner&&outer&&inner.y>=outer.y&&inner.y+inner.height<=outer.y+outer.height,'Content cannot be scrolled into view')
+}
+
+try{
+  await scenario('desktop',{viewport:{width:1280,height:900}},async(page,dialog)=>{
+    await media(dialog,'female','three-quarter');await playback(page,dialog,false,1)
+    assert.equal(await dialog.getByRole('heading',{name:'Техника: Приседания',exact:true}).count(),1)
+    assert.doesNotMatch(await dialog.innerText(),/Mixamo|CH08|Jody|\.glb|test|с опорой/i)
+    assert.equal(await dialog.locator('.exercise-video-viewer').getAttribute('data-studio-id'),'telo365-functional-studio-v3')
+    assert.equal(await dialog.getByText('TELO365.RU',{exact:true}).count(),0,'No HTML branding overlay')
+    assert.equal(await dialog.getByText('ЧАСТЫЕ ОШИБКИ',{exact:true}).count(),1)
+    assert.equal(await dialog.getByText('Колени заваливаются внутрь.',{exact:true}).count(),1)
+    for(const [label,file] of Object.entries(angles)){
+      await angle(dialog,label);await media(dialog,'female',file)
+      await dialog.getByRole('button',{name:'Мужчина',exact:true}).click();await media(dialog,'male',file)
+      await dialog.getByRole('button',{name:'Женщина',exact:true}).click();await media(dialog,'female',file)
+    }
+    await dialog.getByRole('button',{name:'0.5×',exact:true}).click();await playback(page,dialog,false,.5)
+    await dialog.getByRole('button',{name:'Пауза видео',exact:true}).click();await playback(page,dialog,true,.5)
+    const video=await videoReady(dialog),time=await video.evaluate(element=>element.currentTime)
+    await page.waitForTimeout(160)
+    assert.equal(await video.evaluate(element=>element.currentTime),time,'Pause must freeze time')
+    await angle(dialog,'Сбоку')
+    await dialog.getByRole('button',{name:'Мужчина',exact:true}).click()
+    await media(dialog,'male','side');await playback(page,dialog,true,.5)
+    await dialog.getByRole('button',{name:'Запустить видео',exact:true}).click();await playback(page,dialog,false,.5)
+    await dialog.getByRole('button',{name:'1×',exact:true}).click();await playback(page,dialog,false,1)
+    await page.waitForFunction(()=>document.querySelector('.exercise-video-viewer video')?.currentTime>.4)
+    await dialog.getByRole('button',{name:'Вернуть на начало видео',exact:true}).click()
+    assert.ok(await dialog.locator('video').evaluate(element=>element.currentTime<.3),'Restart must rewind')
+    await dialog.locator('video').evaluate(element=>{element.currentTime=element.duration-.08})
+    await page.waitForFunction(()=>{
+      const element=document.querySelector('.exercise-video-viewer video')
+      return element&&!element.paused&&element.currentTime<.6
+    },null,{timeout:4000})
+    await angle(dialog,'3/4');await media(dialog,'male','three-quarter')
+    await noOverflow(page,dialog)
+    await page.screenshot({path:`${artifacts}/squat-video-desktop-male.png`,fullPage:true,animations:'disabled'})
+    await dialog.getByRole('button',{name:'Женщина',exact:true}).click();await media(dialog,'female','three-quarter')
+    await page.screenshot({path:`${artifacts}/squat-video-desktop-female.png`,fullPage:true,animations:'disabled'})
+    await dialog.getByRole('button',{name:'Закрыть',exact:true}).click()
+    assert.equal(await page.locator('dialog.technique-dialog').count(),0)
+    await page.getByRole('button',{name:'Открыть тестовую модалку',exact:true}).click()
+    await media(dialog,'female','three-quarter');await playback(page,dialog,false,1)
+    return {bothAvatarsAllAngles:true,angleSpeedPausePreserved:true,reset:true,closeReopen:true}
   })
-  if(!result.atBottom||!result.guidanceVisible||!result.anglesVisible)throw new Error(`mobile modal bottom is inaccessible: ${JSON.stringify(result)}`)
-  await page.screenshot({path:`${artifacts}/squat-video-mobile-bottom.png`,fullPage:false})
-  await browser.close()
-  if(errors.length)throw new Error(`mobile console errors: ${errors.join(' | ')}`)
-  return {...result,horizontalOverflow:overflow}
-}
 
-async function reducedMotion(){
-  const browser=await chromium.launch({headless:true}),page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'})
-  await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000})
-  const dialog=page.locator('dialog.technique-dialog');await dialog.waitFor({state:'visible',timeout:10000})
-  const video=await dialog.locator('.exercise-video-viewer video').count(),poster=await dialog.locator('.exercise-video-static img').count()
-  if(video||poster!==1)throw new Error(`reduced-motion release fallback mismatch (video=${video}, poster=${poster})`)
-  await dialog.getByRole('button',{name:'\u0417\u0430\u043f\u0443\u0441\u0442\u0438\u0442\u044c \u0434\u0435\u043c\u043e\u043d\u0441\u0442\u0440\u0430\u0446\u0438\u044e'}).click()
-  await waitForVideo(dialog)
-  const startedVideo=await dialog.locator('.exercise-video-viewer video').count()
-  await browser.close()
-  if(startedVideo!==1)throw new Error('reduced-motion user action did not start the demonstration')
-  return {video,poster,manualStart:true}
-}
+  for(const [name,width,height] of [['tablet',820,820],['mobile',390,568],['small-mobile',320,480]]){
+    await scenario(name,{viewport:{width,height},isMobile:true,hasTouch:true},async(page,dialog)=>{
+      await media(dialog,'female','three-quarter')
+      const stage=await dialog.locator('.exercise-video-stage').boundingBox(),guidance=await dialog.locator('.technique-guidance').boundingBox()
+      assert.ok(guidance.y>=stage.y+stage.height,'Narrow layout must stack guidance below video')
+      const buttons=dialog.locator('.exercise-video-controls button, .trainer-avatar-switch button')
+      for(const button of await buttons.all()){
+        const box=await button.boundingBox()
+        assert.ok(box.width>=44&&box.height>=44,`Small touch target ${await button.innerText()}: ${JSON.stringify(box)}`)
+      }
+      for(const [label,file] of Object.entries(angles)){await angle(dialog,label);await media(dialog,'female',file)}
+      await dialog.getByRole('button',{name:'Мужчина',exact:true}).click();await media(dialog,'male','three-quarter')
+      await dialog.getByRole('button',{name:'0.5×',exact:true}).click();await playback(page,dialog,false,.5)
+      await dialog.evaluate(element=>{element.scrollTop=0})
+      await page.screenshot({path:`${artifacts}/squat-video-${name}-top.png`,animations:'disabled'})
+      await scrollVisible(dialog,dialog.getByRole('button',{name:'Вернуть на начало видео',exact:true}))
+      await scrollVisible(dialog,dialog.getByRole('group',{name:'Ракурс демонстрации'}))
+      await dialog.evaluate(element=>{element.scrollTop=element.scrollHeight})
+      await scrollVisible(dialog,dialog.locator('.technique-guidance p').last())
+      assert.ok(await dialog.evaluate(element=>Math.ceil(element.scrollTop+element.clientHeight)>=element.scrollHeight),'Modal cannot reach bottom')
+      await noOverflow(page,dialog)
+      await page.screenshot({path:`${artifacts}/squat-video-${name}-bottom.png`,animations:'disabled'})
+      return {bothAvatars:true,allAngles:true,touchTargets:true,scrollToBottom:true,noHorizontalOverflow:true}
+    })
+  }
 
-await mkdir(artifacts,{recursive:true})
-console.log(JSON.stringify({desktop:await desktop(),mobile:await mobile(),reducedMotion:await reducedMotion()},null,2))
+  await scenario('reduced-motion',{viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'},async(page,dialog)=>{
+    assert.equal(await dialog.locator('video').count(),0)
+    assert.equal(await dialog.locator('.exercise-video-static img').count(),1)
+    await angle(dialog,'Сбоку');await dialog.getByRole('button',{name:'Мужчина',exact:true}).click()
+    assert.match(await dialog.locator('.exercise-video-static img').getAttribute('src'),/squat-male-side/)
+    await page.screenshot({path:`${artifacts}/squat-video-reduced-motion.png`,animations:'disabled'})
+    await dialog.getByRole('button',{name:'Запустить демонстрацию',exact:true}).click()
+    await media(dialog,'male','side');await playback(page,dialog,false,1)
+    await page.emulateMedia({reducedMotion:'no-preference'});await page.waitForTimeout(100)
+    await page.emulateMedia({reducedMotion:'reduce'})
+    await dialog.locator('.exercise-video-static img').waitFor()
+    assert.equal(await dialog.locator('video').count(),0)
+    return {posterOnly:true,manualStart:true,runtimePreferenceChange:true}
+  })
+
+  for(const breakPoster of [false,true]){
+    await scenario(breakPoster?'video-and-poster-fallback':'video-fallback',{viewport:{width:390,height:844}},async(page,dialog)=>{
+      await dialog.getByRole('status').filter({hasText:'временно недоступно'}).waitFor()
+      assert.equal(await dialog.locator('video').count(),0)
+      if(breakPoster){await dialog.locator('.exercise-video-poster-placeholder').waitFor();assert.equal(await dialog.locator('.exercise-video-static img').count(),0)}
+      else assert.equal(await dialog.locator('.exercise-video-static img').count(),1)
+      await page.screenshot({path:`${artifacts}/squat-video-fallback-${breakPoster?'no-poster':'poster'}.png`,animations:'disabled'})
+      await angle(dialog,'Сбоку');await media(dialog,'female','side');await playback(page,dialog,false,1)
+      return {ownFallback:true,recoveryByAngle:true}
+    },{expectedNetworkErrors:true,setup:page=>page.route('**/squat-female-three-quarter.*',route=>{
+      const pathname=new URL(route.request().url()).pathname
+      return pathname.endsWith('.webm')||breakPoster?route.fulfill({status:404,body:'Intentional missing-media regression fixture'}):route.continue()
+    })})
+  }
+
+  await scenario('partial-one-gender-one-angle',{viewport:{width:390,height:568}},async(page,dialog)=>{
+    await media(dialog,'female','side');await playback(page,dialog,false,1)
+    assert.equal(await dialog.getByRole('button',{name:'Мужчина',exact:true}).count(),0)
+    assert.equal(await dialog.getByRole('button',{name:'Женщина',exact:true}).getAttribute('aria-pressed'),'true')
+    assert.equal(await dialog.getByRole('group',{name:'Ракурс демонстрации'}).count(),0)
+    await noOverflow(page,dialog)
+    return {storedMissingGenderFallback:true,onlyAvailableControls:true}
+  },{query:'?media=single-angle&avatar=male'})
+
+  await scenario('partial-missing-angle',{viewport:{width:1280,height:900}},async(page,dialog)=>{
+    await media(dialog,'female','three-quarter');await angle(dialog,'Сбоку')
+    await dialog.getByRole('button',{name:'Мужчина',exact:true}).click();await media(dialog,'male','three-quarter')
+    assert.equal(await dialog.getByRole('button',{name:'Сбоку',exact:true}).count(),0)
+    assert.equal(await dialog.getByRole('button',{name:'3/4',exact:true}).getAttribute('aria-pressed'),'true')
+    await dialog.getByRole('button',{name:'Женщина',exact:true}).click();await media(dialog,'female','side')
+    return {sameExerciseFallback:true,requestedAngleRestored:true}
+  },{query:'?media=missing-male-side'})
+
+  for(const [name,query,title] of [['missing-media','?media=empty','Техника: Приседания'],['empty-angle-registry','?media=empty-angles','Техника: Приседания'],['box-squat','?exercise=box-squat','Техника: Приседания до скамьи']]){
+    await scenario(name,{viewport:{width:390,height:568}},async(page,dialog)=>{
+      assert.equal(await dialog.getByRole('heading',{name:title,exact:true}).count(),1)
+      assert.equal(await dialog.locator('.exercise-video-viewer').count(),0)
+      assert.equal(await dialog.locator('video, img[src*="squat-"]').count(),0)
+      assert.equal(await dialog.getByRole('button',{name:'Мужчина',exact:true}).count(),0)
+      assert.equal(await dialog.locator('.technique-guidance').count(),1)
+      await noOverflow(page,dialog)
+      return {ownExerciseFallback:true,noAirSquatMedia:true}
+    },{query})
+  }
+
+  await scenario('historical-squat-label',{viewport:{width:1280,height:900}},async(page,dialog)=>{
+    await media(dialog,'female','three-quarter')
+    assert.equal(await dialog.getByRole('heading',{name:'Техника: Приседания',exact:true}).count(),1)
+    assert.doesNotMatch(await dialog.innerText(),/с опорой/)
+    return {canonicalTitle:true,exerciseIdPreserved:true}
+  },{query:'?label=legacy'})
+  report.passed=true
+}finally{
+  await browser.close()
+  await writeFile(`${artifacts}/browser-regression-results.json`,JSON.stringify(report,null,2)+'\n')
+}
+console.log(`Browser regressions PASS: ${report.scenarios.length} scenarios`)

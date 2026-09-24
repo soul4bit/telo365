@@ -5,14 +5,36 @@ import { resolve } from 'node:path'
 const root=process.cwd()
 const mediaRoot=resolve(root,'public','media','exercises')
 const reviewManifestPath=resolve(root,'artifacts','squat-release-review','video-release-manifest.json')
+const releaseManifestPath=resolve(root,'trainer','squat-video-release.manifest.json')
+const trainingPlanPath=resolve(root,'server','training-plan.mjs')
+const techniqueDialogPath=resolve(root,'src','components','Workouts.tsx')
+const techniqueViewerPath=resolve(root,'src','components','TechniqueVideoViewer.tsx')
+const exerciseRegistryPath=resolve(root,'src','exercise3d.ts')
 const expectedAngles={front:'front',side:'side',back:'back',threeQuarter:'three-quarter'}
 const expected=Object.fromEntries(['male','female'].map(avatar=>[avatar,Object.fromEntries(Object.entries(expectedAngles).map(([angle,fileAngle])=>[angle,{video:`videos/squat-${avatar}-${fileAngle}.webm`,poster:`posters/squat-${avatar}-${fileAngle}.png`}]))]))
 
 const hash=async file=>createHash('sha256').update(await readFile(file)).digest('hex')
 const exists=async file=>{await access(file);return file}
 
-const manifest=JSON.parse(await readFile(reviewManifestPath,'utf8'))
+const [manifest,releaseManifest,trainingPlanSource,techniqueDialogSource,techniqueViewerSource,exerciseRegistrySource]=await Promise.all([
+  readFile(reviewManifestPath,'utf8').then(JSON.parse),
+  readFile(releaseManifestPath,'utf8').then(JSON.parse),
+  readFile(trainingPlanPath,'utf8'),
+  readFile(techniqueDialogPath,'utf8'),
+  readFile(techniqueViewerPath,'utf8'),
+  readFile(exerciseRegistryPath,'utf8')
+])
 if(!/rendered frames.*not raw Mixamo GLB/i.test(manifest.purpose||''))throw new Error('Release manifest does not declare rendered-video-only delivery')
+if(releaseManifest.exerciseId!=='squat')throw new Error('Air Squat video release must target only the canonical squat exercise ID')
+if(!/exercise\(\{id:'squat',name:'Приседания'/.test(trainingPlanSource)||/exercise\(\{id:'squat',name:'Приседания с опорой'/.test(trainingPlanSource))throw new Error('Canonical squat metadata must describe bodyweight squats without support')
+if(!/const squatVideo=item\.exerciseId==='squat'\?getSquatTechniqueVideo\(trainerAvatar\):null/.test(techniqueDialogSource))throw new Error('Technique dialog must bind Air Squat videos only to exerciseId squat')
+if(!/techniqueExerciseName=.*exerciseId==='squat'\?'Приседания'/.test(techniqueDialogSource))throw new Error('Technique dialog must preserve the canonical Air Squat title for legacy sessions')
+
+if(releaseManifest.specialistTechniqueReview!=='pending'||releaseManifest.verified!==false)throw new Error('Video release must keep specialist review pending and remain unverified')
+if(releaseManifest.mediaArchitecture?.mode!=='gender-by-angle'||releaseManifest.mediaArchitecture?.allowPartialAngles!==true)throw new Error('Release manifest must declare optional gender-by-angle media architecture')
+if(releaseManifest.studio?.currentId!=='telo365-studio-v0-legacy'||releaseManifest.studio?.targetId!=='telo365-functional-studio-v1')throw new Error('Release manifest must distinguish the legacy media studio from the target functional studio')
+if(!/angles:Partial<Record<TechniqueVideoAngle,TechniqueVideoAngleAsset>>/.test(exerciseRegistrySource)||!/getTechniqueVideoAngles/.test(techniqueViewerSource))throw new Error('Technique viewer must render only available angle assets')
+if(!/exerciseTechnique:Record<string,ExerciseTechnique>/.test(exerciseRegistrySource)||!/commonMistakes/.test(techniqueDialogSource))throw new Error('Technique cues and mistakes must be stored in exercise metadata, not hardcoded in dialog layout')
 
 const verified={}
 for(const [avatar,angleMap] of Object.entries(expected)){

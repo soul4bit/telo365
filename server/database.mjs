@@ -10,7 +10,7 @@ export function openDatabase(path) {
   if (path !== ':memory:') chmodSync(path, 0o600);
   db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
   const version = db.prepare('PRAGMA user_version').get().user_version;
-  if (version > 17) throw new Error('Database is newer than this application');
+  if (version > 18) throw new Error('Database is newer than this application');
   if (version === 0) {
     db.exec(`BEGIN IMMEDIATE;
       CREATE TABLE users(id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, recovery TEXT NOT NULL,
@@ -217,6 +217,11 @@ export function openDatabase(path) {
   if (version < 17) db.exec(`BEGIN IMMEDIATE;
     PRAGMA user_version=17; COMMIT;`);
   if (version < 17) seedTrainingExercises(db);
+  // Correct the canonical `squat` metadata without touching saved sessions:
+  // Air Squat is bodyweight and separate from the bench-supported variation.
+  if (version < 18) db.exec(`BEGIN IMMEDIATE;
+    PRAGMA user_version=18; COMMIT;`);
+  if (version < 18) seedTrainingExercises(db);
   return db;
 }
 

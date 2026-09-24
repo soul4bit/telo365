@@ -30,8 +30,11 @@ async function desktop(){
     await current.waitFor({state:'visible',timeout:15000})
     return await current.getAttribute('src')||await current.locator('source').getAttribute('src')
   }
+  const sourcePath=(value)=>new URL(value||'',url).pathname
   const initialSource=await source()
-  if(!initialSource?.endsWith('/squat-female-side.webm'))throw new Error(`expected default female side video, got ${initialSource}`)
+  if(sourcePath(initialSource)!=='/media/exercises/videos/squat-female-three-quarter.webm')throw new Error(`expected default female 3/4 video, got ${initialSource}`)
+  if(!await dialog.getByRole('heading',{name:'Техника: Приседания',exact:true}).isVisible())throw new Error('Air Squat dialog title is not canonical')
+  if(/с опорой/i.test(await dialog.innerText()))throw new Error('Air Squat dialog still exposes a supported-squat label')
   const angles={
     'Спереди':'front',
     'Сбоку':'side',
@@ -42,23 +45,26 @@ async function desktop(){
   for(const [label,fileAngle] of Object.entries(angles)){
     await angleSwitch.getByRole('button',{name:label}).click()
     const current=await source()
-    if(!current?.endsWith(`/squat-female-${fileAngle}.webm`))throw new Error(`female ${label} view did not load: ${current}`)
+    if(sourcePath(current)!==`/media/exercises/videos/squat-female-${fileAngle}.webm`)throw new Error(`female ${label} view did not load: ${current}`)
   }
-  if(!await dialog.getByText('TELO365.RU',{exact:true}).isVisible())throw new Error('TELO365.RU watermark is not visible')
+  if(await dialog.locator('.exercise-video-viewer').getAttribute('data-studio-id')!=='telo365-studio-v0-legacy')throw new Error('current release studio metadata is missing')
+  if(!await dialog.getByText('TELO365.RU',{exact:true}).isVisible())throw new Error('legacy brand treatment is not visible for the current pre-v1 renders')
+  if(!await dialog.getByText('\u0427\u0410\u0421\u0422\u042b\u0415 \u041e\u0428\u0418\u0411\u041a\u0418',{exact:true}).isVisible())throw new Error('exercise mistakes metadata is not visible')
+  if(!await dialog.getByText('\u041a\u043e\u043b\u0435\u043d\u0438 \u0437\u0430\u0432\u0430\u043b\u0438\u0432\u0430\u044e\u0442\u0441\u044f \u0432\u043d\u0443\u0442\u0440\u044c.',{exact:true}).isVisible())throw new Error('Air Squat mistakes are not rendered from metadata')
   await dialog.getByRole('button',{name:'Мужчина'}).click()
   await waitForVideo(dialog)
   const maleSource=await source()
-  if(!maleSource?.endsWith('/squat-male-side.webm'))throw new Error(`avatar switch did not restore male side video: ${maleSource}`)
+  if(sourcePath(maleSource)!=='/media/exercises/videos/squat-male-three-quarter.webm')throw new Error(`avatar switch did not restore male 3/4 video: ${maleSource}`)
   for(const [label,fileAngle] of Object.entries(angles)){
     await angleSwitch.getByRole('button',{name:label}).click()
     const current=await source()
-    if(!current?.endsWith(`/squat-male-${fileAngle}.webm`))throw new Error(`male ${label} view did not load: ${current}`)
+    if(sourcePath(current)!==`/media/exercises/videos/squat-male-${fileAngle}.webm`)throw new Error(`male ${label} view did not load: ${current}`)
   }
   if(!await dialog.locator('.technique-guidance').isVisible())throw new Error('technique guidance is not visible beside the release video')
   const controls=dialog.locator('.exercise-video-controls')
   await controls.getByRole('button',{name:'Пауза видео'}).click()
   await controls.getByRole('button',{name:'Запустить видео'}).click()
-  await controls.getByRole('button',{name:'Вернуть начало видео'}).click()
+  await controls.getByRole('button',{name:'Вернуть на начало видео'}).click()
   await controls.getByRole('button',{name:'1×'}).click()
   if(!await controls.getByRole('button',{name:'1×'}).evaluate(element=>element.classList.contains('is-active')))throw new Error('1× control did not become active')
   await page.screenshot({path:`${artifacts}/squat-video-desktop-male.png`,fullPage:true})
@@ -67,7 +73,7 @@ async function desktop(){
   await browser.close()
   if(errors.length)throw new Error(`desktop console errors: ${errors.join(' | ')}`)
   if(rawAssetRequests.length)throw new Error(`release dialog requested raw review asset: ${rawAssetRequests.join(', ')}`)
-  return {avatarSwitch:true,angleSwitch:true,watermark:true,playPause:true,reset:true,speed:true,dialogClose:true}
+  return {avatarSwitch:true,angleSwitch:true,legacyBrandTreatment:true,techniqueMetadata:true,playPause:true,reset:true,speed:true,dialogClose:true}
 }
 
 async function mobile(){
@@ -95,9 +101,13 @@ async function reducedMotion(){
   await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000})
   const dialog=page.locator('dialog.technique-dialog');await dialog.waitFor({state:'visible',timeout:10000})
   const video=await dialog.locator('.exercise-video-viewer video').count(),poster=await dialog.locator('.exercise-video-static img').count()
-  await browser.close()
   if(video||poster!==1)throw new Error(`reduced-motion release fallback mismatch (video=${video}, poster=${poster})`)
-  return {video,poster}
+  await dialog.getByRole('button',{name:'\u0417\u0430\u043f\u0443\u0441\u0442\u0438\u0442\u044c \u0434\u0435\u043c\u043e\u043d\u0441\u0442\u0440\u0430\u0446\u0438\u044e'}).click()
+  await waitForVideo(dialog)
+  const startedVideo=await dialog.locator('.exercise-video-viewer video').count()
+  await browser.close()
+  if(startedVideo!==1)throw new Error('reduced-motion user action did not start the demonstration')
+  return {video,poster,manualStart:true}
 }
 
 await mkdir(artifacts,{recursive:true})

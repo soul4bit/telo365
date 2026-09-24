@@ -1,6 +1,10 @@
 {
   "schemaVersion": 1,
   "exerciseId": "squat",
+  "exerciseLabel": "Приседания",
+  "excludedExerciseIds": [
+    "box-squat"
+  ],
   "purpose": "Candidate public delivery by rendered video only. Raw Mixamo GLB/FBX, skeletons and animation tracks are excluded from this release.",
   "delivery": "rendered-video-only",
   "scenery": "Locally rendered stylized 3D gym interior; it is baked into the final video and contains no third-party scene asset.",
@@ -10,20 +14,44 @@
       "label": "Мужчина",
       "defaultAngle": "threeQuarter",
       "angles": {
-        "front": {"video": "/media/exercises/videos/squat-male-front.webm", "poster": "/media/exercises/posters/squat-male-front.png"},
-        "side": {"video": "/media/exercises/videos/squat-male-side.webm", "poster": "/media/exercises/posters/squat-male-side.png"},
-        "back": {"video": "/media/exercises/videos/squat-male-back.webm", "poster": "/media/exercises/posters/squat-male-back.png"},
-        "threeQuarter": {"video": "/media/exercises/videos/squat-male-three-quarter.webm", "poster": "/media/exercises/posters/squat-male-three-quarter.png"}
+        "front": {
+          "video": "/media/exercises/videos/squat-male-front.webm",
+          "poster": "/media/exercises/posters/squat-male-front.png"
+        },
+        "side": {
+          "video": "/media/exercises/videos/squat-male-side.webm",
+          "poster": "/media/exercises/posters/squat-male-side.png"
+        },
+        "back": {
+          "video": "/media/exercises/videos/squat-male-back.webm",
+          "poster": "/media/exercises/posters/squat-male-back.png"
+        },
+        "threeQuarter": {
+          "video": "/media/exercises/videos/squat-male-three-quarter.webm",
+          "poster": "/media/exercises/posters/squat-male-three-quarter.png"
+        }
       }
     },
     "female": {
       "label": "Женщина",
       "defaultAngle": "threeQuarter",
       "angles": {
-        "front": {"video": "/media/exercises/videos/squat-female-front.webm", "poster": "/media/exercises/posters/squat-female-front.png"},
-        "side": {"video": "/media/exercises/videos/squat-female-side.webm", "poster": "/media/exercises/posters/squat-female-side.png"},
-        "back": {"video": "/media/exercises/videos/squat-female-back.webm", "poster": "/media/exercises/posters/squat-female-back.png"},
-        "threeQuarter": {"video": "/media/exercises/videos/squat-female-three-quarter.webm", "poster": "/media/exercises/posters/squat-female-three-quarter.png"}
+        "front": {
+          "video": "/media/exercises/videos/squat-female-front.webm",
+          "poster": "/media/exercises/posters/squat-female-front.png"
+        },
+        "side": {
+          "video": "/media/exercises/videos/squat-female-side.webm",
+          "poster": "/media/exercises/posters/squat-female-side.png"
+        },
+        "back": {
+          "video": "/media/exercises/videos/squat-female-back.webm",
+          "poster": "/media/exercises/posters/squat-female-back.png"
+        },
+        "threeQuarter": {
+          "video": "/media/exercises/videos/squat-female-three-quarter.webm",
+          "poster": "/media/exercises/posters/squat-female-three-quarter.png"
+        }
       }
     }
   },
@@ -35,5 +63,18 @@
   "rawGlbPublicDeliveryApproved": false,
   "verified": false,
   "readyForPublication": false,
-  "automaticPublication": false
+  "automaticPublication": false,
+  "mediaArchitecture": {
+    "mode": "gender-by-angle",
+    "allowPartialAngles": true,
+    "rule": "Only declared media is rendered as a control. A missing angle or gender uses the exercise fallback; media from another exercise is never reused."
+  },
+  "studio": {
+    "currentId": "telo365-studio-v0-legacy",
+    "currentBranding": "legacy-overlay",
+    "targetId": "telo365-functional-studio-v1",
+    "targetBranding": "embedded",
+    "framing": "full-body-safe",
+    "replacementRule": "Replace all supplied angle assets for an exercise atomically after they are rendered in the same canonical studio. Do not use a CSS overlay to emulate the room or its physical brand."
+  }
 }

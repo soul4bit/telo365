@@ -30,7 +30,9 @@ function exercise(spec){
 /** Normalized MVP catalogue. Media remains local-placeholder only until supplied. */
 export const exerciseLibrary=[
   // Lower body
-  exercise({id:'squat',name:'Приседания с опорой',movementPattern:'squat',primaryMuscles:['Ноги','Ягодицы'],cautionTags:['knees'],alternatives:['box-squat','glute-bridge'],animationKey:'squat'}),
+  // `squat` is the canonical bodyweight Air Squat. The supported/bench
+  // variation is intentionally retained as the separate `box-squat` entry.
+  exercise({id:'squat',name:'Приседания',movementPattern:'squat',primaryMuscles:['Ноги','Ягодицы'],cautionTags:['knees'],alternatives:['box-squat','glute-bridge'],animationKey:'squat',instructions:['Стопы примерно на ширине плеч.','Колени движутся по направлению носков.','Таз движется назад и вниз; корпус остаётся под контролем.','Опускайся и поднимайся плавно, сохраняя устойчивую опору стоп.']}),
   exercise({id:'box-squat',name:'Приседания до скамьи',movementPattern:'squat',primaryMuscles:['Ноги','Ягодицы'],equipment:['bench'],cautionTags:['knees'],alternatives:['squat','glute-bridge'],animationKey:'squat'}),
   exercise({id:'dumbbell-goblet-squat',name:'Присед с гантелью',movementPattern:'squat',primaryMuscles:['Ноги','Ягодицы'],equipment:['dumbbells'],difficulty:'some',cautionTags:['knees'],contraindicationTags:['knees','injury','surgery'],alternatives:['box-squat','glute-bridge'],animationKey:'goblet_squat'}),
   exercise({id:'split-squat',name:'Сплит-присед',movementPattern:'squat',primaryMuscles:['Ноги','Ягодицы'],difficulty:'some',cautionTags:['knees','balance'],contraindicationTags:['knees','injury','surgery'],alternatives:['box-squat','glute-bridge']}),

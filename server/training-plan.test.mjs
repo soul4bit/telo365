@@ -31,7 +31,7 @@ test('migration creates a personal-plan store and seeds the normalized exercise 
     const db=openDatabase(join(folder,'test.sqlite'));
     assert.equal(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='training_plans'").get().name,'training_plans');
     assert.ok(db.prepare("SELECT count(*) AS count FROM catalog WHERE kind='exercise' AND owner IS NULL").get().count>=exerciseLibrary.length);
-    assert.equal(db.prepare('PRAGMA user_version').get().user_version,17);
+    assert.equal(db.prepare('PRAGMA user_version').get().user_version,18);
     db.close();
   } finally { rmSync(folder,{recursive:true,force:true}); }
 });
@@ -46,6 +46,35 @@ test('exercise catalogue is normalized and keeps local media placeholders',()=>{
     assert.equal(item.media.posterUrl,null);
   }
   for(const pattern of ['squat','hinge','horizontal_push','horizontal_pull','vertical_push','vertical_pull','carry','core','locomotion','mobility'])assert.ok(exerciseLibrary.some(item=>item.movementPattern===pattern),`missing ${pattern}`);
+});
+
+test('Air Squat remains distinct from the bench-supported squat variation',()=>{
+  const airSquat=catalogueById.get('squat'),boxSquat=catalogueById.get('box-squat');
+  assert.ok(airSquat);
+  assert.ok(boxSquat);
+  assert.equal(airSquat.name,'Приседания');
+  assert.deepEqual(airSquat.equipment,[]);
+  assert.ok(airSquat.instructions.every(tip=>!/держ.*опор|опор.*рук|поруч|стул|скамь/i.test(tip)));
+  assert.notEqual(airSquat.id,boxSquat.id);
+  assert.ok(boxSquat.equipment.includes('bench'));
+});
+
+test('version 18 corrects legacy supported-squat metadata without changing the exercise ID',()=>{
+  const folder=mkdtempSync(join(tmpdir(),'telo365-air-squat-migration-'));
+  const path=join(folder,'test.sqlite');
+  try {
+    const db=openDatabase(path);
+    db.prepare("UPDATE catalog SET data=? WHERE id='squat' AND owner IS NULL").run(JSON.stringify({id:'squat',name:'Приседания с опорой',equipment:['bench']}));
+    db.exec('PRAGMA user_version=17');
+    db.close();
+    const migrated=openDatabase(path);
+    const squat=JSON.parse(migrated.prepare("SELECT data FROM catalog WHERE id='squat' AND owner IS NULL").get().data);
+    assert.equal(migrated.prepare('PRAGMA user_version').get().user_version,18);
+    assert.equal(squat.id,'squat');
+    assert.equal(squat.name,'Приседания');
+    assert.deepEqual(squat.equipment,[]);
+    migrated.close();
+  } finally { rmSync(folder,{recursive:true,force:true}); }
 });
 
 test('novice at home with dumbbells gets conservative Strength A and Strength B',()=>{

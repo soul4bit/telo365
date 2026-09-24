@@ -6,6 +6,18 @@
 
 Видеофайлы находятся в `public/media/exercises/videos/`, posters — в `public/media/exercises/posters/`. Они являются отрендеренным конечным видео; raw GLB, FBX, кости и ключи анимаций в них не входят.
 
+## Семантика упражнения
+
+Видеорелиз привязан только к каноническому ID `squat`: это «Приседания» с собственным весом, без опоры. В каталоге у него нет обязательного оборудования, а текстовые подсказки относятся к Air Squat.
+
+`box-squat` («Приседания до скамьи») остаётся отдельной вариацией со скамьёй. Для неё Air Squat не включается: пока нет отдельной демонстрации, окно техники показывает её штатный fallback. Устаревшее название «Приседания с опорой» не используется для ID `squat` и не меняет ни его ID, ни связи с персональными планами.
+
+В исходном задании упомянуты файлы `squat-male.webm` и `squat-female.webm`; в актуальном релизе им соответствуют восемь подготовленных роликов `squat-{male|female}-{front|side|back|three-quarter}.webm`. Пользователь выбирает только реальные четыре ракурса.
+
+## Условия использования Mixamo
+
+24 сентября 2026 года проверена официальная [Mixamo FAQ Adobe](https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html): Adobe указывает, что персонажей и анимации можно использовать royalty-free в личных, коммерческих и некоммерческих проектах, включая создание фильмов. На этом основании выбран вариант B: в сайт поставляются только конечные отрендеренные WebM и PNG, а не GLB, FBX, скелеты или исходные анимационные треки. Это фиксирует технический способ поставки, но не заменяет проверку прав на конкретный источник и учётную запись Adobe владельца проекта.
+
 Вариант **A: интерактивный 3D** остаётся только локальным developer-preview. Его combined GLB находятся в `assets-work/mixamo-review/` и не должны появляться в `public/`, `dist/` или на публичном origin до отдельного письменного подтверждения допустимого способа доставки.
 
 Причина разделения: [Mixamo FAQ](https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html) описывает royalty-free использование персонажей и анимаций, а [Adobe General Terms of Use](https://www.adobe.com/legal/terms.html?internal_browser=true) разрешают встраивать Content Files в конечный продукт, но запрещают их standalone-распространение. Обычный публичный URL к извлекаемому GLB нельзя считать безопасно одобренной формой встраивания без отдельного письменного подтверждения.
@@ -87,3 +99,7 @@ sudo systemctl restart telo365.service
 ```
 
 После отката повторите HTTP-проверку сайта и убедитесь, что health check сервиса проходит. Не удаляйте новую версию, пока откат не подтверждён.
+
+## Virtual studio replacement
+
+The current video-only release retains existing renders. The reusable premium studio, physical `TELO365.RU` treatment, safe framing, and exact replacement paths are defined in [TELO365_FUNCTIONAL_STUDIO_RENDER_SPEC.md](TELO365_FUNCTIONAL_STUDIO_RENDER_SPEC.md). The room must arrive through re-rendered WebM/PNG assets; CSS must not imitate it over an existing video.

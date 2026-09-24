@@ -407,6 +407,10 @@ dialog{overflow-y:auto;overscroll-behavior:contain}
 @media(max-width:760px){.mixamo-squat-review .exercise-3d-viewer,.mixamo-squat-review .exercise-3d-skeleton,.mixamo-squat-review .exercise-3d-fallback{min-height:300px}.mixamo-squat-review .exercise-3d-viewer canvas{height:300px!important}}
 /* Subtle selection contrast and keyboard focus without enlarging the desktop bar. */
 .technique-dialog .exercise-video-controls [role=group] button.is-active{background:#d6e8ce;color:#294f31;box-shadow:inset 0 0 0 1px #a7c59d;font-weight:800}
+.technique-dialog .exercise-video-controls .exercise-video-angle-switch button.is-active{background:#c9e2bf;box-shadow:inset 0 0 0 1px #92b67f}
+/* Compact the rendered-video header; keep fallback and developer modes intact. */
+.technique-dialog:has(.exercise-video-viewer) .dialog-head{margin-bottom:6px}
+.technique-dialog:has(.exercise-video-viewer)>.trainer-avatar-switch{margin-bottom:6px}
 .technique-dialog .exercise-video-controls button:focus-visible,.technique-dialog .trainer-avatar-switch button:focus-visible,.exercise-video-motion-start:focus-visible{outline:2px solid #608d59;outline-offset:2px}
 .exercise-video-controls button:disabled{opacity:.45;cursor:default}
 .exercise-video-viewer>.exercise-video-static{flex:1 1 auto;min-height:0;border:0;border-radius:0;padding-bottom:12px}
@@ -414,6 +418,8 @@ dialog{overflow-y:auto;overscroll-behavior:contain}
 .exercise-video-poster-placeholder p{max-width:300px}
 /* Narrow tablets and touch controls keep the same reading order and scroll. */
 @media(max-width:900px){
+  .technique-dialog:has(.exercise-video-viewer) .dialog-head{margin-bottom:12px}
+  .technique-dialog:has(.exercise-video-viewer)>.trainer-avatar-switch{margin-bottom:8px}
   .technique-dialog-layout{grid-template-columns:minmax(0,1fr);gap:20px}
   .technique-dialog .trainer-avatar-switch{justify-content:flex-start;flex-wrap:wrap}
   .technique-dialog .exercise-video-controls{gap:6px}

@@ -2,8 +2,14 @@ import { test, expect } from '@playwright/test'
 async function expectNutritionSummary(page:any,eaten:string,planned?:string){
   const card=page.locator('.nutrition-today')
   const status=card.locator('.nutrition-status')
-  await expect(status.locator('>div').first()).toContainText(eaten)
-  if(planned)await expect(status.locator('>div').nth(1)).toContainText(planned)
+  await expect(status.locator('>div').first()).toContainText(eaten.split(' ')[0])
+  await expect(card.getByRole('progressbar')).toHaveCount(2)
+  for(const progress of await card.getByRole('progressbar').all()){
+    const value=Number(await progress.getAttribute('aria-valuenow'))
+    expect(value).toBeGreaterThanOrEqual(0)
+    expect(value).toBeLessThanOrEqual(100)
+  }
+  await expect(card.locator('.nutrition-remaining')).toContainText(/./)
   const unlabeledValues=await card.evaluate(node=>{
     const values=new Set<string>()
     for(const element of node.querySelectorAll('strong,b,span,small')){

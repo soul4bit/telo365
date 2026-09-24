@@ -7,7 +7,7 @@
   ],
   "purpose": "Candidate public delivery by rendered video only. Raw Mixamo GLB/FBX, skeletons and animation tracks are excluded from this release.",
   "delivery": "rendered-video-only",
-  "scenery": "Locally rendered stylized 3D gym interior; it is baked into the final video and contains no third-party scene asset.",
+  "scenery": "TELO365 Functional Studio v1: rendered dark rubber floor, metal rack, dumbbell stand, kettlebells, plyometric box, timber slats, window daylight and physical TELO365.RU lettering; baked into final video without third-party scene assets.",
   "sourceCandidateManifest": "trainer/mixamo-air-squat-combined.manifest.json",
   "avatars": {
     "male": {
@@ -70,11 +70,11 @@
     "rule": "Only declared media is rendered as a control. A missing angle or gender uses the exercise fallback; media from another exercise is never reused."
   },
   "studio": {
-    "currentId": "telo365-studio-v0-legacy",
-    "currentBranding": "legacy-overlay",
+    "currentId": "telo365-functional-studio-v1",
+    "currentBranding": "embedded",
     "targetId": "telo365-functional-studio-v1",
     "targetBranding": "embedded",
     "framing": "full-body-safe",
-    "replacementRule": "Replace all supplied angle assets for an exercise atomically after they are rendered in the same canonical studio. Do not use a CSS overlay to emulate the room or its physical brand."
+    "replacementRule": "All supplied angle assets were rendered in the same canonical studio. Physical TELO365.RU branding is embedded in video/posters; no CSS overlay is used."
   }
 }

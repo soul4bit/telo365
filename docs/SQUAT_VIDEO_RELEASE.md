@@ -100,6 +100,6 @@ sudo systemctl restart telo365.service
 
 После отката повторите HTTP-проверку сайта и убедитесь, что health check сервиса проходит. Не удаляйте новую версию, пока откат не подтверждён.
 
-## Virtual studio replacement
+## Virtual studio
 
-The current video-only release retains existing renders. The reusable premium studio, physical `TELO365.RU` treatment, safe framing, and exact replacement paths are defined in [TELO365_FUNCTIONAL_STUDIO_RENDER_SPEC.md](TELO365_FUNCTIONAL_STUDIO_RENDER_SPEC.md). The room must arrive through re-rendered WebM/PNG assets; CSS must not imitate it over an existing video.
+The current release uses newly rendered WebM/PNG from `telo365-functional-studio-v1`. Its reusable scene, physical `TELO365.RU` treatment, safe framing, and exact media paths are defined in [TELO365_FUNCTIONAL_STUDIO_RENDER_SPEC.md](TELO365_FUNCTIONAL_STUDIO_RENDER_SPEC.md). The room is baked into video and posters; CSS never imitates it over an existing video.

@@ -133,66 +133,111 @@ function ReviewAvatar({avatar,time,diagnostic}:{avatar:Avatar;time:number;diagno
   </>
 }
 
-function StudioPanel({position,rotation,width}:{position:[number,number,number];rotation?:[number,number,number];width:number}){
-  return <group position={position} rotation={rotation||[0,0,0]}>
-    <mesh><boxGeometry args={[width,2.2,.035]}/><meshStandardMaterial color="#c8d9d0" roughness={.3} metalness={.12}/></mesh>
-    <mesh position={[0,1.12,.025]}><boxGeometry args={[width+.11,.07,.075]}/><meshStandardMaterial color="#b4c9b0" roughness={.65}/></mesh>
-    <mesh position={[0,-1.12,.025]}><boxGeometry args={[width+.11,.07,.075]}/><meshStandardMaterial color="#b4c9b0" roughness={.65}/></mesh>
-    <mesh position={[-width/2-.02,0,.025]}><boxGeometry args={[.07,2.3,.075]}/><meshStandardMaterial color="#b4c9b0" roughness={.65}/></mesh>
-    <mesh position={[width/2+.02,0,.025]}><boxGeometry args={[.07,2.3,.075]}/><meshStandardMaterial color="#b4c9b0" roughness={.65}/></mesh>
+function BrandPlaque({position,rotation=[0,0,0]}:{position:[number,number,number];rotation?:[number,number,number]}){
+  const map=useMemo(()=>{
+    const canvas=document.createElement('canvas')
+    canvas.width=1024;canvas.height=256
+    const context=canvas.getContext('2d')!
+    context.fillStyle='#d7c8ac';context.fillRect(0,0,canvas.width,canvas.height)
+    context.fillStyle='#30473a';context.font='700 106px Arial, sans-serif';context.textAlign='center';context.textBaseline='middle'
+    context.fillText('TELO365.RU',canvas.width/2,canvas.height/2+4)
+    const texture=new THREE.CanvasTexture(canvas)
+    texture.colorSpace=THREE.SRGBColorSpace
+    return texture
+  },[])
+  useEffect(()=>()=>map.dispose(),[map])
+  return <mesh position={position} rotation={rotation} castShadow><planeGeometry args={[1.68,.42]}/><meshBasicMaterial map={map} toneMapped={false}/></mesh>
+}
+
+function DarkWall({position,rotation=[0,0,0],width=10}:{position:[number,number,number];rotation?:[number,number,number];width?:number}){
+  return <group position={position} rotation={rotation}>
+    <mesh receiveShadow><boxGeometry args={[width,3.85,.14]}/><meshStandardMaterial color="#657064" roughness={.92}/></mesh>
+    <mesh position={[0,1.56,.078]}><boxGeometry args={[width,.07,.03]}/><meshStandardMaterial color="#8b9a87" roughness={.68}/></mesh>
+  </group>
+}
+
+function WoodSlats({position,rotation=[0,0,0],count=13,width=2.05}:{position:[number,number,number];rotation?:[number,number,number];count?:number;width?:number}){
+  return <group position={position} rotation={rotation}>
+    <mesh position={[0,.64,-.015]}><boxGeometry args={[width,2.62,.045]}/><meshStandardMaterial color="#292f2a" roughness={.82}/></mesh>
+    {Array.from({length:count},(_,index)=>{
+      const x=-width/2+(index+.5)*width/count
+      return <mesh key={index} position={[x,.64,.025]} castShadow><boxGeometry args={[width/count*.58,2.58,.06]}/><meshStandardMaterial color={index%2?'#755a3e':'#8b6e4e'} roughness={.76}/></mesh>
+    })}
+  </group>
+}
+
+function StudioWindow({position,rotation=[0,0,0]}:{position:[number,number,number];rotation?:[number,number,number]}){
+  const frame='#1d2521'
+  return <group position={position} rotation={rotation}>
+    <mesh><planeGeometry args={[2.6,2.42]}/><meshBasicMaterial color="#b8af94" toneMapped={false}/></mesh>
+    <mesh position={[0,0,.03]}><boxGeometry args={[2.74,.1,.1]}/><meshStandardMaterial color={frame} roughness={.55} metalness={.6}/></mesh>
+    <mesh position={[0,1.17,.03]}><boxGeometry args={[2.74,.1,.1]}/><meshStandardMaterial color={frame} roughness={.55} metalness={.6}/></mesh>
+    <mesh position={[-1.32,.59,.03]}><boxGeometry args={[.1,2.5,.1]}/><meshStandardMaterial color={frame} roughness={.55} metalness={.6}/></mesh>
+    <mesh position={[1.32,.59,.03]}><boxGeometry args={[.1,2.5,.1]}/><meshStandardMaterial color={frame} roughness={.55} metalness={.6}/></mesh>
+    <mesh position={[0,.59,.04]}><boxGeometry args={[.055,2.36,.08]}/><meshStandardMaterial color={frame} roughness={.55} metalness={.6}/></mesh>
+    <mesh position={[0,.59,.05]}><boxGeometry args={[2.56,.055,.08]}/><meshStandardMaterial color={frame} roughness={.55} metalness={.6}/></mesh>
   </group>
 }
 
 function GymRack({position,rotation=[0,0,0]}:{position:[number,number,number];rotation?:[number,number,number]}){
-  const metal='#526d57'
+  const metal='#202723',accent='#617b68'
   return <group position={position} rotation={rotation}>
-    <mesh position={[-.72,.78,0]} castShadow><boxGeometry args={[.1,1.85,.1]}/><meshStandardMaterial color={metal} roughness={.55}/></mesh>
-    <mesh position={[.72,.78,0]} castShadow><boxGeometry args={[.1,1.85,.1]}/><meshStandardMaterial color={metal} roughness={.55}/></mesh>
-    <mesh position={[0,1.58,0]} castShadow><boxGeometry args={[1.6,.08,.12]}/><meshStandardMaterial color={metal} roughness={.55}/></mesh>
-    <mesh position={[0,.18,0]} castShadow><boxGeometry args={[1.76,.12,.35]}/><meshStandardMaterial color="#799477" roughness={.68}/></mesh>
-    {[-.52,-.26,0,.26,.52].map(x=><mesh key={x} position={[x,.38,-.03]} rotation={[0,0,Math.PI/2]} castShadow><cylinderGeometry args={[.11,.11,.17,12]}/><meshStandardMaterial color="#3d5e44" roughness={.48}/></mesh>)}
+    {[-.78,.78].map(x=><mesh key={x} position={[x,.86,0]} castShadow><boxGeometry args={[.105,2.1,.105]}/><meshStandardMaterial color={metal} roughness={.48} metalness={.68}/></mesh>)}
+    <mesh position={[0,1.88,0]} castShadow><boxGeometry args={[1.66,.1,.13]}/><meshStandardMaterial color={metal} roughness={.48} metalness={.68}/></mesh>
+    <mesh position={[0,.14,0]} castShadow><boxGeometry args={[1.86,.12,.5]}/><meshStandardMaterial color={metal} roughness={.58} metalness={.55}/></mesh>
+    <mesh position={[0,1.32,.09]} castShadow><cylinderGeometry args={[.035,.035,1.78,12]}/><meshStandardMaterial color={accent} roughness={.34} metalness={.7}/></mesh>
   </group>
 }
 
-/** A restrained gym interior rendered only into review frames and final WebM.
- * It is intentionally built from simple room and equipment forms, never from
- * another character or a downloadable third-party asset. */
+function DumbbellRack({position,rotation=[0,0,0]}:{position:[number,number,number];rotation?:[number,number,number]}){
+  const metal='#202723'
+  return <group position={position} rotation={rotation}>
+    <mesh position={[0,.22,0]} castShadow><boxGeometry args={[1.82,.08,.42]}/><meshStandardMaterial color={metal} roughness={.5} metalness={.6}/></mesh>
+    <mesh position={[0,.7,0]} castShadow><boxGeometry args={[1.66,.08,.38]}/><meshStandardMaterial color={metal} roughness={.5} metalness={.6}/></mesh>
+    {[-.62,-.31,0,.31,.62].map((x,index)=><group key={x} position={[x,.85,0]} rotation={[0,0,Math.PI/2]}><mesh castShadow><cylinderGeometry args={[.035,.035,.28,12]}/><meshStandardMaterial color="#87908a" roughness={.32} metalness={.72}/></mesh><mesh position={[0,.16,0]} castShadow><cylinderGeometry args={[.11,.11,.12,16]}/><meshStandardMaterial color={index%2?'#303832':'#3d4d42'} roughness={.45} metalness={.38}/></mesh><mesh position={[0,-.16,0]} castShadow><cylinderGeometry args={[.11,.11,.12,16]}/><meshStandardMaterial color={index%2?'#303832':'#3d4d42'} roughness={.45} metalness={.38}/></mesh></group>)}
+    {[-.65,.65].map(x=><mesh key={x} position={[x,.37,0]} rotation={[0,0,x<0?.35:-.35]} castShadow><boxGeometry args={[.07,.72,.07]}/><meshStandardMaterial color={metal} roughness={.5} metalness={.6}/></mesh>)}
+  </group>
+}
+
+function Kettlebell({position,color='#33483b'}:{position:[number,number,number];color?:string}){
+  return <group position={position}><mesh castShadow><sphereGeometry args={[.22,20,16]}/><meshStandardMaterial color={color} roughness={.48} metalness={.18}/></mesh><mesh position={[0,.2,0]} castShadow><torusGeometry args={[.11,.035,10,18]}/><meshStandardMaterial color={color} roughness={.48} metalness={.18}/></mesh></group>
+}
+
+function PlyoBox({position,rotation=[0,0,0]}:{position:[number,number,number];rotation?:[number,number,number]}){
+  return <group position={position} rotation={rotation}><mesh castShadow receiveShadow><boxGeometry args={[.86,.72,.86]}/><meshStandardMaterial color="#9b7a54" roughness={.8}/></mesh><mesh position={[0,.365,0]} castShadow><boxGeometry args={[.93,.04,.93]}/><meshStandardMaterial color="#b39168" roughness={.74}/></mesh><BrandPlaque position={[0,.02,.436]} rotation={[0,0,0]}/></group>
+}
+
+function Plant({position}:{position:[number,number,number]}){
+  return <group position={position}><mesh castShadow><cylinderGeometry args={[.22,.27,.32,16]}/><meshStandardMaterial color="#b48e62" roughness={.86}/></mesh>{Array.from({length:9},(_,index)=>{const angle=index/9*Math.PI*2;return <mesh key={index} position={[Math.sin(angle)*.16,.42,Math.cos(angle)*.16]} rotation={[.4,angle,.25]} castShadow><sphereGeometry args={[.15,.1,12,8]}/><meshStandardMaterial color={index%2?'#3f674a':'#577d56'} roughness={.76}/></mesh>})}</group>
+}
+
+/** This physical room is rendered into review frames and final WebM only.
+ * It never becomes a runtime CSS background and is shared by every view/avatar. */
 function GymInterior(){
-  const wall='#eef3eb',accent='#d2e0ce',rubber='#d2ddd0',metal='#5d7561',bench='#789378'
+  const rubber='#343a36',tile='#4a514a'
   return <group>
-    <mesh rotation={[-Math.PI/2,0,0]} position={[0,-1.06,0]} receiveShadow><planeGeometry args={[10,10]}/><meshStandardMaterial color={rubber} roughness={.94}/></mesh>
-    <mesh rotation={[-Math.PI/2,0,0]} position={[0,-1.055,0]} receiveShadow><planeGeometry args={[3.7,5.1]}/><meshStandardMaterial color="#c3d3bf" roughness={.9}/></mesh>
-    <gridHelper args={[9.8,14,'#b5cbb2','#d6e2d2']} position={[0,-1.05,0]}/>
-    <mesh position={[0,.82,-5]} receiveShadow><boxGeometry args={[10,3.8,.12]}/><meshStandardMaterial color={wall} roughness={.96}/></mesh>
-    <mesh position={[0,.82,5]} rotation={[0,Math.PI,0]} receiveShadow><boxGeometry args={[10,3.8,.12]}/><meshStandardMaterial color={wall} roughness={.96}/></mesh>
-    <mesh position={[-5,.82,0]} rotation={[0,Math.PI/2,0]} receiveShadow><boxGeometry args={[10,3.8,.12]}/><meshStandardMaterial color={wall} roughness={.96}/></mesh>
-    <mesh position={[5,.82,0]} rotation={[0,-Math.PI/2,0]} receiveShadow><boxGeometry args={[10,3.8,.12]}/><meshStandardMaterial color={wall} roughness={.96}/></mesh>
-    <mesh position={[0,2.68,-4.91]}><boxGeometry args={[9.2,.12,.06]}/><meshStandardMaterial color={accent} roughness={.8}/></mesh>
-    <mesh position={[0,2.68,4.91]}><boxGeometry args={[9.2,.12,.06]}/><meshStandardMaterial color={accent} roughness={.8}/></mesh>
-    <StudioPanel position={[0,.72,-4.9]} width={3.25}/><StudioPanel position={[0,.72,4.9]} rotation={[0,Math.PI,0]} width={3.25}/>
-    <StudioPanel position={[-4.9,.72,0]} rotation={[0,Math.PI/2,0]} width={3.25}/><StudioPanel position={[4.9,.72,0]} rotation={[0,-Math.PI/2,0]} width={3.25}/>
-    <GymRack position={[-3.35,.1,-4.72]}/><GymRack position={[3.35,.1,-4.72]}/>
-    <GymRack position={[-3.35,.1,4.72]} rotation={[0,Math.PI,0]}/><GymRack position={[3.35,.1,4.72]} rotation={[0,Math.PI,0]}/>
-    <GymRack position={[-4.72,.1,-2.75]} rotation={[0,Math.PI/2,0]}/><GymRack position={[-4.72,.1,2.75]} rotation={[0,Math.PI/2,0]}/>
-    <group position={[3.35,-.72,-3.3]} rotation={[0,-.28,0]}>
-      <mesh position={[0,.32,0]} castShadow><boxGeometry args={[1.3,.13,.42]}/><meshStandardMaterial color={bench} roughness={.72}/></mesh>
-      <mesh position={[-.5,0,0]} rotation={[0,0,.3]} castShadow><boxGeometry args={[.09,.7,.09]}/><meshStandardMaterial color={metal} roughness={.5}/></mesh>
-      <mesh position={[.5,0,0]} rotation={[0,0,-.3]} castShadow><boxGeometry args={[.09,.7,.09]}/><meshStandardMaterial color={metal} roughness={.5}/></mesh>
-    </group>
-    <group position={[-3.25,.25,3.8]} rotation={[0,.45,0]}>
-      <mesh position={[0,.2,0]} castShadow><boxGeometry args={[1.25,.12,.44]}/><meshStandardMaterial color="#759071" roughness={.7}/></mesh>
-      {[-.42,-.14,.14,.42].map(x=><mesh key={x} position={[x,.48,0]} rotation={[0,0,Math.PI/2]} castShadow><cylinderGeometry args={[.14,.14,.2,12]}/><meshStandardMaterial color="#49664c" roughness={.48}/></mesh>)}
-    </group>
-    <mesh position={[0,2.7,0]} receiveShadow><boxGeometry args={[8.5,.08,8.5]}/><meshStandardMaterial color="#f5f9f2" roughness={1}/></mesh>
+    <mesh rotation={[-Math.PI/2,0,0]} position={[0,-1.06,0]} receiveShadow><planeGeometry args={[10,10]}/><meshStandardMaterial color={rubber} roughness={.96}/></mesh>
+    {[-3,-1.5,0,1.5,3].flatMap(value=>[
+      <mesh key={`x${value}`} rotation={[-Math.PI/2,0,0]} position={[value,-1.055,0]}><planeGeometry args={[.016,9.8]}/><meshBasicMaterial color={tile}/></mesh>,
+      <mesh key={`z${value}`} rotation={[-Math.PI/2,0,0]} position={[0,-1.055,value]}><planeGeometry args={[9.8,.016]}/><meshBasicMaterial color={tile}/></mesh>
+    ])}
+    <DarkWall position={[0,.82,-4.92]}/><DarkWall position={[0,.82,4.92]} rotation={[0,Math.PI,0]}/><DarkWall position={[-4.92,.82,0]} rotation={[0,Math.PI/2,0]}/><DarkWall position={[4.92,.82,0]} rotation={[0,-Math.PI/2,0]}/>
+    <WoodSlats position={[1.7,.18,-4.82]} width={2.18}/><StudioWindow position={[-2.85,.15,-4.82]}/><BrandPlaque position={[.1,1.36,-4.81]}/>
+    <WoodSlats position={[-4.82,.18,-2.55]} rotation={[0,Math.PI/2,0]} width={1.9}/><WoodSlats position={[4.82,.18,2.55]} rotation={[0,-Math.PI/2,0]} width={1.9}/>
+    <GymRack position={[-3.48,-.94,-4.55]}/><DumbbellRack position={[2.65,-.94,-4.48]} rotation={[0,.05,0]}/>
+    <PlyoBox position={[3.34,-.7,-2.78]} rotation={[0,-.35,0]}/><Kettlebell position={[-2.65,-.83,-2.7]}/><Kettlebell position={[-2.2,-.84,-2.94]} color="#5c765c"/><Kettlebell position={[-1.75,-.84,-2.7]} color="#80694c"/>
+    <Plant position={[-4.2,-.9,-3.95]}/>
+    <mesh position={[0,2.73,0]} receiveShadow><boxGeometry args={[9.8,.1,9.8]}/><meshStandardMaterial color="#202622" roughness={.92}/></mesh>
+    <mesh position={[0,2.64,-.7]}><boxGeometry args={[3.1,.035,.7]}/><meshBasicMaterial color="#f1dfb4" toneMapped={false}/></mesh>
   </group>
 }
 
 function ReviewScene({state}:{state:ReviewState}){
-  return <Canvas className="squat-technique-review-canvas" shadows frameloop="demand" dpr={[1,1]} camera={{position:cameraPositions[state.view],fov:30}} gl={{alpha:false,antialias:true,preserveDrawingBuffer:true,powerPreference:'high-performance',toneMapping:THREE.ACESFilmicToneMapping,toneMappingExposure:.82,outputColorSpace:THREE.SRGBColorSpace}}>
-    <color attach="background" args={['#eaf1e6']}/>
-    <hemisphereLight args={['#fcfdf9','#d7e4d2',1.05]}/><ambientLight intensity={.34}/>
-    <directionalLight castShadow position={[3.4,5.2,3.1]} intensity={1.05} color="#fffdf7" shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-bias={-.00025} shadow-radius={3}/>
-    <directionalLight position={[-3.5,2.4,1.5]} intensity={.25} color="#e8f0e4"/>
+  return <Canvas className="squat-technique-review-canvas" shadows frameloop="demand" dpr={[1,1]} camera={{position:cameraPositions[state.view],fov:28}} gl={{alpha:false,antialias:true,preserveDrawingBuffer:true,powerPreference:'high-performance',toneMapping:THREE.ACESFilmicToneMapping,toneMappingExposure:1.1,outputColorSpace:THREE.SRGBColorSpace}}>
+    <color attach="background" args={['#3f4942']}/>
+    <hemisphereLight args={['#f2e5c7','#718072',1.4]}/><ambientLight intensity={.64}/>
+    <directionalLight castShadow position={[3.4,5.2,3.1]} intensity={1.36} color="#fff1d3" shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-bias={-.00025} shadow-radius={3}/>
+    <directionalLight position={[-3.5,2.4,1.5]} intensity={.48} color="#dce9d2"/>
     <GymInterior/>
     <Suspense fallback={null}><ReviewAvatar key={state.avatar} {...state}/></Suspense>
     <Camera view={state.view}/>

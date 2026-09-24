@@ -4,16 +4,16 @@ This document defines one recognizable virtual studio for every future TELO365 e
 
 ## Current release status
 
-The current `squat-*.webm` files contain the previously rendered simplified interior. They remain a working video-only fallback and use studio id `telo365-studio-v0-legacy`. The small on-screen brand treatment for those old assets is a temporary `legacy-overlay`.
+All eight current `squat-*.webm` and matching posters have been rendered in `telo365-functional-studio-v1`. They use video-only delivery; raw GLB/FBX files are still excluded.
 
-Physical branding and the new interior can only arrive through a new WebM/PNG render. When all supplied views are replaced atomically, update `trainer/squat-video-release.manifest.json` to:
+The active media manifest declares:
 
 ```json
 "currentId": "telo365-functional-studio-v1",
 "currentBranding": "embedded"
 ```
 
-The viewer then stops rendering the legacy overlay. `TELO365.RU` must be visible as a physical part of the room in both video and poster.
+`TELO365.RU` is embedded as a physical wall sign in the rendered room and posters. The viewer does not render an HTML/CSS watermark over these assets.
 
 ## Canonical scene: `telo365-functional-studio-v1`
 

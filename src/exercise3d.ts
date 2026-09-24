@@ -98,7 +98,7 @@ export const telo365FunctionalStudioV1:TechniqueVideoStudio={
 }
 
 // Release media is cached for one day. Bump this only when rendered frames change.
-const squatVideoRevision='gym-20260924'
+const squatVideoRevision='studio-v1-20260924'
 
 const squatVideoAngles=(avatar:TrainerAvatar):Record<TechniqueVideoAngle,TechniqueVideoAngleAsset>=>{
   const prefix=`/media/exercises/videos/squat-${avatar}`
@@ -113,15 +113,13 @@ const squatVideoAngles=(avatar:TrainerAvatar):Record<TechniqueVideoAngle,Techniq
   }
 }
 
-const legacySquatStudio:TechniqueVideoStudio={
-  id:'telo365-studio-v0-legacy',
-  branding:'legacy-overlay',
-  framing:'full-body-safe'
+const squatStudio:TechniqueVideoStudio={
+  ...telo365FunctionalStudioV1
 }
 
 export const squatTechniqueVideos:Record<TrainerAvatar,TechniqueVideoAsset>={
-  male:{label:'\u041c\u0443\u0436\u0447\u0438\u043d\u0430',defaultAngle:'threeQuarter',angles:squatVideoAngles('male'),studio:legacySquatStudio},
-  female:{label:'\u0416\u0435\u043d\u0449\u0438\u043d\u0430',defaultAngle:'threeQuarter',angles:squatVideoAngles('female'),studio:legacySquatStudio}
+  male:{label:'\u041c\u0443\u0436\u0447\u0438\u043d\u0430',defaultAngle:'threeQuarter',angles:squatVideoAngles('male'),studio:squatStudio},
+  female:{label:'\u0416\u0435\u043d\u0449\u0438\u043d\u0430',defaultAngle:'threeQuarter',angles:squatVideoAngles('female'),studio:squatStudio}
 }
 
 export const getSquatTechniqueVideo=(avatar:TrainerAvatar)=>squatTechniqueVideos[avatar]

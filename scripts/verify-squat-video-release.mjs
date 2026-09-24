@@ -12,7 +12,7 @@ const hash=async file=>createHash('sha256').update(await readFile(file)).digest(
 const exists=async file=>{await access(file);return file}
 
 const manifest=JSON.parse(await readFile(reviewManifestPath,'utf8'))
-if(!/rendered frames, not raw Mixamo GLB/i.test(manifest.purpose||''))throw new Error('Release manifest does not declare rendered-video-only delivery')
+if(!/rendered frames.*not raw Mixamo GLB/i.test(manifest.purpose||''))throw new Error('Release manifest does not declare rendered-video-only delivery')
 
 const verified={}
 for(const [avatar,angleMap] of Object.entries(expected)){

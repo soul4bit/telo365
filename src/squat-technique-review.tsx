@@ -133,13 +133,67 @@ function ReviewAvatar({avatar,time,diagnostic}:{avatar:Avatar;time:number;diagno
   </>
 }
 
+function StudioPanel({position,rotation,width}:{position:[number,number,number];rotation?:[number,number,number];width:number}){
+  return <group position={position} rotation={rotation||[0,0,0]}>
+    <mesh><boxGeometry args={[width,2.2,.035]}/><meshStandardMaterial color="#c8d9d0" roughness={.3} metalness={.12}/></mesh>
+    <mesh position={[0,1.12,.025]}><boxGeometry args={[width+.11,.07,.075]}/><meshStandardMaterial color="#b4c9b0" roughness={.65}/></mesh>
+    <mesh position={[0,-1.12,.025]}><boxGeometry args={[width+.11,.07,.075]}/><meshStandardMaterial color="#b4c9b0" roughness={.65}/></mesh>
+    <mesh position={[-width/2-.02,0,.025]}><boxGeometry args={[.07,2.3,.075]}/><meshStandardMaterial color="#b4c9b0" roughness={.65}/></mesh>
+    <mesh position={[width/2+.02,0,.025]}><boxGeometry args={[.07,2.3,.075]}/><meshStandardMaterial color="#b4c9b0" roughness={.65}/></mesh>
+  </group>
+}
+
+function GymRack({position,rotation=[0,0,0]}:{position:[number,number,number];rotation?:[number,number,number]}){
+  const metal='#526d57'
+  return <group position={position} rotation={rotation}>
+    <mesh position={[-.72,.78,0]} castShadow><boxGeometry args={[.1,1.85,.1]}/><meshStandardMaterial color={metal} roughness={.55}/></mesh>
+    <mesh position={[.72,.78,0]} castShadow><boxGeometry args={[.1,1.85,.1]}/><meshStandardMaterial color={metal} roughness={.55}/></mesh>
+    <mesh position={[0,1.58,0]} castShadow><boxGeometry args={[1.6,.08,.12]}/><meshStandardMaterial color={metal} roughness={.55}/></mesh>
+    <mesh position={[0,.18,0]} castShadow><boxGeometry args={[1.76,.12,.35]}/><meshStandardMaterial color="#799477" roughness={.68}/></mesh>
+    {[-.52,-.26,0,.26,.52].map(x=><mesh key={x} position={[x,.38,-.03]} rotation={[0,0,Math.PI/2]} castShadow><cylinderGeometry args={[.11,.11,.17,12]}/><meshStandardMaterial color="#3d5e44" roughness={.48}/></mesh>)}
+  </group>
+}
+
+/** A restrained gym interior rendered only into review frames and final WebM.
+ * It is intentionally built from simple room and equipment forms, never from
+ * another character or a downloadable third-party asset. */
+function GymInterior(){
+  const wall='#eef3eb',accent='#d2e0ce',rubber='#d2ddd0',metal='#5d7561',bench='#789378'
+  return <group>
+    <mesh rotation={[-Math.PI/2,0,0]} position={[0,-1.06,0]} receiveShadow><planeGeometry args={[10,10]}/><meshStandardMaterial color={rubber} roughness={.94}/></mesh>
+    <mesh rotation={[-Math.PI/2,0,0]} position={[0,-1.055,0]} receiveShadow><planeGeometry args={[3.7,5.1]}/><meshStandardMaterial color="#c3d3bf" roughness={.9}/></mesh>
+    <gridHelper args={[9.8,14,'#b5cbb2','#d6e2d2']} position={[0,-1.05,0]}/>
+    <mesh position={[0,.82,-5]} receiveShadow><boxGeometry args={[10,3.8,.12]}/><meshStandardMaterial color={wall} roughness={.96}/></mesh>
+    <mesh position={[0,.82,5]} rotation={[0,Math.PI,0]} receiveShadow><boxGeometry args={[10,3.8,.12]}/><meshStandardMaterial color={wall} roughness={.96}/></mesh>
+    <mesh position={[-5,.82,0]} rotation={[0,Math.PI/2,0]} receiveShadow><boxGeometry args={[10,3.8,.12]}/><meshStandardMaterial color={wall} roughness={.96}/></mesh>
+    <mesh position={[5,.82,0]} rotation={[0,-Math.PI/2,0]} receiveShadow><boxGeometry args={[10,3.8,.12]}/><meshStandardMaterial color={wall} roughness={.96}/></mesh>
+    <mesh position={[0,2.68,-4.91]}><boxGeometry args={[9.2,.12,.06]}/><meshStandardMaterial color={accent} roughness={.8}/></mesh>
+    <mesh position={[0,2.68,4.91]}><boxGeometry args={[9.2,.12,.06]}/><meshStandardMaterial color={accent} roughness={.8}/></mesh>
+    <StudioPanel position={[0,.72,-4.9]} width={3.25}/><StudioPanel position={[0,.72,4.9]} rotation={[0,Math.PI,0]} width={3.25}/>
+    <StudioPanel position={[-4.9,.72,0]} rotation={[0,Math.PI/2,0]} width={3.25}/><StudioPanel position={[4.9,.72,0]} rotation={[0,-Math.PI/2,0]} width={3.25}/>
+    <GymRack position={[-3.35,.1,-4.72]}/><GymRack position={[3.35,.1,-4.72]}/>
+    <GymRack position={[-3.35,.1,4.72]} rotation={[0,Math.PI,0]}/><GymRack position={[3.35,.1,4.72]} rotation={[0,Math.PI,0]}/>
+    <GymRack position={[-4.72,.1,-2.75]} rotation={[0,Math.PI/2,0]}/><GymRack position={[-4.72,.1,2.75]} rotation={[0,Math.PI/2,0]}/>
+    <group position={[3.35,-.72,-3.3]} rotation={[0,-.28,0]}>
+      <mesh position={[0,.32,0]} castShadow><boxGeometry args={[1.3,.13,.42]}/><meshStandardMaterial color={bench} roughness={.72}/></mesh>
+      <mesh position={[-.5,0,0]} rotation={[0,0,.3]} castShadow><boxGeometry args={[.09,.7,.09]}/><meshStandardMaterial color={metal} roughness={.5}/></mesh>
+      <mesh position={[.5,0,0]} rotation={[0,0,-.3]} castShadow><boxGeometry args={[.09,.7,.09]}/><meshStandardMaterial color={metal} roughness={.5}/></mesh>
+    </group>
+    <group position={[-3.25,.25,3.8]} rotation={[0,.45,0]}>
+      <mesh position={[0,.2,0]} castShadow><boxGeometry args={[1.25,.12,.44]}/><meshStandardMaterial color="#759071" roughness={.7}/></mesh>
+      {[-.42,-.14,.14,.42].map(x=><mesh key={x} position={[x,.48,0]} rotation={[0,0,Math.PI/2]} castShadow><cylinderGeometry args={[.14,.14,.2,12]}/><meshStandardMaterial color="#49664c" roughness={.48}/></mesh>)}
+    </group>
+    <mesh position={[0,2.7,0]} receiveShadow><boxGeometry args={[8.5,.08,8.5]}/><meshStandardMaterial color="#f5f9f2" roughness={1}/></mesh>
+  </group>
+}
+
 function ReviewScene({state}:{state:ReviewState}){
   return <Canvas className="squat-technique-review-canvas" shadows frameloop="demand" dpr={[1,1]} camera={{position:cameraPositions[state.view],fov:30}} gl={{alpha:false,antialias:true,preserveDrawingBuffer:true,powerPreference:'high-performance',toneMapping:THREE.ACESFilmicToneMapping,toneMappingExposure:.82,outputColorSpace:THREE.SRGBColorSpace}}>
-    <color attach="background" args={['#f7faf5']}/>
+    <color attach="background" args={['#eaf1e6']}/>
     <hemisphereLight args={['#fcfdf9','#d7e4d2',1.05]}/><ambientLight intensity={.34}/>
     <directionalLight castShadow position={[3.4,5.2,3.1]} intensity={1.05} color="#fffdf7" shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-bias={-.00025} shadow-radius={3}/>
     <directionalLight position={[-3.5,2.4,1.5]} intensity={.25} color="#e8f0e4"/>
-    <mesh rotation={[-Math.PI/2,0,0]} position={[0,-1.061,0]} receiveShadow><circleGeometry args={[2.8,64]}/><meshStandardMaterial color="#e4ebe1" roughness={1} metalness={0}/></mesh>
+    <GymInterior/>
     <Suspense fallback={null}><ReviewAvatar key={state.avatar} {...state}/></Suspense>
     <Camera view={state.view}/>
   </Canvas>

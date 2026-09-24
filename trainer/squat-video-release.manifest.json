@@ -3,6 +3,7 @@
   "exerciseId": "squat",
   "purpose": "Candidate public delivery by rendered video only. Raw Mixamo GLB/FBX, skeletons and animation tracks are excluded from this release.",
   "delivery": "rendered-video-only",
+  "scenery": "Locally rendered stylized 3D gym interior; it is baked into the final video and contains no third-party scene asset.",
   "sourceCandidateManifest": "trainer/mixamo-air-squat-combined.manifest.json",
   "avatars": {
     "male": {

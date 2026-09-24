@@ -89,7 +89,7 @@ try{
 }finally{await browser.close()}
 
 await writeFile(resolve(reviewRoot,'video-release-manifest.json'),JSON.stringify({
-  purpose:'Video-only candidate for user and specialist review. It contains rendered frames, not raw Mixamo GLB, FBX, skeletons or animation tracks.',
+  purpose:'Video-only candidate for user and specialist review. It contains rendered frames with a locally built stylized gym scene, not raw Mixamo GLB, FBX, skeletons or animation tracks.',
   source:'artifacts/squat-technique-review/<avatar>/source-frames/<view>/frame-000.png..frame-071.png',
   clip:'Original embedded Mixamo squat clip rendered earlier for local review; no retargeting or animation edit during video generation.',
   fps,avatars:produced

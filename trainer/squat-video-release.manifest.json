@@ -70,9 +70,9 @@
     "rule": "Only declared media is rendered as a control. A missing angle or gender uses the exercise fallback; media from another exercise is never reused."
   },
   "studio": {
-    "currentId": "telo365-functional-studio-v1",
+    "currentId": "telo365-functional-studio-v2",
     "currentBranding": "embedded",
-    "targetId": "telo365-functional-studio-v1",
+    "targetId": "telo365-functional-studio-v2",
     "targetBranding": "embedded",
     "framing": "full-body-safe",
     "replacementRule": "All supplied angle assets were rendered in the same canonical studio. Physical TELO365.RU branding is embedded in video/posters; no CSS overlay is used."

@@ -91,14 +91,14 @@ export const exerciseTechnique:Record<string,ExerciseTechnique>={
 }
 export const getExerciseTechnique=(exerciseId:string)=>exerciseTechnique[exerciseId]||defaultExerciseTechnique
 
-export const telo365FunctionalStudioV1:TechniqueVideoStudio={
-  id:'telo365-functional-studio-v1',
+export const telo365FunctionalStudio:TechniqueVideoStudio={
+  id:'telo365-functional-studio-v2',
   branding:'embedded',
   framing:'full-body-safe'
 }
 
 // Release media is cached for one day. Bump this only when rendered frames change.
-const squatVideoRevision='studio-v1-20260924'
+const squatVideoRevision='studio-v2-20260924'
 
 const squatVideoAngles=(avatar:TrainerAvatar):Record<TechniqueVideoAngle,TechniqueVideoAngleAsset>=>{
   const prefix=`/media/exercises/videos/squat-${avatar}`
@@ -114,7 +114,7 @@ const squatVideoAngles=(avatar:TrainerAvatar):Record<TechniqueVideoAngle,Techniq
 }
 
 const squatStudio:TechniqueVideoStudio={
-  ...telo365FunctionalStudioV1
+  ...telo365FunctionalStudio
 }
 
 export const squatTechniqueVideos:Record<TrainerAvatar,TechniqueVideoAsset>={

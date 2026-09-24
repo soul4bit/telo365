@@ -4,18 +4,20 @@ This document defines one recognizable virtual studio for every future TELO365 e
 
 ## Current release status
 
-All eight current `squat-*.webm` and matching posters have been rendered in `telo365-functional-studio-v1`. They use video-only delivery; raw GLB/FBX files are still excluded.
+All eight current `squat-*.webm` and matching posters have been rendered in `telo365-functional-studio-v2`. They use video-only delivery; raw GLB/FBX files are still excluded.
 
 The active media manifest declares:
 
 ```json
-"currentId": "telo365-functional-studio-v1",
+"currentId": "telo365-functional-studio-v2",
 "currentBranding": "embedded"
 ```
 
 `TELO365.RU` is embedded as a physical wall sign in the rendered room and posters. The viewer does not render an HTML/CSS watermark over these assets.
 
-## Canonical scene: `telo365-functional-studio-v1`
+Version v2 keeps one physical layout across all four cameras: the side wall contains a window, dumbbell rack, kettlebells, and timber slats; the opposite wall repeats the same rack, window, slats, and physical sign treatment. Lighting remains fixed from the same window side.
+
+## Canonical scene: `telo365-functional-studio-v2`
 
 A compact, premium functional-training studio for an individual TELO365 workout. It is not a large commercial gym.
 

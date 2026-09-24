@@ -222,9 +222,16 @@ function GymInterior(){
       <mesh key={`z${value}`} rotation={[-Math.PI/2,0,0]} position={[0,-1.055,value]}><planeGeometry args={[9.8,.016]}/><meshBasicMaterial color={tile}/></mesh>
     ])}
     <DarkWall position={[0,.82,-4.92]}/><DarkWall position={[0,.82,4.92]} rotation={[0,Math.PI,0]}/><DarkWall position={[-4.92,.82,0]} rotation={[0,Math.PI/2,0]}/><DarkWall position={[4.92,.82,0]} rotation={[0,-Math.PI/2,0]}/>
-    <WoodSlats position={[1.7,.18,-4.82]} width={2.18}/><StudioWindow position={[-2.85,.15,-4.82]}/><BrandPlaque position={[.1,1.36,-4.81]}/>
-    <WoodSlats position={[-4.82,.18,-2.55]} rotation={[0,Math.PI/2,0]} width={1.9}/><WoodSlats position={[4.82,.18,2.55]} rotation={[0,-Math.PI/2,0]} width={1.9}/>
+    {/* End wall: the front and 3/4 views. */}
+    <WoodSlats position={[1.7,.18,-4.82]} width={2.18}/><StudioWindow position={[-2.85,.15,-4.82]}/><BrandPlaque position={[-1.02,1.36,-4.81]}/>
     <GymRack position={[-3.48,-.94,-4.55]}/><DumbbellRack position={[2.65,-.94,-4.48]} rotation={[0,.05,0]}/>
+    {/* Opposite end wall: it is part of the same room and keeps the back view recognisable. */}
+    <WoodSlats position={[1.7,.18,4.82]} rotation={[0,Math.PI,0]} width={2.18}/><StudioWindow position={[-2.85,.15,4.82]} rotation={[0,Math.PI,0]}/><BrandPlaque position={[-1.02,1.36,4.81]} rotation={[0,Math.PI,0]}/>
+    <GymRack position={[-3.48,-.94,4.55]} rotation={[0,Math.PI,0]}/><DumbbellRack position={[2.65,-.94,4.48]} rotation={[0,Math.PI+.05,0]}/>
+    {/* Left wall: the side camera looks directly at this composition. */}
+    <WoodSlats position={[-4.82,.18,-2.55]} rotation={[0,Math.PI/2,0]} width={1.9}/><StudioWindow position={[-4.82,.15,1.72]} rotation={[0,Math.PI/2,0]}/>
+    <DumbbellRack position={[-4.55,-.94,.4]} rotation={[0,Math.PI/2,0]}/><Kettlebell position={[-4.18,-.84,1.55]}/><Kettlebell position={[-4.18,-.84,1.1]} color="#5c765c"/>
+    <WoodSlats position={[4.82,.18,2.55]} rotation={[0,-Math.PI/2,0]} width={1.9}/>
     <PlyoBox position={[3.34,-.7,-2.78]} rotation={[0,-.35,0]}/><Kettlebell position={[-2.65,-.83,-2.7]}/><Kettlebell position={[-2.2,-.84,-2.94]} color="#5c765c"/><Kettlebell position={[-1.75,-.84,-2.7]} color="#80694c"/>
     <Plant position={[-4.2,-.9,-3.95]}/>
     <mesh position={[0,2.73,0]} receiveShadow><boxGeometry args={[9.8,.1,9.8]}/><meshStandardMaterial color="#202622" roughness={.92}/></mesh>

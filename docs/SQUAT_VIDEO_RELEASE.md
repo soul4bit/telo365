@@ -102,4 +102,4 @@ sudo systemctl restart telo365.service
 
 ## Virtual studio
 
-The current release uses newly rendered WebM/PNG from `telo365-functional-studio-v1`. Its reusable scene, physical `TELO365.RU` treatment, safe framing, and exact media paths are defined in [TELO365_FUNCTIONAL_STUDIO_RENDER_SPEC.md](TELO365_FUNCTIONAL_STUDIO_RENDER_SPEC.md). The room is baked into video and posters; CSS never imitates it over an existing video.
+The current release uses newly rendered WebM/PNG from `telo365-functional-studio-v2`. Its reusable scene, physical `TELO365.RU` treatment, safe framing, and exact media paths are defined in [TELO365_FUNCTIONAL_STUDIO_RENDER_SPEC.md](TELO365_FUNCTIONAL_STUDIO_RENDER_SPEC.md). The room is baked into video and posters; CSS never imitates it over an existing video.

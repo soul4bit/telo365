@@ -47,7 +47,7 @@ async function desktop(){
     const current=await source()
     if(sourcePath(current)!==`/media/exercises/videos/squat-female-${fileAngle}.webm`)throw new Error(`female ${label} view did not load: ${current}`)
   }
-  if(await dialog.locator('.exercise-video-viewer').getAttribute('data-studio-id')!=='telo365-functional-studio-v2')throw new Error('functional studio metadata is missing')
+  if(await dialog.locator('.exercise-video-viewer').getAttribute('data-studio-id')!=='telo365-functional-studio-v3')throw new Error('functional studio metadata is missing')
   if(await dialog.getByText('TELO365.RU',{exact:true}).count())throw new Error('physical studio branding must not use an HTML overlay')
   if(!await dialog.getByText('\u0427\u0410\u0421\u0422\u042b\u0415 \u041e\u0428\u0418\u0411\u041a\u0418',{exact:true}).isVisible())throw new Error('exercise mistakes metadata is not visible')
   if(!await dialog.getByText('\u041a\u043e\u043b\u0435\u043d\u0438 \u0437\u0430\u0432\u0430\u043b\u0438\u0432\u0430\u044e\u0442\u0441\u044f \u0432\u043d\u0443\u0442\u0440\u044c.',{exact:true}).isVisible())throw new Error('Air Squat mistakes are not rendered from metadata')

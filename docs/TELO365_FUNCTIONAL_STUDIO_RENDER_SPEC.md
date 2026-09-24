@@ -1,88 +1,111 @@
-# TELO365 Functional Studio v1 - render specification
+# TELO365 Functional Studio v3 — спецификация рендера
 
-This document defines one recognizable virtual studio for every future TELO365 exercise demonstration. It does not change animation, skeletons, source models, or authorize publication of raw GLB/FBX files.
+Идентификатор сцены: `telo365-functional-studio-v3`.
 
-## Current release status
+Единая студия v3 используется в серии из восьми видеодемонстраций squat и соответствующих posters. Актуальную версию подключённых роликов фиксирует `studio.currentId` в `trainer/squat-video-release.manifest.json`. Проверка оформления описана ниже и не заменяет оценку техники упражнения специалистом.
 
-All eight current `squat-*.webm` and matching posters have been rendered in `telo365-functional-studio-v2`. They use video-only delivery; raw GLB/FBX files are still excluded.
+Меняется только окружение. Геометрия персонажей, скелеты, материалы одежды, оригинальные клипы Air Squat и их скорость остаются прежними. Исходные GLB/FBX не входят в публичную поставку.
 
-The active media manifest declares:
+## Одна физическая студия
 
-```json
-"currentId": "telo365-functional-studio-v2",
-"currentBranding": "embedded"
+Сцена и свет определены в `src/trainer-studio/FunctionalStudio.tsx`, подключены в `src/squat-technique-review.tsx` и используются для всех персонажей и ракурсов. У помещения одна система координат, одно размещение оборудования и один набор источников света. Интерьер не переключается по `view`, полу или фазе движения.
+
+Цель — компактная boutique gym / wellness studio со спокойным спортивным характером:
+
+- Светлая тёплая штукатурка и приглушённые шалфейные панели стен; графитовые металлические детали и умеренные тёмно-зелёные акценты.
+- Матовый тёмный резиновый пол с малозаметными швами и читаемой контактной тенью под обувью.
+- Одна современная силовая стойка с перекладиной и одна аккуратная гантельная стойка.
+- Спортивная скамья, небольшая группа гирь и настенные перекладины. Оборудование находится по периметру, вдали от траектории тренера.
+- Дубовые рейки или панели как небольшой повторяющийся архитектурный мотив, связывающий стены одного помещения.
+- Большое окно с рассеянным тёплым дневным светом; при необходимости небольшое растение у окна.
+- Свободная центральная зона для упражнения. Скамья и другое оборудование окружения не превращают Air Squat в приседание с опорой.
+
+Стены не должны быть четырьмя копиями одной композиции. Зоны дополняют друг друга: стойка, гантели, скамья и перекладины имеют собственные постоянные места. По соседним ракурсам должны читаться продолжение пола, одинаковая высота стен, совпадающие углы и характер материалов.
+
+Не использовать фоновых людей, зеркала со сложными отражениями, плакаты, сторонние логотипы, неон, агрессивные красно-синие акценты, плотные ряды тренажёров или произвольные детали, добавленные только ради одного кадра.
+
+## Свет и материалы
+
+Основной мягкий свет расположен в мировых координатах со стороны окна. Его направление, интенсивность, цвет, экспозиция и tone mapping не меняются при переключении камер. Общий заполняющий свет позволяет рассмотреть лицо, складки одежды и обувь с обратной стороны.
+
+Параметры v3: hemisphere intensity `1.85`, основной directional light `1.35` в позиции `[-3.8, 5.4, 2.0]`, заполняющий directional light `0.58`, PMREM environment intensity `0.08`. Используются VSM-тени с картой `1024×1024`, радиусом `8` и восемью выборками размытия; ACES Filmic tone mapping, exposure `1.02`, вывод sRGB. Карта окружения создаётся локально из `RoomEnvironment` Three.js, без загружаемого HDRI. Эти значения относятся к сцене рендера и не меняют материалы или текстуры Mixamo.
+
+Материалы матовые или умеренно шероховатые. У резины, окрашенного металла, дерева и штукатурки должны различаться отклик на свет и фактура. Простые процедурные материалы не следует описывать как фотореалистичные текстуры. Приоритет — ясность движения и аккуратная сцена при доступном времени рендера.
+
+Белые участки одежды и обувь не должны терять детали от пересвета. Тени мягкие и достаточно светлые, чтобы ноги были различимы на тёмном полу.
+
+## Физическое брендирование
+
+`TELO365.RU` находится на стене или небольшой интерьерной табличке в виде геометрии/материала сцены. Надпись подчиняется перспективе помещения и не привязана к экрану. Её положение не меняется ради отдельной камеры.
+
+В v3 есть основная надпись на дальней стене и меньшая надпись на боковой стене. Обе занимают постоянное место в комнате; это позволяет естественно видеть бренд в нескольких ракурсах. Задний ракурс узнаётся по материалам и оборудованию. Отсутствие надписи в отдельном кадре не компенсируется HTML/CSS watermark.
+
+## Камеры и композиция
+
+| Ракурс | Задача | Окружение в кадре |
+| --- | --- | --- |
+| Спереди | Положение стоп, коленей и симметрия движения | Главная композиция со стойкой или гантелями, рейками и физическим брендом |
+| Сбоку | Траектория таза и наклон корпуса | Минимум один узнаваемый спортивный элемент: скамья/гири/перекладины, плюс продолжение панелей или реек |
+| Сзади | Симметрия и положение стоп/коленей | Другая постоянная зона того же помещения с оборудованием и общими архитектурными мотивами |
+| 3/4 | Основной выразительный ракурс, совмещающий глубину и положение нижних конечностей | Читается угол комнаты и взаимное расположение её зон; тренер остаётся главным объектом |
+
+`threeQuarter` остаётся ракурсом по умолчанию, скорость — `1×`. Структура модального окна и управление не меняются.
+
+Камера неподвижна в течение всего цикла. Полное тело, кисти и обувь помещаются в кадр во всех фазах с небольшими безопасными отступами. Масштаб персонажа сопоставим между ракурсами и полами; скелеты для кадрирования не масштабируются. Интерьер не заслоняет тренера. Увеличение визуального размера допустимо только после проверки крайних поз и промежуточных кадров.
+
+## Описание для повторного рендера
+
+> Одна компактная фирменная студия TELO365: светлая тёплая штукатурка, приглушённые шалфейные панели, дубовые рейки, тёмный матовый резиновый пол, графитовая силовая стойка с перекладиной, гантельная стойка, аккуратная скамья, несколько гирь и настенные перекладины. Оборудование стоит вдоль стен и оставляет центр свободным. Большое окно даёт мягкий естественный тёплый свет с постоянной стороны. Спокойные натуральные материалы и чистая boutique wellness gym композиция. TELO365.RU — небольшая физическая надпись на стене, без экранного watermark. Ни фоновых людей, ни сторонних брендов, ни плакатов, ни неона. Тренер целиком виден, обувь и голова не обрезаны. Ракурсы спереди, сбоку, сзади и 3/4 — четыре камеры одного сохранённого помещения, без перестановки реквизита или источников света.
+
+Это описание сцены, а не запрос на четыре независимо сгенерированные фоновые картинки. Рендерить нужно один сохранённый интерьер с четырёх камер.
+
+## Файлы и воспроизводимость
+
+Публичные файлы сохраняют текущую архитектуру `пол × ракурс`:
+
+```text
+public/media/exercises/videos/squat-{male|female}-{front|side|back|three-quarter}.webm
+public/media/exercises/posters/squat-{male|female}-{front|side|back|three-quarter}.png
 ```
 
-`TELO365.RU` is embedded as a physical wall sign in the rendered room and posters. The viewer does not render an HTML/CSS watermark over these assets.
+Рендер: `tools/render-squat-technique-review-browser.mjs`. Кодирование и подготовка poster: `tools/create-squat-release-videos.mjs`. WebM использует VP9 и единое квадратное разрешение (текущий формат — 900×900). Для исходного клипа длительностью `2.375 с` берутся 72 равномерные выборки времени. Текущий encoder задаёт `30.25 fps` (примерно 30 кадров/с), поэтому длительность конечного видео составляет около `2.380165 с`; небольшое отличие обусловлено частотой кодирования. Ключи и относительный временной профиль движения не меняются. Poster берётся из начала соответствующего ролика.
 
-Version v2 keeps one physical layout across all four cameras: the side wall contains a window, dumbbell rack, kettlebells, and timber slats; the opposite wall repeats the same rack, window, slats, and physical sign treatment. Lighting remains fixed from the same window side.
+Обновлять нужно согласованную серию роликов и posters: нельзя смешивать разные версии студии для мужчины, женщины или отдельных ракурсов. Для последующих упражнений допустим неполный набор `пол × ракурс`; UI показывает только реально подготовленные assets.
 
-## Canonical scene: `telo365-functional-studio-v2`
+После рендера обновляются версия студии, cache revision и фактические хеши в существующих metadata/manifests. Успешная генерация файлов сама по себе не подтверждает визуальное качество или технику упражнения.
 
-A compact, premium functional-training studio for an individual TELO365 workout. It is not a large commercial gym.
+Для повторения захвата сначала запустить Vite в отдельном терминале:
 
-- Matte dark rubber flooring: warm graphite, subtle large-tile seams, and a soft contact shadow beneath shoes.
-- One contemporary dark-metal rack at the rear; one tidy low dumbbell rack in the background.
-- A few kettlebells, one plyometric box, and optionally one exercise ball. Equipment stays at the edge of the composition and never intersects the trainer.
-- Warm timber slats as a vertical interior accent, with warm beige or natural stone wall surfaces.
-- A large side window or a soft natural daylight source, plus subtle greenery near the window.
-- Palette: deep green, muted green, graphite, grey, warm beige, and natural wood.
-- Lighting: warm daylight key, light fill, soft realistic shadows. Face, clothing folds, and shoes must remain legible.
-- Exclude mirrors with visible reflections, people, posters, external brands, neon, red/blue sports colors, cyberpunk, crowded equipment, and visual noise.
-
-### Physical brand treatment
-
-Use `TELO365.RU` once as subtle dimensional or painted lettering on the rear wall. An alternative is a small print on the visible side of the plyometric box. It must be part of scene geometry/materials and visible in posters; it must not be an HTML/CSS overlay. It cannot overlap the trainer or become the main focus.
-
-## Camera and framing
-
-For one exercise, avatar, and view, camera remains fixed throughout the cycle. Lighting, room layout, materials, trainer appearance, and clothing remain the same across all four views; only camera position changes.
-
-- Trainer occupies about 85-90% of safe frame height, approximately 10-15% larger than legacy v0 framing.
-- Keep at least 5% safe margin above the head and below shoes in both standing and bottom positions.
-- Do not crop head, hands, feet, shoes, mat, or required equipment.
-- No zoom, handheld motion, or camera shake during the exercise.
-- `threeQuarter` is the default Air Squat view; it must show hip path, knees, and feet. Strict side remains available for profile checking.
-- Male and female views use comparable visual scale and safe margins without scaling their skeletons.
-
-## Render prompt
-
-> Premium compact functional training studio for TELO365, warm daylight from a large side window, graphite rubber gym floor with subtle tile seams, one modern dark metal squat rack, a tidy dumbbell rack, three kettlebells, one wooden plyometric box, subtle warm wooden slats, a small plant, dark green graphite warm beige natural material palette, soft realistic shadows, calm high-end wellness fitness aesthetic. One subtle physical `TELO365.RU` wall lettering in the far background, part of the room, not an overlay. No people in background, no mirrors, no posters, no external logos, no neon, no cyberpunk, no crowded commercial gym. Static camera, full-body trainer, head and shoes fully visible throughout the air-squat loop, 5% safe margins.
-
-For each view append only: `front view`, `strict side view`, `back view`, or `three-quarter view`. Do not change the room, equipment layout, materials, lighting, clothing, or trainer appearance between renders.
-
-## Air Squat output files
-
-Render only from approved local sources and export final video. `public` receives WebM and posters only; it never receives GLB, FBX, skeletons, or animation clips.
-
-```
-public/media/exercises/videos/squat-male-front.webm
-public/media/exercises/videos/squat-male-side.webm
-public/media/exercises/videos/squat-male-back.webm
-public/media/exercises/videos/squat-male-three-quarter.webm
-public/media/exercises/videos/squat-female-front.webm
-public/media/exercises/videos/squat-female-side.webm
-public/media/exercises/videos/squat-female-back.webm
-public/media/exercises/videos/squat-female-three-quarter.webm
-
-public/media/exercises/posters/squat-male-front.png
-public/media/exercises/posters/squat-male-side.png
-public/media/exercises/posters/squat-male-back.png
-public/media/exercises/posters/squat-male-three-quarter.png
-public/media/exercises/posters/squat-female-front.png
-public/media/exercises/posters/squat-female-side.png
-public/media/exercises/posters/squat-female-back.png
-public/media/exercises/posters/squat-female-three-quarter.png
+```powershell
+npm.cmd run dev -- --port 4175
 ```
 
-Use VP9 WebM, 900x900 or another consistent square format, 30 fps or higher, original Mixamo speed at 1x, and a seamless loop with no phase loss. Each poster is the natural standing frame of its matching view.
+Затем выполнить контрольный захват обоих персонажей в начале и нижней точке, полный рендер и кодирование:
 
-## Acceptance checklist
+```powershell
+node tools/capture-studio-quality.mjs --port 4175 --avatar both --size 1200
+$env:TELO_DEV_PORT='4175'
+node tools/render-squat-technique-review-browser.mjs
+npm.cmd run generate:squat-release-videos
+```
 
-1. Every view in the series uses the same room, light, and equipment layout.
-2. `TELO365.RU` is physically visible once in scene and no viewer overlay remains.
-3. The full trainer fits in standing and bottom positions.
-4. There is no cropped shoe, clipped head, blown-out white clothing, or unreadable shadow.
-5. The media manifest lists only actually exported `gender x angle` assets; UI does not show missing controls.
-6. After replacement, run `npm run verify:squat-video-release`, `npm run verify:public-assets`, build, and browser checks for desktop, mobile, and reduced motion.
-7. `specialistTechniqueReview` remains `pending` until a documented specialist conclusion exists.
+Контрольный захват обоих персонажей во всех четырёх ракурсах выполнен. Снимки имеют разрешение `1200×1200`, фиксированную камеру и точное время из `artifacts/squat-technique-review/phase-times.json`:
+
+```text
+artifacts/studio-quality-review/male-contact-sheet.png
+artifacts/studio-quality-review/female-contact-sheet.png
+artifacts/studio-quality-review/{male|female}/{standing|bottom}-{front|side|back|three-quarter}.png
+artifacts/studio-quality-review/capture-manifest.json
+```
+
+Manifest захвата содержит время каждой фазы, имена и SHA-256 снимков и исходных combined GLB. Это воспроизводимые материалы проверки оформления; автоматический захват не устанавливает `specialistTechniqueReview: approved`. Полные исходные кадры роликов находятся в `artifacts/squat-technique-review/{male|female}/source-frames/`, а сведения о конечных WebM/PNG — в `artifacts/squat-release-review/video-release-manifest.json`.
+
+## Приёмка
+
+1. Сопоставить четыре камеры одного персонажа: оборудование не меняет мест, материалы и направление света совпадают, боковой и задний кадры не пустые.
+2. Проверить ту же сцену у второго персонажа. Интерьер и одежда не меняются между его ракурсами.
+3. Посмотреть весь цикл, а также начало, полуприсед и нижнюю точку: нет обрезанных частей тела, пересвета или перекрытия обуви.
+4. Убедиться, что бренд находится внутри сцены и UI не накладывает watermark.
+5. Запустить `npm.cmd run verify:squat-video-release`, `npm.cmd run verify:public-assets`, build, server tests и существующие проверки desktop/mobile/reduced-motion.
+6. Проверить наличие WebM/PNG и отсутствие неопубликованных Mixamo GLB/FBX в `dist`.
+7. Сохранить результаты проверки. `specialistTechniqueReview` остаётся `pending`, а `verified` — без изменений до фактического заключения специалиста. Оформление студии не является подтверждением техники.

@@ -32,7 +32,7 @@ if(!/techniqueExerciseName=.*exerciseId==='squat'\?'Приседания'/.test(
 
 if(releaseManifest.specialistTechniqueReview!=='pending'||releaseManifest.verified!==false)throw new Error('Video release must keep specialist review pending and remain unverified')
 if(releaseManifest.mediaArchitecture?.mode!=='gender-by-angle'||releaseManifest.mediaArchitecture?.allowPartialAngles!==true)throw new Error('Release manifest must declare optional gender-by-angle media architecture')
-if(releaseManifest.studio?.currentId!=='telo365-functional-studio-v2'||releaseManifest.studio?.targetId!=='telo365-functional-studio-v2')throw new Error('Release manifest must declare the functional studio for rendered media')
+if(releaseManifest.studio?.currentId!=='telo365-functional-studio-v3'||releaseManifest.studio?.targetId!=='telo365-functional-studio-v3')throw new Error('Release manifest must declare the functional studio for rendered media')
 if(!/angles:Partial<Record<TechniqueVideoAngle,TechniqueVideoAngleAsset>>/.test(exerciseRegistrySource)||!/getTechniqueVideoAngles/.test(techniqueViewerSource))throw new Error('Technique viewer must render only available angle assets')
 if(!/exerciseTechnique:Record<string,ExerciseTechnique>/.test(exerciseRegistrySource)||!/commonMistakes/.test(techniqueDialogSource))throw new Error('Technique cues and mistakes must be stored in exercise metadata, not hardcoded in dialog layout')
 

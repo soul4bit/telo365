@@ -33,14 +33,19 @@ export type TechniqueVideoAsset={
   angles:Record<TechniqueVideoAngle,TechniqueVideoAngleAsset>
 }
 
+// Release media is cached for one day. Bump this only when rendered frames change.
+const squatVideoRevision='gym-20260924'
+
 const squatVideoAngles=(avatar:TrainerAvatar):Record<TechniqueVideoAngle,TechniqueVideoAngleAsset>=>{
   const prefix=`/media/exercises/videos/squat-${avatar}`
   const posterPrefix=`/media/exercises/posters/squat-${avatar}`
+  const video=(angle:string)=>`${prefix}-${angle}.webm?v=${squatVideoRevision}`
+  const poster=(angle:string)=>`${posterPrefix}-${angle}.png?v=${squatVideoRevision}`
   return {
-    front:{label:'Спереди',videoUrl:`${prefix}-front.webm`,posterUrl:`${posterPrefix}-front.png`},
-    side:{label:'Сбоку',videoUrl:`${prefix}-side.webm`,posterUrl:`${posterPrefix}-side.png`},
-    back:{label:'Сзади',videoUrl:`${prefix}-back.webm`,posterUrl:`${posterPrefix}-back.png`},
-    threeQuarter:{label:'3/4',videoUrl:`${prefix}-three-quarter.webm`,posterUrl:`${posterPrefix}-three-quarter.png`}
+    front:{label:'Спереди',videoUrl:video('front'),posterUrl:poster('front')},
+    side:{label:'Сбоку',videoUrl:video('side'),posterUrl:poster('side')},
+    back:{label:'Сзади',videoUrl:video('back'),posterUrl:poster('back')},
+    threeQuarter:{label:'3/4',videoUrl:video('three-quarter'),posterUrl:poster('three-quarter')}
   }
 }
 
